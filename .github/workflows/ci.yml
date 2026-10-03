@@ -23,7 +23,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libopengl0 libgbm1 libnss3 libasound2t64 libpulse0 libportaudio2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 libxtst6 xvfb xauth
+          sudo apt-get install -y libegl1 libgl1 libopengl0 libgbm1 libnss3 libasound2t64 libpulse0 pulseaudio libportaudio2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 libxtst6 xvfb xauth
       - name: Install pinned environment
         run: python source/tools/setup_environment.py --dev --models
       - name: Public files and Python checks
@@ -42,4 +42,8 @@ jobs:
         env:
           QTWEBENGINE_DISABLE_SANDBOX: '1'
           QTWEBENGINE_CHROMIUM_FLAGS: '--disable-gpu --disable-dev-shm-usage'
-        run: xvfb-run -a .venv/bin/python -X utf8 -m unittest discover -s source/tests -t source -v
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=classroom_test
+          pactl set-default-sink classroom_test
+          xvfb-run -a .venv/bin/python -X utf8 -m unittest discover -s source/tests -t source -v

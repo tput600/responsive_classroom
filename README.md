@@ -166,10 +166,13 @@ git push -u origin feature/my-change
 在 GitHub 按 **Code → Codespaces → Create codespace**，環境會準備固定依賴與離線模型。Linux 的測試使用：
 
 ```bash
+pulseaudio --start --exit-idle-time=-1
+pactl load-module module-null-sink sink_name=classroom_test
+pactl set-default-sink classroom_test
 QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run -a .venv/bin/python -m unittest discover -s source/tests -t source -v
 ```
 
-上述停用沙箱僅限隔離的雲端測試環境，發佈程式沒有加入此旗標。Codespaces 可修改 UI、核心、演算法並執行測試，不能直接存取使用者電腦的麥克風或教室區域網路燈板；實際收音、音效及燈板驗收需在本地進行。雲端變更 commit／push 後，本地 pull 即可同步。
+上述停用沙箱僅限隔離的雲端測試環境，發佈程式沒有加入此旗標；虛擬音訊輸出只供 MP3 解碼测试，並非真人收音驗收。Codespaces 可修改 UI、核心、演算法並執行測試，不能直接存取使用者電腦的麥克風或教室區域網路燈板；實際收音、音效及燈板驗收需在本地進行。雲端變更 commit／push 後，本地 pull 即可同步。
 
 ## 13. 發佈新版本與檢查
 
