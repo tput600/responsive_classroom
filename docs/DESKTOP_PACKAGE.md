@@ -146,3 +146,5 @@ manual acceptance remain separate.
 ## Publication cleanup in v3.1.0
 
 The old Windows-only release workflow, three-archive cross-platform publisher, and one-time v3.0.3 draft recovery workflow have been retired. Their Git history and published releases remain intact. There is one current publication entry point, the manual `publish-unified.yml`; `macos.yml` remains an artifact-only architecture-specific diagnostic. The assembly output is not automatically published.
+
+Validation evidence is hashed with the same canonical UTF-8 JSON encoding as the manifest: sorted keys, two-space indentation, unescaped Unicode and a trailing newline. Input whitespace/key ordering may differ without changing the evidence digest; any changed value changes it.

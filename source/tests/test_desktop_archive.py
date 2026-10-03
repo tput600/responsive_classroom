@@ -144,7 +144,7 @@ class DesktopArchiveTests(unittest.TestCase):
         self.assemble(validation_evidence=evidence)
         with zipfile.ZipFile(self.output) as zipped:
             manifest = json.loads(zipped.read(desktop.MANIFEST))
-        self.assertEqual(manifest['validation_evidence'], {'report': value, 'sha256': desktop.sha256(evidence)})
+        self.assertEqual(manifest['validation_evidence'], {'report': value, 'sha256': hashlib.sha256(desktop.json_bytes(value)).hexdigest()})
 
     def test_rejects_thin_mac_archive_and_version_mismatch(self):
         for platform, version in [('macos-arm64', self.version), ('macos-x86_64', self.version),

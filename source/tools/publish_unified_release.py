@@ -228,7 +228,7 @@ def verify_evidence(manifest, run_id, commit):
     evidence = manifest.get('validation_evidence', {}).get('report', {})
     expected_url = f'https://github.com/{current_repository()}/actions/runs/{run_id}'
     proof = manifest.get('validation_evidence', {})
-    serialized = (json.dumps(evidence, indent=2) + '\n').encode('utf-8')
+    serialized = desktop.json_bytes(evidence)
     if proof.get('sha256') != hashlib.sha256(serialized).hexdigest():
         raise ValueError('Native evidence report hash mismatch')
     native = evidence.get('macos_native', [])

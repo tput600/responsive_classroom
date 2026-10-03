@@ -289,7 +289,9 @@ class UnifiedPublicationTests(unittest.TestCase):
                               'frozen_model': 'passed', 'frozen_ui': 'passed', 'signature': 'ad-hoc-verified',
                               'universal_binaries': 8} for machine in ('arm64', 'x86_64')]}
         evidence = self.root / 'evidence.json'
-        evidence.write_bytes(desktop.json_bytes(self.evidence))
+        # Match the real workflow: insertion-ordered, indented JSON, not
+        # pre-sorted fixture JSON that could hide canonicalization bugs.
+        evidence.write_text(json.dumps(self.evidence, indent=2) + '\n', encoding='utf-8')
         self.directory = self.root / 'artifacts'
         report = desktop.assemble(winzip, maczip, self.directory / release.ARCHIVE,
                                   version='3.1.0', validation_evidence=evidence)
@@ -300,6 +302,25 @@ class UnifiedPublicationTests(unittest.TestCase):
         assets = self.build_files()
         self.assertEqual(release.verify_artifacts(self.directory, 123, self.commit), assets)
         self.api.assert_not_called()
+
+    def test_native_evidence_canonical_hash_survives_key_order_and_unicode(self):
+        # Semantic evidence validation is portable; no POSIX payload fixture.
+        evidence = {'commit': self.commit,
+                    'run': 'https://github.com/example/classroom/actions/runs/123',
+                    'windows_job': 'passed', 'note': '雙架構原生驗證',
+                    'macos_native': [{'machine': machine, 'version': '3.1.0',
+                        'archive_sha256': 'f' * 64, 'frozen_model': 'passed',
+                        'frozen_ui': 'passed', 'signature': 'ad-hoc-verified',
+                        'universal_binaries': 8} for machine in ('arm64', 'x86_64')]}
+        proof = {'report': evidence,
+                 'sha256': hashlib.sha256(desktop.json_bytes(evidence)).hexdigest()}
+        manifest = {'validation_evidence': proof, 'inputs': {
+            platform: {'sha256': 'f' * 64, 'bytes': 1} for platform in ('macos', 'windows')}}
+        proof['report'] = dict(reversed(list(proof['report'].items())))
+        release.verify_evidence(manifest, 123, self.commit)
+        proof['report']['note'] = 'changed'
+        with self.assertRaisesRegex(ValueError, 'report hash'):
+            release.verify_evidence(manifest, 123, self.commit)
 
     def test_checksum_extra_files_and_candidate_report_fail(self):
         self.build_files()

@@ -7,6 +7,7 @@ have passed before invoking this packaging-only tool.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import plistlib
@@ -364,7 +365,10 @@ def assemble(windows, macos, output, *, version, validation_evidence=None):
             evidence = json.loads(Path(validation_evidence).read_text(encoding='utf-8'))
             if not isinstance(evidence, dict) or not evidence:
                 raise ValueError('Validation evidence must be a nonempty JSON object')
-            manifest['validation_evidence'] = {'sha256': sha256(Path(validation_evidence)), 'report': evidence}
+            # Hash canonical semantic JSON, not input formatting/order that the
+            # outer canonical manifest intentionally normalizes.
+            manifest['validation_evidence'] = {
+                'sha256': hashlib.sha256(json_bytes(evidence)).hexdigest(), 'report': evidence}
         (root / MANIFEST).write_bytes(json_bytes(manifest))
         (root / MANIFEST).chmod(0o644)
         expanded += (root / MANIFEST).stat().st_size + (root / 'README.txt').stat().st_size
