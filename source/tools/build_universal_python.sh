@@ -141,7 +141,7 @@ for library in libssl.a libcrypto.a liblzma.a; do
     lipo -create "$work/stage/arm64/lib/$library" "$work/stage/x86_64/lib/$library" \
         -output "$deps/lib/$library"
     "$RANLIB" "$deps/lib/$library"
-    lipo -verify_arch arm64 x86_64 "$deps/lib/$library"
+    lipo "$deps/lib/$library" -verify_arch arm64 x86_64
 done
 
 # Preserve both versions of every differing header, instead of accidentally
