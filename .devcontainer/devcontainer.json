@@ -1,0 +1,12 @@
+{
+  "name": "responsive_classroom",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "vscode",
+  "postCreateCommand": "python source/tools/setup_environment.py --dev --models",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": {"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"}
+    }
+  }
+}

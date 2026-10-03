@@ -1,0 +1,45 @@
+"""Fail before pushing private runtime files, secrets, or machine-specific paths."""
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+def main():
+    root = Path(__file__).resolve().parents[2]
+    result = subprocess.run(['git', 'ls-files', '-z'], cwd=root, check=True, capture_output=True)
+    names = result.stdout.decode('utf-8').split('\0')
+    forbidden_roots = {'.codex', '.venv', '_internal', 'dist', 'build', 'artifacts', 'sessions'}
+    patterns = (
+        re.compile(rb'(?i)\b[A-Z]:[/\\](?:Users|programing|programming)[/\\]'),
+        re.compile(rb'\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b'),
+        re.compile(rb'\bgithub_pat_[A-Za-z0-9_]{30,}\b'),
+        re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
+    )
+    failures = []
+    for name in filter(None, names):
+        relative = Path(name)
+        if (relative.parts[0] in forbidden_roots or relative.name in {'settings.json', '.env'}
+                or relative.suffix.lower() in {'.zip', '.exe', '.log', '.bak', '.onnx'}
+                or name.startswith('source/resources/fixtures/')
+                or name == 'source/resources/audio/blue-danube.mp3'):
+            failures.append(f'{name}: private/generated/unapproved asset is tracked')
+            continue
+        path = root / relative
+        if path.is_symlink() or not path.is_file():
+            failures.append(f'{name}: must be a regular file')
+            continue
+        data = path.read_bytes()
+        if len(data) > 25 * 1024 * 1024:
+            failures.append(f'{name}: large file belongs in a reviewed release')
+        if any(pattern.search(data) for pattern in patterns):
+            failures.append(f'{name}: secret or machine-specific path detected')
+    if failures:
+        print('\n'.join(failures), file=sys.stderr)
+        return 1
+    print(f'Public tree checked: {len(list(filter(None, names)))} files; no prohibited data found.')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

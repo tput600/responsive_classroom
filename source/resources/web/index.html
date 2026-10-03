@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' qrc:; script-src 'self' qrc:; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>課堂小幫手</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<!-- THESIS: The teacher reads readiness and changes classroom signals in one view; dense setup uses grouped fields and genuine disclosure.
+OWN-WORLD: User-approved light slate and teal, bundled Noto Sans TC, authored consistent SVG, aligned compact forms.
+STORY: Connect boards, confirm audio, act manually or by voice; custom sound remains available.
+FIRST VIEWPORT: Left readiness, central real LED canvas, right four activities and three responses; fixed live input below.
+FORM: Classroom control workspace, user-pinned B overrides direction seed 367bfe2c.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5zM6 10v6c3 3 9 3 12 0v-6M22 8v8"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 7h.01M12 7h.01M17 7h.01M7 12h.01M12 12h.01M17 12h.01M7 17h.01M12 17h.01M17 17h.01" stroke-width="3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></symbol>
+  <symbol id="i-glow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
+  <symbol id="i-notice" viewBox="0 0 24 24"><path d="m3 10 14-6v16L3 14zM3 10v4M7 16l2 5h3l-2-6M21 9v6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 3h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 1-2ZM8 19h10l3 3v-5"/><path d="M7 8h8M7 11h5"/></symbol>
+  <symbol id="i-rest" viewBox="0 0 24 24"><path d="M4 9h13v7a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h2a3 3 0 1 1 0 6h-2M8 2v3M12 1v4"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5M5.1 5.1a10 5.5 45 1 0 13.8 13.8"/><circle cx="19" cy="5" r="1"/></symbol>
+  <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 14 6M18 18a8 8 0 0 1-14-6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 5 7 7-7 7"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 13 8-13 8z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M3 9h4l5-5v16l-5-5H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="8"/><path d="M9 2h6M12 2v4M12 10v4l3 2M19 6l2 2"/></symbol>
+</defs></svg>
+<div id="app">
+  <header class="app-header">
+    <div class="brand"><svg class="icon"><use href="#i-cap"/></svg><strong data-t="brand">課堂小幫手</strong></div>
+    <nav class="navigation" aria-label="主要導覽" data-aria="navigation">
+      <button type="button" data-page="classroom" aria-current="page" data-t="classroom">課堂</button>
+      <button type="button" data-page="connection" data-t="connection">連線與收音</button>
+      <button type="button" data-page="timers" data-t="timers">計時</button>
+    </nav>
+    <button id="language" class="language-button" type="button" aria-label="Switch interface language">EN</button>
+  </header>
+  <main id="pages">
+    <section id="page-classroom" class="page classroom" aria-label="課堂" data-aria="classroom">
+      <aside class="status-rail">
+        <div class="status-list">
+          <button class="status-item" type="button" data-go="connection"><svg class="icon"><use href="#i-board"/></svg><span><strong id="board-title">尚未連線</strong><small id="board-detail">WLED</small></span><i id="board-dot" class="status-dot"></i></button>
+          <button class="status-item" type="button" data-go="connection"><svg class="icon"><use href="#i-mic"/></svg><span><strong id="microphone-title">準備麥克風</strong><small id="microphone-detail">系統預設麥克風</small></span><i id="microphone-dot" class="status-dot"></i></button>
+          <div class="status-item"><svg class="icon"><use href="#i-sound"/></svg><span><strong id="speech-title">語音已關閉</strong><small id="speech-detail">SenseVoice · 離線</small></span><i id="speech-dot" class="status-dot"></i></div>
+        </div>
+        <div class="status-actions">
+          <button id="voice-toggle" class="button primary" type="button" aria-pressed="false"><svg class="icon"><use href="#i-mic"/></svg><span data-t="voiceOn">開啟語音</span></button>
+          <button id="noise-toggle" class="button quiet" type="button" aria-pressed="false"><span data-t="noiseOn">啟動音量偵測</span></button>
+        </div>
+      </aside>
+      <div class="preview-column">
+        <div class="current-mode"><span data-t="currentMode">目前模式</span><h1 id="current-mode">待機</h1></div>
+        <div id="countdown" class="countdown" aria-live="polite"></div>
+        <div id="matrix-stage" class="matrix-stage"><canvas id="matrix" width="400" height="400" aria-label="即時 8×8 燈板畫面" data-aria="matrix"></canvas></div>
+        <p id="pattern-label" class="preview-caption">暖金柔光漫遊</p>
+      </div>
+      <div class="control-column">
+        <div class="control-heading"><h2 data-t="manual">手動控制</h2><p data-t="manualHelp">點選模式，立即調整課堂信號。</p></div>
+        <div class="base-modes">
+          <button type="button" class="mode-button selected" data-mode="STANDBY" aria-pressed="true"><svg class="icon"><use href="#i-glow"/></svg><strong data-t="STANDBY">待機</strong><small data-t="standbyHelp">等待下一個課堂活動</small></button>
+          <button type="button" class="mode-button" data-mode="NOTICE" aria-pressed="false"><svg class="icon"><use href="#i-notice"/></svg><strong data-t="NOTICE">請注意</strong><small data-t="noticeHelp">安靜聽講</small></button>
+          <button type="button" class="mode-button" data-mode="DISCUSSION" aria-pressed="false"><svg class="icon"><use href="#i-chat"/></svg><strong data-t="DISCUSSION">討論</strong><small data-t="discussionHelp">允許交談，音量範圍更寬</small></button>
+          <button type="button" class="mode-button" data-mode="REST" aria-pressed="false"><svg class="icon"><use href="#i-rest"/></svg><strong data-t="REST">休息</strong><small data-t="restHelp">倒數後提醒回到課堂</small></button>
+        </div>
+        <div class="response-modes">
+          <button type="button" class="mode-button response" data-mode="QUESTION" aria-pressed="false"><svg class="icon"><use href="#i-orbit"/></svg><strong data-t="QUESTION">提問</strong><small id="question-duration">10 秒</small></button>
+          <button type="button" class="mode-button response" data-mode="CORRECT" aria-pressed="false"><svg class="icon"><use href="#i-circle"/></svg><strong data-t="CORRECT">答對</strong><small class="feedback-duration">5 秒</small></button>
+          <button type="button" class="mode-button response" data-mode="WRONG" aria-pressed="false"><svg class="icon"><use href="#i-cross"/></svg><strong data-t="WRONG">答錯</strong><small class="feedback-duration">5 秒</small></button>
+        </div>
+      </div>
+      <div class="live-strip">
+        <div class="live-level"><svg class="icon"><use href="#i-mic"/></svg><div><strong data-t="audioInput">收音輸入</strong><small id="live-dbfs">— dBFS</small></div><meter id="live-meter" min="-100" max="0" value="-100" aria-label="即時音量" data-aria="liveLevel"></meter></div>
+        <div class="live-transcript"><span data-t="heard">最新辨識</span><strong id="transcript" title="">尚無語音輸入</strong><small id="command-result"></small></div>
+        <button id="stop-audio-live" class="icon-button" type="button" hidden data-title="stopAudio"><svg class="icon"><use href="#i-stop"/></svg></button>
+      </div>
+    </section>
+    <section id="page-connection" class="page scroll-page" hidden>
+      <div class="settings-content">
+        <section class="settings-section">
+          <details id="board-details" class="disclosure section-disclosure settings-region board-region" open>
+            <summary><svg class="icon"><use href="#i-chevron"/></svg><h2><svg class="icon"><use href="#i-board"/></svg><span data-t="boards">燈板連線</span></h2></summary>
+            <div class="region-content">
+<div class="board-add-flow"><form id="connect-form" class="connection-toolbar"><label class="sr-only" for="board-ip" data-t="boardIp">燈板 IP</label><input id="board-ip" type="text" inputmode="decimal" placeholder="192.168.1.50" maxlength="45" required autocomplete="off"><button class="button primary" id="connect-button" type="submit" data-t="connectBoard">連線燈板</button></form><div id="network-details" class="inline-form network-tools"><label class="sr-only" for="network" data-t="network">網路</label><select id="network"></select><button id="scan-button" class="button" type="button" data-t="search">搜尋</button></div></div><div id="found-boards" class="found-boards"></div>
+              <p id="board-message" class="form-message" role="status"></p>
+              <div class="board-table-wrap"><table class="board-table"><thead><tr><th class="enabled-column" data-t="enabled">啟用</th><th data-t="board">燈板</th><th data-t="state">狀態</th><th class="action-column"></th></tr></thead><tbody id="board-list"></tbody></table><p id="board-empty" class="empty-state" data-t="boardEmpty">尚未加入燈板。輸入 IP 建立連線。</p></div>
+              <details class="disclosure child-disclosure" id="orientation-details" open><summary><svg class="icon"><use href="#i-chevron"/></svg><span data-t="orientation">燈板方向</span></summary><form id="orientation-form" class="orientation-row"><label class="field"><span data-t="board">燈板</span><select id="orientation-board"></select></label><label class="field"><span data-t="rotation">旋轉</span><select id="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><div class="orientation-flags"><label><input id="serpentine" type="checkbox"><span data-t="serpentine">蛇形排列</span></label><label><input id="mirror-x" type="checkbox"><span data-t="mirrorX">左右鏡像</span></label><label><input id="mirror-y" type="checkbox"><span data-t="mirrorY">上下鏡像</span></label></div><button class="button" type="submit" data-t="save">儲存</button></form></details>
+            </div>
+          </details>
+        </section>
+        <section class="settings-section">
+          <details id="input-details" class="disclosure section-disclosure settings-region input-region" open>
+            <summary><svg class="icon"><use href="#i-chevron"/></svg><h2><svg class="icon"><use href="#i-mic"/></svg><span data-t="microphoneNoise">麥克風與音量</span></h2><button id="save-noise" class="button primary small" type="submit" form="noise-form" data-t="saveSettings">儲存設定</button></summary>
+            <div class="region-content">
+              <div class="microphone-row"><label class="sr-only" for="microphone" data-t="microphone">麥克風</label><select id="microphone"></select><button id="refresh-microphones" class="icon-button" type="button" data-title="refreshMicrophones"><svg class="icon"><use href="#i-refresh"/></svg></button><button id="calibrate" class="button" type="button" data-t="calibrate">安靜校準 12 秒</button><progress id="calibration-progress" max="1" value="0" aria-label="校準進度" data-aria="calibrationProgress"></progress></div>
+              <div class="noise-feedback"><span id="noise-reading" class="numeric-reading">— dBFS</span><p id="noise-message" class="form-message" role="status"></p></div>
+              <form id="noise-form">
+                <div class="speech-option"><label><input id="speech-noise-guard" type="checkbox"><span data-t="speechGuard">人聲處理</span></label><p data-t="speechGuardHelp">請注意排除偵測到的人聲；討論保留持續交談音量。單一麥克風無法辨別發言者。</p></div>
+                <div class="noise-profiles"><div class="profile"><h3><span class="color-dot focus-color"></span><span data-t="NOTICE">請注意</span></h3><div class="fields two"><label class="field"><span data-t="risingThreshold">稍吵門檻</span><span class="input-unit"><input id="noise-rising" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span>dB</span></span></label><label class="field"><span data-t="loudThreshold">吵鬧門檻</span><span class="input-unit"><input id="noise-loud" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span>dB</span></span></label></div></div><div class="profile"><h3><span class="color-dot discussion-color"></span><span data-t="DISCUSSION">討論</span></h3><div class="fields two"><label class="field"><span data-t="risingThreshold">稍吵門檻</span><span class="input-unit"><input id="discussion-rising" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span>dB</span></span></label><label class="field"><span data-t="loudThreshold">吵鬧門檻</span><span class="input-unit"><input id="discussion-loud" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span>dB</span></span></label></div></div></div>
+                <details class="disclosure child-disclosure"><summary><svg class="icon"><use href="#i-chevron"/></svg><span data-t="noiseAdvanced">恢復門檻與持續時間</span></summary>
+                  <div class="fields four noise-times"><label class="field"><span data-t="risingDuration">稍吵持續時間</span><span class="input-unit"><input id="rising-seconds" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span data-t="seconds">秒</span></span></label><label class="field"><span data-t="loudDuration">吵鬧持續時間</span><span class="input-unit"><input id="loud-seconds" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span data-t="seconds">秒</span></span></label><label class="field"><span data-t="recoveryDuration">恢復持續時間</span><span class="input-unit"><input id="recovery-seconds" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text"><span data-t="seconds">秒</span></span></label><label class="field"><span data-t="smoothing">音量平滑</span><span class="input-unit"><input id="smoothing-ms" data-number="int" data-min="100" data-max="5000" inputmode="numeric" type="text"><span>ms</span></span></label></div>
+                  <div class="recovery-grid"><span></span><strong data-t="NOTICE">請注意</strong><strong data-t="DISCUSSION">討論</strong><span data-t="quietReturn">恢復安靜</span><span class="input-unit"><input id="rising-exit" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text" aria-label="請注意恢復安靜門檻" data-aria="focusQuietReturn"><span>dB</span></span><span class="input-unit"><input id="discussion-rising-exit" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text" aria-label="討論恢復安靜門檻" data-aria="discussionQuietReturn"><span>dB</span></span><span data-t="loudReturn">離開吵鬧</span><span class="input-unit"><input id="loud-exit" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text" aria-label="請注意離開吵鬧門檻" data-aria="focusLoudReturn"><span>dB</span></span><span class="input-unit"><input id="discussion-loud-exit" data-number="float" data-min="0.1" data-max="120" inputmode="decimal" type="text" aria-label="討論離開吵鬧門檻" data-aria="discussionLoudReturn"><span>dB</span></span></div>
+                </details>
+              </form>
+              <details id="voice-details" class="disclosure child-disclosure voice-region"><summary><svg class="icon"><use href="#i-chevron"/></svg><h3 data-t="voiceCommands">自訂語音指令</h3><span class="summary-detail" data-t="voiceDetail">觸發詞與辨識修正</span></summary><form id="voice-form"><p class="section-help" data-t="voiceHelp">直接說短指令，也能從整句中辨識完整觸發詞；多個別名用逗號分隔。儲存時會與收音設定一起儲存。</p><div id="alias-fields" class="fields two"></div><label class="field corrections-field"><span data-t="corrections">辨識修正：誤辨文字＝觸發詞</span><textarea id="corrections" rows="3" spellcheck="false" placeholder="questions＝question"></textarea></label><div class="form-footer"><span id="voice-message" class="form-message" role="status"></span></div></form></details>
+            </div>
+          </details>
+        </section>
+        <section class="settings-section">
+          <details id="audio-details" class="disclosure section-disclosure settings-region audio-region">
+            <summary><svg class="icon"><use href="#i-chevron"/></svg><h2><svg class="icon"><use href="#i-sound"/></svg><span data-t="customAudio">自訂音源</span></h2><button id="save-audio" class="button primary small" type="button" data-t="saveAudio">儲存音源設定</button></summary>
+            <div class="region-content">
+              <div class="audio-toolbar"><span class="playback-heading" data-t="playbackSettings">播放設定</span><label class="field"><span data-t="volume">音量</span><span class="input-unit"><input id="audio-volume" data-number="int" data-min="0" data-max="100" type="text" inputmode="numeric"><span>%</span></span></label><label class="field"><span data-t="audioFade">淡入淡出</span><span class="input-unit"><input id="audio-fade" data-number="int" data-min="0" data-max="10000" type="text" inputmode="numeric"><span>ms</span></span></label><button id="stop-audio" class="button quiet" type="button"><svg class="icon"><use href="#i-stop"/></svg><span data-t="stopAudio">停止播放</span></button></div>
+              <div id="audio-files" class="audio-files"></div>
+              <p id="audio-message" class="form-message" role="status"></p>
+            </div>
+          </details>
+        </section>
+      </div>
+    </section>
+    <section id="page-timers" class="page scroll-page" hidden><div class="settings-content timer-content"><div class="page-heading"><h2><svg class="icon"><use href="#i-timer"/></svg><span data-t="classTimers">課堂計時</span></h2><p data-t="timerHelp">設定下一次啟動模式時使用的時長。</p></div><form id="timers-form" class="timer-grid"></form><p class="section-help" data-t="idleHelp">閒置回待機設為 0 可停用；請注意與討論不受閒置計時影響。</p><p id="timers-message" class="form-message" role="status"></p></div></section>
+  </main>
+  <div id="connection-error" role="alert" hidden></div>
+</div>
+</body>
+</html>

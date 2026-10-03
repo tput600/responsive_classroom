@@ -1,0 +1,35 @@
+# Private runtime data and development history remain on the local computer.
+.codex/
+.venv/
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*.log
+*.bak
+*.part
+settings.json
+sessions/
+build/
+dist/
+artifacts/
+/_internal/
+/ResponsiveClassroom.exe
+/resource_manifest.json
+/*.zip
+/models/
+
+# Models are fetched from pinned upstream; releases bundle them for offline use.
+/source/resources/models/sensevoice/*.onnx
+# Owner audio remains local until redistribution permission is documented.
+/source/resources/fixtures/
+/source/resources/audio/blue-danube.mp3
+/*.mp3
+
+# Earlier local packaging scripts depend on private audit directories.
+/source/tools/build.ps1
+/source/tools/publish-portable.ps1
+/source/tools/build_macos.sh
+
+.DS_Store
+Thumbs.db

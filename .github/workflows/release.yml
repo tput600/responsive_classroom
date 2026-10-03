@@ -1,0 +1,40 @@
+name: Build Windows release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag, matching classroom_resources.VERSION'
+        required: true
+        default: 'v3.0.1'
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: windows-latest
+    environment: responsive_classroom
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Prepare environment
+        run: python source/tools/setup_environment.py --models
+      - name: Check release tag and public files
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          .venv/Scripts/python.exe source/tools/check_public_tree.py
+          .venv/Scripts/python.exe -c "import os,re,pathlib; text=pathlib.Path('source/classroom_resources.py').read_text(encoding='utf-8'); v=re.search(r'VERSION = [\x22]([^\x22]+)[\x22]',text).group(1); assert os.environ['RELEASE_TAG']=='v'+v"
+      - name: Build verified public portable ZIP
+        run: .venv/Scripts/python.exe -X utf8 source/tools/build_release.py
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release create "$RELEASE_TAG" artifacts/*.zip artifacts/*.sha256 --target "$GITHUB_SHA" --title "Responsive Classroom $RELEASE_TAG" --notes "Windows x64 portable build. Extract the complete ZIP and run ResponsiveClassroom.exe. Offline SenseVoiceSmall and third-party license notices are included. The original project owner's recording and private voice fixtures are not redistributed."

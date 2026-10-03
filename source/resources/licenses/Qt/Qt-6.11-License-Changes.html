@@ -1,0 +1,1617 @@
+
+  <html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta content="Information about changes of licenses in Qt and Third Party Modules" name="description"/>
+  <title>License Changes | Qt 6.11</title>
+<link rel="canonical" href="https://doc.qt.io/qt-6/license-changes.html" />
+  <link rel="stylesheet" type="text/css" href="/style/online2.css" />
+  <link rel="stylesheet" href="https://www.qt.io/hubfs/qt-design-system/qt-design-system-1.1.0.css" />
+  <link rel="stylesheet" type="text/css" href="/style/font-awesome.min.css" />
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.17/themes/default/style.min.css" />
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.17/themes/default-dark/style.min.css" />
+  <link href="images/htmltabs.css" rel="stylesheet" type="text/css"/>
+  <link rel="shortcut icon" href="//d33sqmjvzgs8hq.cloudfront.net/wp-content/themes/oneqt/assets/images/favicon.ico.gzip" />
+  <link rel="icon" type="image/png" href="//d33sqmjvzgs8hq.cloudfront.net/wp-content/themes/oneqt/assets/images/favicon-32x32.png" />
+  <link rel="icon" type="image/png" href="//d33sqmjvzgs8hq.cloudfront.net/wp-content/themes/oneqt/assets/images/favicon-16x16.png" />
+  <script type="text/javascript" src="//d33sqmjvzgs8hq.cloudfront.net/wp-includes/js/jquery/jquery.js.gzip"></script>
+  <script type="text/javascript" src="//d33sqmjvzgs8hq.cloudfront.net/wp-includes/js/jquery/jquery-migrate.min.js.gzip"></script>
+  <script type="text/javascript" src="//d33sqmjvzgs8hq.cloudfront.net/wp-content/themes/oneqt/js/combo.js.gzip"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.17/jstree.min.js"></script>
+  <script type="text/javascript" src="/scripts/popper.min.js"></script>
+  <script type="text/javascript" src="/scripts/tippy.min.js"></script>
+  <script type="text/javascript" src="/scripts/qtds-extras.js"></script>
+  <script type="text/javascript"> wpThemeFolder = 'https://qt.io/wp-content/themes/oneqt'; </script>
+  <script type="text/javascript">
+ $(document).ready(function(){
+   $("input[type=radio]").on("click", function() {
+   var lbl = $(this).next().text();
+   $("input[type=radio]:not(checked)").filter(function() {
+     if ($(this).next().text() == lbl)
+         $(this).prop("checked", true);
+   });
+   });
+ });
+  </script>
+  <script type="text/javascript">
+    $(function () {
+      if (document.documentElement.getAttribute('data-theme') === 'dark')
+        $('input#th-toggle').prop('checked', true);
+      $('input#th-toggle').change(function() {
+        var theme = this.checked ? 'dark' : 'light';
+        localStorage.setItem('theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        $('#sidebar-toctree').jstree(true).set_theme('default' + `${theme === 'dark' ? '-dark' : ''}`);
+      });
+    });
+  </script>
+  <script type="text/javascript" src="/scripts/init-tree.js"></script>
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5QQXBTC');</script>
+  <!-- End Google Tag Manager -->
+  <script type="text/javascript" src="/scripts/qt-design-system-1.1.0-doc.js"></script>
+</head>
+<body class="qt-design-system" style="background:var(--content-bg-color)" >
+<div class="qds-page-header" id="qds-page-header">
+<header class="b-header" data-float="true">
+    <div class="b-header__container">
+
+        <div class="b-header__secondary-level">
+            <div class="b-header__secondary-level__back">
+                <a class="c-link c-link--left" href="https://www.qt.io/">Back to Qt.io</a>
+            </div>
+            <div class="b-header__secondary-level__right">
+                <a href="https://www.qt.io/contact-us/" target="_blank">Contact Us</a>
+                <a href="https://blog.qt.io/" target="_blank">Blog</a>
+                <a href="https://www.qt.io/download/" target="_blank" class="c-button c-button--small">Download Q&#116;</a>
+            </div>
+        </div>
+
+        <div class="b-header__primary-level">
+            <div class="b-header__primary-level__left">
+                <a class="b-header__logo" href="/">
+                    <img src="/style/qt-logo-documentation.png" srcset="/style/qt-logo-documentation.png 1x, /style/qt-logo-documentation-2x.png 2x" alt="Qt documentation">
+                </a>
+            </div>
+            <div class="b-header__primary-level__navigation">
+            <ul class="c-navigation-header">
+                <li id="qds-trans" role="menu" class="has-children" style="display: none; margin: 0 20px 5px 0;top:7px">
+                <div class="lang-icon theme-icon"><a></a></div>
+                    <ul id="qds-trans-ul">
+                        <li class="tr-lang active" data-lang="en"><a>English</a></li>
+                    </ul>
+                </li>
+                <li role="menu" style="margin: 0 5px 5px 0;top:7px">
+                  <div title="Toggle light/dark theme" class="theme-switch-wrapper">
+                    <label class="theme-switch" for="th-toggle">
+                        <input type="checkbox" id="th-toggle" />
+                        <div class="theme-icon"></div>
+                    </label>
+                  </div>
+                </li>
+                <li role="menu">
+                    <a href="https://www.qt.io/academy" aria-haspopup="true" aria-expanded="false">Qt Academy</a>
+                </li>
+                <li role="menu">
+                    <a href="/archives" aria-haspopup="true" aria-expanded="false">Archives</a>
+                </li>
+                <li role="menu">
+                    <a href="https://doc-snapshots.qt.io/" aria-haspopup="true" aria-expanded="false">Snapshots</a>
+                </li>
+            </ul>
+            </div>
+            <div class="b-header__primary-level__hamburger">
+                <div class="c-hamburger"></div>
+            </div>
+        </div>
+    </div>
+</header>
+</div>
+<div data-global-resource-path="qt-design-system/components/b-sidebar.html">
+    <div class="b-sidebar b-sidebar--full-width">
+        <aside class="b-sidebar__sidebar">
+            <div id="qds-sbhandle"></div>
+            <div class="b-sidebar__sidebar__mobile-close"><div class="c-mobile-close"></div></div>
+            <div class="b-sidebar__sidebar__mobile-toggle" data-mobile-title="Topics"></div>
+                        <div class="b-sidebar__sidebar__content">
+                <div data-margin-bottom="md">
+                                        <select id="qds-vdropdown" class="c-form-select c-form-select--dark js-versioncontrol" style="visibility:hidden">
+                                            </select>
+                                    </div>
+                <div id="qds-ec-toggle" title="Expand/collapse all"></div>
+                <nav>
+                    <div id="sidebar-toctree"></div>
+                    <ul class="c-sidebar-navigation">
+                                                
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+        <div class="b-sidebar__content">
+            <div class="b-sidebar__topbar" data-margin-bottom="sm">
+                <div class="b-topbar">
+                    <div class="b-topbar__search">
+                        <form id="site-search" role="search" style="width: 535px; max-width: 100%" autocomplete="off">
+                            <input accesskey="f" class="c-form-input-field c-form-input-field--search" placeholder="Search" id="search" name="search" onclick="(function(w,d,i){i.removeAttribute('on'+w.event.type);var j=d.createElement('script'),c=d.createElement('link');j.async=true;j.onload=function(){qtSearchInit(i,w.qtSearchNavigation)};j.src='//www.qt.io/hubfs/qt-design-system/qt-search-component-v2/qt-search-component-v2.js';c.rel='stylesheet';c.onload=function(){try{w.qtscs=1;qtSearchStyle(i)}catch(e){}};c.href='//www.qt.io/hubfs/qt-design-system/qt-search-component-v2/qt-search-component-v2.css';d.head.appendChild(c);d.head.appendChild(j)})(window,document,this)" required type="text">
+                            <button type="submit" style="display:none;">Search</button>
+                            <style>.js-qt-search-component{z-index:1000;}</style>
+                        </form>
+                    </div>                    <div class="b-topbar__breadcrump" translate="no">
+                        <ul class="c-breadcrump">
+                            <li><a href="index.html">Qt 6.11</a></li>
+                            <li><a href="licensing.html">Qt Licensing</a></li>
+                            <li><a>License Changes</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="b-sidebar__content__wrapper">
+                <article class="b-sidebar__content__left">
+                    <div id="qds-toc-menu">On this page</div>
+                    <div class="context mainContent" style="margin: 0;padding: 0; background: 0;">
+                    
+<link href="qt-attribution-llvm.html" rel="prev"/>
+<link href="sbom.html" rel="next"/>
+<p class="naviNextPrevious headerNavi">
+<a class="" href="qt-attribution-llvm.html">LLVM Attribution</a>
+<a class="" href="sbom.html">Software Bill of Materials</a>
+</p>
+
+<div class="context">
+<h1 class="title">License Changes</h1>
+<!-- $$$license-changes.html-description -->
+<div class="descr" id="details">
+<p>Changes in Qt and <a href="licenses-used-in-qt.html">Third Party Modules</a> released with Qt that are relevant to licensing.</p>
+<h2 id="qt-6-11-2">Qt 6.11.2<a class="plink" href="#qt-6-11-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-3d-module">Qt 3D Module<a class="plink" href="#qt-3d-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.5.</li>
+</ul>
+<h3 id="qt-core-module">Qt Core Module<a class="plink" href="#qt-core-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-tika-mimetypes.html#tika-mimetypes">Apache Tika MimeType Definitions</a> was updated to upstream SHA1 c29724782854bb5a319f4a1940d0828a58ace3f9.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version v48.2.</li>
+</ul>
+<h3 id="qt-gui-module">Qt GUI Module<a class="plink" href="#qt-gui-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 14.3.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.2.0.</li>
+<li><a href="qtgui-attribution-md4c.html#md4c">MD4C</a> was updated to version 0.5.3.</li>
+</ul>
+<h3 id="qt-image-formats">Qt Image Formats<a class="plink" href="#qt-image-formats" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.7.2.</li>
+</ul>
+<h3 id="qt-multimedia-module">Qt Multimedia Module<a class="plink" href="#qt-multimedia-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtmultimedia-attribution-dr-libs.html#dr-libs">DR Libs</a> was updated to version 0.14.5.</li>
+<li><a href="qtspatialaudio-attribution-eigen.html#eigen">Eigen</a> was updated to version 5.1.0.</li>
+<li><a href="qtmultimedia-attribution-ffmpeg.html#ffmpeg">FFmpeg</a> was updated to version 7.1.3.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-libjpeg.html#ffmpeg-libjpeg">libjpeg</a> under Independent JPEG Group License is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-zlib.html#ffmpeg-zlib">zlib</a> under zlib License is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-boost.html#ffmpeg-boost">boost</a> under Boost Software License 1.0 is now documented.</li>
+<li><a href="qtspatialaudio-attribution-pffft.html#pffft">pffft</a> was updated to upstream SHA1 02fe7715a5bf8bfd914681c53429600f94e0f536.</li>
+<li><a href="qtspatialaudio-attribution-resonance-audio.html#resonance-audio">Resonance Audio</a> was updated to upstream SHA1 e225aedb5ec76ca6a0fe7079c0b84dbcbb490553.</li>
+<li>Usage of <a href="qtmultimedia-attribution-signalsmith-stretch.html#signalsmith-stretch">Signalsmith Stretch</a> under MIT License is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-tlfs.html#tlfs">Two-Level Segregated Fit</a> "BSD 3-clause "New" or "Revised" License is now documented.</li>
+</ul>
+<h3 id="qt-network-module">Qt Network Module<a class="plink" href="#qt-network-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version 2026-05-14_08-35-31_UTC.</li>
+</ul>
+<h3 id="qt-6-11-2-qt-3d-module-7">Qt 3D Module<a class="plink" href="#qt-6-11-2-qt-3d-module-7" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.5.</li>
+</ul>
+<h3 id="qt-sql-module">Qt SQL Module<a class="plink" href="#qt-sql-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.53.4.</li>
+</ul>
+<h3 id="qt-testlib-module">Qt Testlib Module<a class="plink" href="#qt-testlib-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-cycle.html#cycle">Cycle</a> was updated to version 3.3.11.</li>
+</ul>
+<h2 id="qt-6-11-1">Qt 6.11.1<a class="plink" href="#qt-6-11-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-11-1-qt-gui-module-11">Qt GUI Module<a class="plink" href="#qt-6-11-1-qt-gui-module-11" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.14.3.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 14.2.0.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.58.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.1.4.</li>
+</ul>
+<h3 id="qt-quick3d-module">Qt Quick3D module<a class="plink" href="#qt-quick3d-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.13.</li>
+</ul>
+<h3 id="qt-6-11-1-qt-sql-module-13">Qt SQL Module<a class="plink" href="#qt-6-11-1-qt-sql-module-13" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.53.0.</li>
+</ul>
+<h2 id="qt-6-11-0">Qt 6.11.0<a class="plink" href="#qt-6-11-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-canvas-painter-module">Qt Canvas Painter Module<a class="plink" href="#qt-canvas-painter-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtcanvaspainter-attribution-nanovg.html#nanovg">NanoVG</a>, version f93799c, is now documented.</li>
+</ul>
+<h3 id="qt-6-11-0-qt-core-module-16">Qt Core Module<a class="plink" href="#qt-6-11-0-qt-core-module-16" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 9.3.1.</li>
+</ul>
+<h3 id="qt-opc-ua-module">Qt OPC UA module<a class="plink" href="#qt-opc-ua-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version v1.4.14.</li>
+</ul>
+<h3 id="qt-open-api-module">Qt Open API Module<a class="plink" href="#qt-open-api-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtopenapi-attribution-colorpaletteapp.html#colorpaletteapp">Selected Material Icons</a> is now documented.</li>
+<li>Usage of <a href="qtopenapi-attribution-graduation-hat.html#graduation-hat">graduation hat</a> is now documented.</li>
+<li>Usage of <a href="qtopenapi-attribution-head.html#head">head</a> is now documented.</li>
+<li>Usage of <a href="qtopenapi-attribution-head-plus.html#head-plus">head plus</a> is now documented.</li>
+<li>Usage of <a href="qtopenapi-attribution-magic-hat.html#magic-hat">hat wizard</a> is now documented.</li>
+</ul>
+<h3 id="qt-6-11-0-qt-quick3d-module-19">Qt Quick3D Module<a class="plink" href="#qt-6-11-0-qt-quick3d-module-19" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtquick3d-attribution-blue-noise-texture.html#blue-noise-texture">Blue Noise Texture</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-closest-point-on-triangle.html#closest-point-on-triangle">closestPointOnTriangle</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-grid.html#grid">Cornell</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-baked.html#svgrepo-baked">Bake</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-camera-viewfinder.html#svgrepo-camera-viewfinder">Camera Viewfinder</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-colosseum.html#svgrepo-colosseum">Colosseum</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-house-simple-bold.html#svgrepo-house-simple-bold">House Simple Bold</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-night-light-disabled.html#svgrepo-night-light-disabled">Night Light Disabled</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-right-arrow.html#svgrepo-right-arrow">Right Arrow Backup 2 SVG Vector</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-svgrepo-screen-shared.html#svgrepo-screen-shared">Screen Shared</a> is now documented.</li>
+<li><a href="qtquick3d-attribution-meshoptimizer.html#meshoptimizer">meshoptimizer</a> was updated to version 1.0.</li>
+<li><a href="qt3dxr-supported-platforms.html#openxr">OpenXR SDK</a> was updated to version 1.1.54.</li>
+</ul>
+<h3 id="qt-shadertools-module">Qt Shadertools module<a class="plink" href="#qt-shadertools-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 16.1.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version 998146d76fc5cbb2726f44c55e25fa28a573a782.</li>
+</ul>
+<h3 id="qt-wayland-compositor-module">Qt Wayland Compositor Module<a class="plink" href="#qt-wayland-compositor-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-session-management-protocol.html#wayland-session-management-protocol">Wayland Color Management Protocol</a>, version experimental V1, is now documented.</li>
+<li><a href="qtwaylandcompositor-attribution-wayland-protocol.html#wayland-protocol">Wayland Protocol</a> was updated to version 1.24.0.</li>
+</ul>
+<h2 id="qt-6-10-3">Qt 6.10.3<a class="plink" href="#qt-6-10-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-10-3-qt-3d-module-23">Qt 3D Module<a class="plink" href="#qt-6-10-3-qt-3d-module-23" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.4.</li>
+</ul>
+<h3 id="qt-6-10-3-qt-core-module-24">Qt Core Module<a class="plink" href="#qt-6-10-3-qt-core-module-24" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-tinycbor.html#tinycbor">TinyCBOR</a> was updated to version 7.0.</li>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">double-conversion</a> was updated to version 3.4.0.</li>
+<li><a href="qtcore-attribution-zlib.html#zlib">Data Compression Library (zlib)</a> was updated to version 1.3.2.</li>
+<li><a href="qtcore-attribution-tika-mimetypes.html#tika-mimetypes">Apache Tika MimeType Definitions</a> was updated to upstream SHA1 408c26e1e03e018a623e732dff6fb047a2fb8e19.</li>
+<li><a href="qtcore-attribution-unicode-character-database.html#unicode-character-database">Unicode Character Database (UCD)</a> was updated to version 36.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version v48.1.</li>
+</ul>
+<h3 id="qt-6-10-3-qt-gui-module-25">Qt GUI Module<a class="plink" href="#qt-6-10-3-qt-gui-module-25" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.14.2.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 12.3.2.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.55.</li>
+</ul>
+<h3 id="qt-6-10-3-qt-network-module-26">Qt Network Module<a class="plink" href="#qt-6-10-3-qt-network-module-26" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version 2026-01-16_13-11-47_UTC.</li>
+</ul>
+<h3 id="qt-6-10-3-qt-quick3d-module-27">Qt Quick3D Module<a class="plink" href="#qt-6-10-3-qt-quick3d-module-27" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.4.</li>
+</ul>
+<h3 id="qt-6-10-3-qt-sql-module-28">Qt SQL Module<a class="plink" href="#qt-6-10-3-qt-sql-module-28" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.51.2.</li>
+</ul>
+<h2 id="qt-6-10-2">Qt 6.10.2<a class="plink" href="#qt-6-10-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-10-2-qt-core-module-30">Qt Core Module<a class="plink" href="#qt-6-10-2-qt-core-module-30" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version v48.</li>
+</ul>
+<h3 id="qt-6-10-2-qt-gui-module-31">Qt GUI Module<a class="plink" href="#qt-6-10-2-qt-gui-module-31" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 12.3.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.1.3.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.54.</li>
+</ul>
+<h3 id="qt-6-10-2-qt-sql-module-32">Qt SQL Module<a class="plink" href="#qt-6-10-2-qt-sql-module-32" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.51.1.</li>
+</ul>
+<h3 id="qt-6-10-2-qt-wayland-compositor-module-33">Qt Wayland Compositor Module<a class="plink" href="#qt-6-10-2-qt-wayland-compositor-module-33" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtwaylandcompositor-attribution-wayland-color-management-protocol.html#wayland-color-management-protocol">Wayland Color Management Protocol</a> was updated to version v1.</li>
+</ul>
+<h2 id="qt-6-10-1">Qt 6.10.1<a class="plink" href="#qt-6-10-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-10-1-qt-core-module-35">Qt Core Module<a class="plink" href="#qt-6-10-1-qt-core-module-35" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.47.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.47.</li>
+</ul>
+<h3 id="qt-6-10-1-qt-gui-module-36">Qt GUI Module<a class="plink" href="#qt-6-10-1-qt-gui-module-36" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 12.2.0.</li>
+</ul>
+<h3 id="qt-6-10-1-qt-sql-module-37">Qt SQL Module<a class="plink" href="#qt-6-10-1-qt-sql-module-37" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.51.0.</li>
+</ul>
+<h2 id="qt-6-10-0">Qt 6.10.0<a class="plink" href="#qt-6-10-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-10-0-qt-core-module-39">Qt Core Module<a class="plink" href="#qt-6-10-0-qt-core-module-39" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-tika-mimetypes.html#tika-mimetypes">Apache Tika MimeType Definitions</a> was updated to upstream SHA1 dbcbb368e0a913e1a74cca61347fd6ce24bc6d7e.</li>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 8.14.2.</li>
+</ul>
+<h3 id="qt-doc-module">Qt Doc Module<a class="plink" href="#qt-doc-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtdoc-attribution-graphs-csv.html#graphs-csv">Vince's CSV Parser</a>, version 2.3.0, is now documented.</li>
+<li>Usage of <a href="qtdoc-attribution-graphs-csv-hedley.html#graphs-csv-hedley">Hedley</a>, version v9, is now documented.</li>
+<li>Usage of <a href="qtdoc-attribution-graphs-csv-mio.html#graphs-csv-mio">Mio</a> is now documented.</li>
+<li>Usage of <a href="qtdoc-attribution-graphs-csv-string-view.html#graphs-csv-string-view">string_view lite</a> is now documented.</li>
+<li>Usage of <a href="qtdoc-attribution-graphs-csv-row-json.html#graphs-csv-row-json">JSON for Modern C++</a> is now documented.</li>
+</ul>
+<h3 id="qt-6-10-0-qt-gui-module-41">Qt GUI Module<a class="plink" href="#qt-6-10-0-qt-gui-module-41" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-vulkanmemoryallocator.html#vulkanmemoryallocator">Vulkan Memory Allocator</a> was updated to version 3.2.1.</li>
+<li><a href="qtgui-attribution-vulkan-xml-spec.html#vulkan-xml-spec">Vulkan API Registry</a> was updated to version 1.4.308.</li>
+</ul>
+<h3 id="qt-lottie-module">Qt Lottie Module<a class="plink" href="#qt-lottie-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtlottieanimation-attribution-fingerprint-icon.html#fingerprint-icon">Fingerprint Icon</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-google-icons.html#google-icons">Google Icons</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-happy-star.html#happy-star">Happy Star</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-heartbeat-medical.html#heartbeat-medical">Heartbeat | Medical</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-surprised-boy.html#surprised-boy">Surprised Boy</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-usa-map-with-outlines-blue.html#usa-map-with-outlines-blue">USA Map with outlines blue</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-user-authentication.html#user-authentication">User Authentication</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-user-interaction.html#user-interaction">User Interaction</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-user-interface.html#user-interface">User Interface</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-lottielogo.html#lottielogo">Lottie Logo</a> is now documented.</li>
+<li>Usage of <a href="qtlottieanimation-attribution-lottiedocs-examples.html#lottiedocs-examples">Example Lottie files from github.com/LottieFiles/lottie-docs</a> is now documented.</li>
+</ul>
+<h3 id="qt-quick-module">Qt Quick Module<a class="plink" href="#qt-quick-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtquick-attribution-yoga.html#yoga">Yoga</a>, version 2.0.1, under MIT License, is now documented.</li>
+</ul>
+<h3 id="qt-6-10-0-qt-quick3d-module-44">Qt Quick3D Module<a class="plink" href="#qt-6-10-0-qt-quick3d-module-44" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3dxr-supported-platforms.html#openxr">OpenXR SDK</a> was updated to version 1.1.49.</li>
+<li><a href="qtquick3d-attribution-jsoncpp.html#jsoncpp">JsonCpp</a> was updated to version 1.9.6.</li>
+</ul>
+<h3 id="qt-6-10-0-qt-wayland-compositor-module-45">Qt Wayland Compositor Module<a class="plink" href="#qt-6-10-0-qt-wayland-compositor-module-45" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-color-management-protocol.html#wayland-color-management-protocol">Wayland Color Management Protocol</a>, version experimental v4, under MIT License, is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-pointer-warp-protocol.html#wayland-pointer-warp-protocol">Wayland Pointer Warp Protocol</a>, version 1, under MIT License, is now documented.</li>
+</ul>
+<h2 id="qt-6-9-3">Qt 6.9.3<a class="plink" href="#qt-6-9-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-9-3-qt-core-module-47">Qt Core Module<a class="plink" href="#qt-6-9-3-qt-core-module-47" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.46.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.46.</li>
+</ul>
+<h3 id="qt-6-9-3-qt-gui-module-48">Qt GUI Module<a class="plink" href="#qt-6-9-3-qt-gui-module-48" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.14.1.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 11.5.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.1.2.</li>
+</ul>
+<h3 id="qt-6-9-3-qt-image-formats-49">Qt Image Formats<a class="plink" href="#qt-6-9-3-qt-image-formats-49" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.7.1.</li>
+</ul>
+<h2 id="qt-6-9-2">Qt 6.9.2<a class="plink" href="#qt-6-9-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-9-2-qt-3d-module-51">Qt 3D Module<a class="plink" href="#qt-6-9-2-qt-3d-module-51" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.2.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-core-module-52">Qt Core Module<a class="plink" href="#qt-6-9-2-qt-core-module-52" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version v47.</li>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">double-conversion</a> was updated to version 3.3.1.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-gui-module-53">Qt GUI Module<a class="plink" href="#qt-6-9-2-qt-gui-module-53" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 11.3.3.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.1.1.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.50.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-network-module-54">Qt Network Module<a class="plink" href="#qt-6-9-2-qt-network-module-54" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version 2025-06-16_09-45-02_UTC.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-quick3d-module-55">Qt Quick3D Module<a class="plink" href="#qt-6-9-2-qt-quick3d-module-55" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 6.0.2.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-sql-module-56">Qt SQL Module<a class="plink" href="#qt-6-9-2-qt-sql-module-56" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.50.4.</li>
+</ul>
+<h3 id="qt-6-9-2-qt-testlib-module-57">Qt Testlib Module<a class="plink" href="#qt-6-9-2-qt-testlib-module-57" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-valgrind.html#valgrind">Valgrind</a> was updated to version 3.25.1.</li>
+</ul>
+<h2 id="qt-6-9-1">Qt 6.9.1<a class="plink" href="#qt-6-9-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-9-1-qt-gui-module-59">Qt GUI Module<a class="plink" href="#qt-6-9-1-qt-gui-module-59" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 11.2.1.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.48.</li>
+</ul>
+<h3 id="qt-6-9-1-qt-quick3d-module-60">Qt Quick3D module<a class="plink" href="#qt-6-9-1-qt-quick3d-module-60" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.12.</li>
+</ul>
+<h3 id="qt-6-9-1-qt-sql-module-61">Qt SQL Module<a class="plink" href="#qt-6-9-1-qt-sql-module-61" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.49.2.</li>
+</ul>
+<h3 id="qt-6-9-1-qt-opc-ua-module-62">Qt OPC UA module<a class="plink" href="#qt-6-9-1-qt-opc-ua-module-62" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.4.13.</li>
+</ul>
+<h2 id="qt-6-9-0">Qt 6.9.0<a class="plink" href="#qt-6-9-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-9-0-qt-core-module-64">Qt Core module<a class="plink" href="#qt-6-9-0-qt-core-module-64" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 8.12.</li>
+</ul>
+<h3 id="qt-6-9-0-qt-gui-module-65">Qt GUI module<a class="plink" href="#qt-6-9-0-qt-gui-module-65" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtgui-attribution-emoji-segmenter.html#emoji-segmenter">Emoji Segmenter</a>, version 0.4.0, is now documented.</li>
+<li>Usage of IAccessible2 IDL Specification was removed.</li>
+<li><a href="qtgui-attribution-vulkanmemoryallocator.html#vulkanmemoryallocator">Vulkan Memory Allocator</a> was updated to version 3.1.0.</li>
+</ul>
+<h3 id="qt-opcua-module">Qt OpcUA module<a class="plink" href="#qt-opcua-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.4.9.</li>
+</ul>
+<h3 id="qt-6-9-0-qt-quick3d-module-67">Qt Quick3D module<a class="plink" href="#qt-6-9-0-qt-quick3d-module-67" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qt3dxr-supported-platforms.html#openxr">OpenXR SDK</a> was updated to version 1.1.42.</li>
+</ul>
+<h3 id="qt-6-9-0-qt-shadertools-module-68">Qt Shadertools module<a class="plink" href="#qt-6-9-0-qt-shadertools-module-68" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 15.1.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version ebe2aa0cd80f5eb5cd8a605da604cacf72205f3b.</li>
+</ul>
+<h3 id="qt-6-9-0-qt-wayland-compositor-module-69">Qt Wayland Compositor module<a class="plink" href="#qt-6-9-0-qt-wayland-compositor-module-69" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtwaylandcompositor-attribution-appmenu.html#appmenu">Wayland KDE DBus Menu Protocol</a> version 1 under LGPL 2.1 or later license is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wlr-data-control-unstable-v1-protocol.html#wlr-data-control-unstable-v1-protocol">Wlr Data Control Unstable V1 Protocol</a> version 2 under MIT license is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-xdg-system-bell-protocol.html#wayland-xdg-system-bell-protocol">Wayland XDG System Bell Protocol</a> version 1.18 under MIT license is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-xdg-toplevel-icon-protocol.html#wayland-xdg-toplevel-icon-protocol">Wayland xdg-toplevel-icon Protocol</a> version 1 under MIT license is now documented.</li>
+<li><a href="qtwaylandcompositor-attribution-wayland-protocol.html#wayland-protocol">Wayland Protocol</a> was updated to version 1.23.0</li>
+</ul>
+<h2 id="qt-6-8-3">Qt 6.8.3<a class="plink" href="#qt-6-8-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-8-3-qt-core-module-71">Qt Core Module<a class="plink" href="#qt-6-8-3-qt-core-module-71" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Updated <a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> to v46.1.</li>
+<li><a href="qtcore-attribution-unicode-character-database.html#unicode-character-database">Unicode Character Database (UCD)</a> was updated to version 34.</li>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.45.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.45.</li>
+<li><a href="qtcore-attribution-tinycbor.html#tinycbor">TinyCBOR</a> was updated to version 0.6.1.</li>
+</ul>
+<h3 id="qt-6-8-3-qt-gui-module-72">Qt GUI Module<a class="plink" href="#qt-6-8-3-qt-gui-module-72" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 10.4.0.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.47.</li>
+</ul>
+<h3 id="qt-6-8-3-qt-network-module-73">Qt Network module<a class="plink" href="#qt-6-8-3-qt-network-module-73" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha 47264b57765919188b9f4144de8d95cf77e1b6dc, on 2025-01-22.</li>
+</ul>
+<h3 id="qt-grpc-module">Qt GRPC module<a class="plink" href="#qt-grpc-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtprotobuf-attribution-protobuf-tests.html#protobuf-tests">protobuf-tests</a>, version 21.9, is now documented.</li>
+</ul>
+<h3 id="qt-6-8-3-qt-sql-module-75">Qt SQL Module<a class="plink" href="#qt-6-8-3-qt-sql-module-75" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.49.1.</li>
+</ul>
+<h3 id="qt-6-8-3-qt-testlib-module-76">Qt Testlib Module<a class="plink" href="#qt-6-8-3-qt-testlib-module-76" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Updated <a href="qttestlib-attribution-valgrind.html#valgrind">Valgrind</a> to version 3.24.0.</li>
+<li>Updated <a href="qttestlib-attribution-linuxperf.html#linuxperf">Linux Performance Events</a> to version 6.13.</li>
+</ul>
+<h2 id="qt-6-8-2">Qt 6.8.2<a class="plink" href="#qt-6-8-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-8-2-qt-core-module-78">Qt Core Module<a class="plink" href="#qt-6-8-2-qt-core-module-78" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-blake2.html#blake2">BLAKE2 (reference implementation)</a> was updated to version ed1974ea83433eba7b2d95c5dcd9ac33cb847913.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 46.</li>
+</ul>
+<h3 id="qt-6-8-2-qt-gui-module-79">Qt GUI Module<a class="plink" href="#qt-6-8-2-qt-gui-module-79" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 10.2.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.1.0.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.45.</li>
+</ul>
+<h3 id="qt-6-8-2-qt-image-formats-80">Qt Image Formats<a class="plink" href="#qt-6-8-2-qt-image-formats-80" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.5.0.</li>
+</ul>
+<h3 id="qt-6-8-2-qt-sql-module-81">Qt SQL Module<a class="plink" href="#qt-6-8-2-qt-sql-module-81" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.48.0.</li>
+</ul>
+<h2 id="qt-6-8-1">Qt 6.8.1<a class="plink" href="#qt-6-8-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-8-1-qt-gui-module-83">Qt GUI Module<a class="plink" href="#qt-6-8-1-qt-gui-module-83" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 10.1.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.0.4.</li>
+</ul>
+<h3 id="qt-6-8-1-qt-image-formats-84">Qt Image Formats<a class="plink" href="#qt-6-8-1-qt-image-formats-84" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.7.0.</li>
+</ul>
+<h3 id="qt-6-8-1-qt-multimedia-module-85">Qt Multimedia Module<a class="plink" href="#qt-6-8-1-qt-multimedia-module-85" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtmultimedia-attribution-ffmpeg.html#ffmpeg">FFmpeg</a> was updated to version 7.1.</li>
+</ul>
+<h3 id="qt-6-8-1-qt-sql-module-86">Qt SQL Module<a class="plink" href="#qt-6-8-1-qt-sql-module-86" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.47.0.</li>
+</ul>
+<h2 id="qt-6-8-0">Qt 6.8.0<a class="plink" href="#qt-6-8-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-8-0-qt-testlib-module-88">Qt Testlib Module<a class="plink" href="#qt-6-8-0-qt-testlib-module-88" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Updated <a href="qttestlib-attribution-valgrind.html#valgrind">Valgrind</a> to version 3.23.0.</li>
+</ul>
+<h2 id="qt-6-7-3">Qt 6.7.3<a class="plink" href="#qt-6-7-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-7-3-qt-3d-module-90">Qt 3D Module<a class="plink" href="#qt-6-7-3-qt-3d-module-90" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.4.3.</li>
+<li><a href="qt3d-attribution-imgui.html#imgui">Dear ImGui</a> was updated to version 1.91.0.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-quick3d-module-91">Qt Quick3D module<a class="plink" href="#qt-6-7-3-qt-quick3d-module-91" title="Direct link to this headline"></a></h3>
+<h3 id="qt-assistant-module">Qt Assistant Module<a class="plink" href="#qt-assistant-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtassistant-attribution-litehtml.html#litehtml">litehtml</a> was updated to version 0.9.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-core-module-93">Qt Core Module<a class="plink" href="#qt-6-7-3-qt-core-module-93" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 8.10.</li>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.44.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.44.</li>
+<li>Usage of <a href="qtcore-attribution-tika-mimetypes.html#tika-mimetypes">Apache Tika MimeType Definitions</a> is now documented.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 45.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-gui-module-94">Qt GUI Module<a class="plink" href="#qt-6-7-3-qt-gui-module-94" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.13.3.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 9.0.0.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.44.</li>
+</ul>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha 903a83ff7bfc3148e3692e09396f9f3bdc9462ef, on 2024-06-05.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-multimedia-module-95">Qt Multimedia Module<a class="plink" href="#qt-6-7-3-qt-multimedia-module-95" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtmultimedia-attribution-ffmpeg.html#ffmpeg">FFmpeg</a> was updated to version 7.0.2.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-opcua-module-96">Qt OpcUA Module<a class="plink" href="#qt-6-7-3-qt-opcua-module-96" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.3.11.</li>
+</ul>
+<h3 id="qt-positioning-module">Qt Positioning Module<a class="plink" href="#qt-positioning-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtpositioning-attribution-poly2tri.html#poly2tri">Poly2Tri Polygon Triangulation Library</a> was updated to commit a922022da4c0d3a55b1d6b6d634219caea653053.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-quick3d-module-98">Qt Quick3D module<a class="plink" href="#qt-6-7-3-qt-quick3d-module-98" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.4.3.</li>
+<li>Usage of <a href="qt3dxr-supported-platforms.html#openxr">OpenXR SDK</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-jsoncpp.html#jsoncpp">JsonCpp</a> is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-jnipp.html#jnipp">Java Native Interface for C++</a> is now documented.</li>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.9.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-shadertools-module-99">Qt Shadertools Module<a class="plink" href="#qt-6-7-3-qt-shadertools-module-99" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 14.2.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version 2d990d355a296ae1e368585810f884ebadcc4773.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-sql-module-100">Qt SQL Module<a class="plink" href="#qt-6-7-3-qt-sql-module-100" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.46.1.</li>
+</ul>
+<h3 id="qt-6-7-3-qt-testlib-module-101">Qt Testlib Module<a class="plink" href="#qt-6-7-3-qt-testlib-module-101" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-cycle.html#cycle">Cycle</a> was updated to version 3.3.10.</li>
+<li><a href="qttestlib-attribution-linuxperf.html#linuxperf">Linux Performance Events</a> was updated to version 6.0.</li>
+</ul>
+<h2 id="qt-6-7-2">Qt 6.7.2<a class="plink" href="#qt-6-7-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-7-2-qt-3d-module-103">Qt 3D Module<a class="plink" href="#qt-6-7-2-qt-3d-module-103" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.4.1.</li>
+<li>Usage of <a href="qt3d-attribution-miramar-sky.html#miramar-sky">Miramar Skybox Textures</a> was removed.</li>
+<li>Usage of <a href="qt3d-attribution-substance-share.html#substance-share">Substance Share</a> was removed.</li>
+</ul>
+<h3 id="qt-6-7-2-qt-quick3d-module-104">Qt Quick3D module<a class="plink" href="#qt-6-7-2-qt-quick3d-module-104" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.4.1.</li>
+</ul>
+<h3 id="qt-6-7-2-qt-gui-module-105">Qt GUI Module<a class="plink" href="#qt-6-7-2-qt-gui-module-105" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 8.5.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.0.3.</li>
+</ul>
+<h3 id="qt-sensors-module">Qt Sensors Module<a class="plink" href="#qt-sensors-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtsensors-attribution-android-compass.html#android-compass">Android getRotationMatrix and getOrientation</a> is now documented.</li>
+</ul>
+<h3 id="qt-6-7-2-qt-sql-module-107">Qt SQL Module<a class="plink" href="#qt-6-7-2-qt-sql-module-107" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.46.0.</li>
+</ul>
+<h2 id="qt-6-7-1">Qt 6.7.1<a class="plink" href="#qt-6-7-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-7-1-qt-gui-module-109">Qt GUI Module<a class="plink" href="#qt-6-7-1-qt-gui-module-109" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 8.4.0.</li>
+</ul>
+<h3 id="qt-6-7-1-qt-image-formats-110">Qt Image Formats<a class="plink" href="#qt-6-7-1-qt-image-formats-110" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.4.0.</li>
+</ul>
+<h3 id="qt-6-7-1-qt-quick3d-module-111">Qt Quick3D module<a class="plink" href="#qt-6-7-1-qt-quick3d-module-111" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.4.0.</li>
+</ul>
+<h3 id="qt-spatial-audio-module">Qt Spatial Audio Module<a class="plink" href="#qt-spatial-audio-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtspatialaudio-attribution-pffft.html#pffft">pffft</a> was updated to version fbc4058602803f40dc554b8a5d2bcc694c005f2f.</li>
+</ul>
+<h3 id="qt-6-7-1-qt-sql-module-113">Qt SQL Module<a class="plink" href="#qt-6-7-1-qt-sql-module-113" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.45.3.</li>
+</ul>
+<h2 id="qt-6-7-0">Qt 6.7.0<a class="plink" href="#qt-6-7-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-7-0-qt-doc-module-115">Qt Doc Module<a class="plink" href="#qt-6-7-0-qt-doc-module-115" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of QualTypeNames is now documented.</li>
+</ul>
+<h3 id="qt-6-7-0-qt-opcua-module-116">Qt OpcUA Module<a class="plink" href="#qt-6-7-0-qt-opcua-module-116" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.3.9.</li>
+</ul>
+<h3 id="qt-6-7-0-qt-positioning-module-117">Qt Positioning Module<a class="plink" href="#qt-6-7-0-qt-positioning-module-117" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Tango Weather Icon Pack by Darkobra isn't used anymore.</li>
+<li>The Tango Icons package isn't used anymore.</li>
+<li><a href="qtpositioning-attribution-poly2tri.html#poly2tri">Poly2Tri Polygon Triangulation Library</a> was updated to commit 0be213d95f82471b95d96d0248a0490d0a934f9f.</li>
+</ul>
+<h3 id="qt-6-7-0-qt-quick-module-118">Qt Quick Module<a class="plink" href="#qt-6-7-0-qt-quick-module-118" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtquick-attribution-weather-icons.html#weather-icons">Weather icons from the Noto Emoji collection</a> is now documented.</li>
+<li>Usage of <a href="qtquick-attribution-map-of-europe.html#map-of-europe">Map of Europe from Wikipedia</a> is now documented.</li>
+<li>Usage of <a href="qtquick-attribution-work-sans-font.html#work-sans-font">Work Sans font by Wei Huang</a> is now documented.</li>
+<li>Usage of <a href="qtquick-attribution-gear-icon.html#gear-icon">Gear Icon</a> is now documented.</li>
+</ul>
+<h3 id="qt-6-7-0-qt-shadertools-module-119">Qt Shadertools Module<a class="plink" href="#qt-6-7-0-qt-shadertools-module-119" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 13.0.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version sdk-1.3.261.0.</li>
+</ul>
+<h2 id="qt-6-6-3">Qt 6.6.3<a class="plink" href="#qt-6-6-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-6-3-qt-core-module-121">Qt Core Module<a class="plink" href="#qt-6-6-3-qt-core-module-121" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.43.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.43.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 44.1.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-gui-module-122">Qt GUI Module<a class="plink" href="#qt-6-6-3-qt-gui-module-122" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.43.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-multimedia-module-123">Qt Multimedia Module<a class="plink" href="#qt-6-6-3-qt-multimedia-module-123" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtmultimedia-attribution-ffmpeg.html#ffmpeg">FFmpeg</a> was updated to version 6.1.1.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-network-module-124">Qt Network module<a class="plink" href="#qt-6-6-3-qt-network-module-124" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha 883ced078a83f9d79a98933145425c221a5e51f0, on 2024-01-25.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-quick3d-module-125">Qt Quick3D module<a class="plink" href="#qt-6-6-3-qt-quick3d-module-125" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.8.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-sql-module-126">Qt SQL Module<a class="plink" href="#qt-6-6-3-qt-sql-module-126" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.45.2.</li>
+</ul>
+<h3 id="qt-6-6-3-qt-testlib-module-127">Qt Testlib Module<a class="plink" href="#qt-6-6-3-qt-testlib-module-127" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Updated <a href="qttestlib-attribution-valgrind.html#valgrind">Valgrind</a> to version 3.22.0.</li>
+</ul>
+<h2 id="qt-6-6-2">Qt 6.6.2<a class="plink" href="#qt-6-6-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-6-2-qt-core-module-129">Qt Core Module<a class="plink" href="#qt-6-6-2-qt-core-module-129" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-zlib.html#zlib">Data Compression Library (zlib)</a> was updated to version 1.3.1.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-doc-module-130">Qt Doc module<a class="plink" href="#qt-6-6-2-qt-doc-module-130" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of HDRI Images is now documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-alpha-blending-frag.html#alpha-blending-frag">alpha_blending.frag</a>, version 4500c7f9cb7d569de5978094677e48722bc9133e, is now documented.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-grpc-module-131">Qt GRPC module<a class="plink" href="#qt-6-6-2-qt-grpc-module-131" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtgrpc-attribution-grpc.html#grpc">gRPC</a>, version 1.50.1, is now documented.</li>
+<li>Usage of <a href="qtprotobuf-attribution-protobuf.html#protobuf">protobuf</a>, version 21.9, is now documented.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-gui-module-132">Qt GUI Module<a class="plink" href="#qt-6-6-2-qt-gui-module-132" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 8.3.0.</li>
+<li><a href="qtgui-attribution-md4c.html#md4c">MD4C</a> was updated to version 0.5.2.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.42.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.0.2.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-multimedia-module-133">Qt Multimedia Module<a class="plink" href="#qt-6-6-2-qt-multimedia-module-133" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg.html#ffmpeg">FFmpeg</a>, version n6.1, is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-libjpeg.html#ffmpeg-libjpeg">libjpeg</a> is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-zlib.html#ffmpeg-zlib">zlib</a> is now documented.</li>
+<li>Usage of <a href="qtmultimedia-attribution-ffmpeg-boost.html#ffmpeg-boost">boost</a> is now documented.</li>
+</ul>
+<h3 id="qt-protobuf-module">Qt Protobuf module<a class="plink" href="#qt-protobuf-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtprotobuf-attribution-protobuf.html#protobuf">protobuf</a>, version 21.9, is now documented.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-quick3d-module-135">Qt Quick3D module<a class="plink" href="#qt-6-6-2-qt-quick3d-module-135" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.3.1.</li>
+</ul>
+<h3 id="qt-6-6-2-qt-sql-module-136">Qt SQL Module<a class="plink" href="#qt-6-6-2-qt-sql-module-136" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.45.1.</li>
+</ul>
+<h2 id="qt-6-6-1">Qt 6.6.1<a class="plink" href="#qt-6-6-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-6-1-qt-gui-module-138">Qt GUI Module<a class="plink" href="#qt-6-6-1-qt-gui-module-138" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 8.3.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.0.1.</li>
+</ul>
+<h3 id="qt-6-6-1-qt-spatial-audio-module-139">Qt Spatial Audio Module<a class="plink" href="#qt-6-6-1-qt-spatial-audio-module-139" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtspatialaudio-attribution-pffft.html#pffft">pffft</a> was updated to version 7641e67977cf937c22849e2ef19fffa70269e562.</li>
+</ul>
+<h3 id="qt-6-6-1-qt-sql-module-140">Qt SQL Module<a class="plink" href="#qt-6-6-1-qt-sql-module-140" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.44.0.</li>
+</ul>
+<h2 id="qt-6-6-0">Qt 6.6.0<a class="plink" href="#qt-6-6-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-6-0-qt-core-module-142">Qt Core Module<a class="plink" href="#qt-6-6-0-qt-core-module-142" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 8.3.</li>
+</ul>
+<h3 id="qt-6-6-0-qt-gui-module-143">Qt GUI Module<a class="plink" href="#qt-6-6-0-qt-gui-module-143" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtgui-attribution-d3d12memoryallocator.html#d3d12memoryallocator">D3D12 Memory Allocator</a>, version f128d39b7a95b4235bd228d231646278dc6c24b2 under MIT License is now documented.</li>
+<li>Usage of <a href="qtgui-attribution-rhi-miniengine-d3d12-mipmap.html#rhi-miniengine-d3d12-mipmap">Mipmap generator for D3D12</a>, version 0aa79bad78992da0b6a8279ddb9002c1753cb849 under MIT License is now documented.</li>
+</ul>
+<h3 id="qt-6-6-0-qt-opcua-module-144">Qt OpcUA Module<a class="plink" href="#qt-6-6-0-qt-opcua-module-144" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.3.6.</li>
+</ul>
+<h3 id="qt-6-6-0-qt-positioning-module-145">Qt Positioning Module<a class="plink" href="#qt-6-6-0-qt-positioning-module-145" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtpositioning-attribution-titilliumweb-font.html#titilliumweb-font">Titillium Web Font</a> under SIL OPEN FONT LICENSE Version 1.1 license is now documented.</li>
+<li>Usage of <a href="qtpositioning-attribution-material-symbols-and-icons.html#material-symbols-and-icons">Material Symbols and Icons</a> under Apache License Version 2.0 is now documented.</li>
+</ul>
+<h2 id="qt-6-5-3">Qt 6.5.3<a class="plink" href="#qt-6-5-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-5-3-qt-core-module-147">Qt Core Module<a class="plink" href="#qt-6-5-3-qt-core-module-147" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">double-conversion</a> was updated to version 3.3.0.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 43.</li>
+<li><a href="qtcore-attribution-zlib.html#zlib">Data Compression Library (zlib)</a> was updated to version 1.3.</li>
+</ul>
+<h3 id="qt-6-5-3-qt-gui-module-148">Qt GUI Module<a class="plink" href="#qt-6-5-3-qt-gui-module-148" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.13.2.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 8.2.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 3.0.0.</li>
+</ul>
+<h3 id="qt-6-5-3-qt-image-formats-149">Qt Image Formats<a class="plink" href="#qt-6-5-3-qt-image-formats-149" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.6.0.</li>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.3.2.</li>
+</ul>
+<h3 id="qt-6-5-3-qt-network-module-150">Qt Network module<a class="plink" href="#qt-6-5-3-qt-network-module-150" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha 1a4824549b093abc3077205ae5386ed57f73806d, on 2023-09-20.</li>
+</ul>
+<h3 id="qt-6-5-3-qt-quick3d-module-151">Qt Quick3D module<a class="plink" href="#qt-6-5-3-qt-quick3d-module-151" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.7.</li>
+</ul>
+<h3 id="qt-6-5-3-qt-sql-module-152">Qt SQL Module<a class="plink" href="#qt-6-5-3-qt-sql-module-152" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.43.1.</li>
+</ul>
+<h2 id="qt-6-5-2">Qt 6.5.2<a class="plink" href="#qt-6-5-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-5-2-qt-gui-module-154">Qt GUI Module<a class="plink" href="#qt-6-5-2-qt-gui-module-154" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 7.3.0.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.40.</li>
+</ul>
+<h3 id="qt-6-5-2-qt-image-formats-155">Qt Image Formats<a class="plink" href="#qt-6-5-2-qt-image-formats-155" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.5.1.</li>
+</ul>
+<h3 id="qt-6-5-2-qt-network-module-156">Qt Network module<a class="plink" href="#qt-6-5-2-qt-network-module-156" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha 195aa1c180a5ca8c06c1ce485c75693b635c1ebd, on 2023-07-06.</li>
+</ul>
+<h3 id="qt-6-5-2-qt-quick3d-module-157">Qt Quick3D module<a class="plink" href="#qt-6-5-2-qt-quick3d-module-157" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.5.</li>
+</ul>
+<h3 id="qt-6-5-2-qt-sql-module-158">Qt SQL Module<a class="plink" href="#qt-6-5-2-qt-sql-module-158" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.42.0.</li>
+</ul>
+<h2 id="qt-6-5-1">Qt 6.5.1<a class="plink" href="#qt-6-5-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-5-1-qt-gui-module-160">Qt GUI Module<a class="plink" href="#qt-6-5-1-qt-gui-module-160" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 7.2.0.</li>
+</ul>
+<h3 id="qt-location-module">Qt Location Module<a class="plink" href="#qt-location-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <i>Earcut Polygon Triangulation Library</i> was removed.</li>
+<li>Usage of <i>geosimplify-js polyline simplification library</i> was removed.</li>
+</ul>
+<h3 id="qt-6-5-1-qt-multimedia-module-162">Qt Multimedia Module<a class="plink" href="#qt-6-5-1-qt-multimedia-module-162" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtspatialaudio-attribution-pffft.html#pffft">pffft</a> was updated to version 38946c766c1a.</li>
+<li><a href="qtspatialaudio-attribution-resonance-audio.html#resonance-audio">Resonance Audio</a> was updated to version e225aedb5ec7.</li>
+</ul>
+<h3 id="qt-6-5-1-qt-network-module-163">Qt Network module<a class="plink" href="#qt-6-5-1-qt-network-module-163" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha a304485800b4b6b796fcccbb3be1585f189ee038, on 2023-05-03.</li>
+</ul>
+<h3 id="qt-6-5-1-qt-quick3d-module-164">Qt Quick3D module<a class="plink" href="#qt-6-5-1-qt-quick3d-module-164" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> was updated to version v1.0.2.</li>
+</ul>
+<h3 id="qt-6-5-1-qt-sql-module-165">Qt SQL Module<a class="plink" href="#qt-6-5-1-qt-sql-module-165" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.41.2.</li>
+</ul>
+<h3 id="qt-webengine-module">Qt Webengine Module<a class="plink" href="#qt-webengine-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <i>Marked (<a href="qml-qtwebengine-webengine.html" translate="no">WebEngine</a> Markdown Editor example)</i> was removed.</li>
+<li>Usage of <i>Markdown.css (<a href="qml-qtwebengine-webengine.html" translate="no">WebEngine</a> Markdown Editor example)</i> was removed.</li>
+<li>Usage of <i>Tango Icon Library</i> was removed.</li>
+</ul>
+<h2 id="qt-6-5-0">Qt 6.5.0<a class="plink" href="#qt-6-5-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-5-0-qt-core-module-168">Qt Core Module<a class="plink" href="#qt-6-5-0-qt-core-module-168" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 8.0</li>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">double-conversion</a> was updated to version 3.2.1.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 42.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-doc-module-169">Qt Doc Module<a class="plink" href="#qt-6-5-0-qt-doc-module-169" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtdoc-attribution-colorpaletteclient.html#colorpaletteclient">Selected Material Icons</a> under Apache License Version 2.0 was documented.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-gui-module-170">Qt GUI Module<a class="plink" href="#qt-6-5-0-qt-gui-module-170" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-vulkanmemoryallocator.html#vulkanmemoryallocator">Vulkan Memory Allocator</a> was updated to version 3.0.1.</li>
+<li><a href="qtgui-attribution-vulkan-xml-spec.html#vulkan-xml-spec">Vulkan API Registry</a> was updated to version 1.3.223.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-location-module-171">Qt Location Module<a class="plink" href="#qt-6-5-0-qt-location-module-171" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <i>Earcut Polygon Triangulation Library</i> under ISC License was documented.</li>
+<li>Usage of <i>geosimplify-js polyline simplification library</i> under geosimplify-js License was documented.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-testlib-module-172">Qt Testlib Module<a class="plink" href="#qt-6-5-0-qt-testlib-module-172" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Updated <a href="qttestlib-attribution-valgrind.html#valgrind">Valgrind</a> to version 3.20.0.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-network-module-173">Qt Network module<a class="plink" href="#qt-6-5-0-qt-network-module-173" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to the commit matching the sha f15705582ed13f390c59541300dea7288acf4137, on 2023-02-02.</li>
+</ul>
+<h3 id="qt-nfc-module">Qt NFC Module<a class="plink" href="#qt-nfc-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtnfc-attribution-ndefeditor.html#ndefeditor">Selected Material Icons</a> under Apache License Version 2.0 was documented.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-opcua-module-175">Qt OpcUA Module<a class="plink" href="#qt-6-5-0-qt-opcua-module-175" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtopcua-attribution-open62541.html#open62541">Open62541</a> was updated to version 1.3.4.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-quick3d-module-176">Qt Quick3D Module<a class="plink" href="#qt-6-5-0-qt-quick3d-module-176" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.2.5.</li>
+<li>Usage of <a href="qtquick3d-attribution-meshoptimizer.html#meshoptimizer">meshoptimizer</a> version v0.18 under MIT license was documented.</li>
+<li>Usage of <a href="qtquick3d-attribution-fog.html#fog">Godot Engine: Fog</a> under MIT license was documented.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-shadertools-module-177">Qt Shadertools Module<a class="plink" href="#qt-6-5-0-qt-shadertools-module-177" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 11.10.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version sdk-1.3.216.0.</li>
+</ul>
+<h3 id="qt-6-5-0-qt-sql-module-178">Qt SQL Module<a class="plink" href="#qt-6-5-0-qt-sql-module-178" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.41.1.</li>
+</ul>
+<h3 id="qt-wayland-module">Qt Wayland Module<a class="plink" href="#qt-wayland-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtwaylandcompositor-attribution-xdg-foreign-unstable-v2.html#xdg-foreign-unstable-v2">Wayland XDG Foreign Protocol</a> version 1 under MIT license is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-fractional-scale-v1.html#fractional-scale-v1">Wayland Fractional Scale Protocol</a> version 1 under MIT license is now documented.</li>
+</ul>
+<h2 id="qt-6-4-3">Qt 6.4.3<a class="plink" href="#qt-6-4-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-4-3-qt-core-module-181">Qt Core Module<a class="plink" href="#qt-6-4-3-qt-core-module-181" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.42.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.42.</li>
+<li><a href="qtcore-attribution-unicode-character-database.html#unicode-character-database">Unicode Character Database (UCD)</a> was updated to version 30.</li>
+</ul>
+<h3 id="qt-6-4-3-qt-gui-module-182">Qt GUI Module<a class="plink" href="#qt-6-4-3-qt-gui-module-182" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.1.5.</li>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.13.0.</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 7.0.1.</li>
+</ul>
+<h3 id="qt-6-4-3-qt-image-formats-183">Qt Image Formats<a class="plink" href="#qt-6-4-3-qt-image-formats-183" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.5.0.</li>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.3.0.</li>
+</ul>
+<h3 id="qt-6-4-3-qt-sql-module-184">Qt SQL Module<a class="plink" href="#qt-6-4-3-qt-sql-module-184" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.41.0.</li>
+</ul>
+<h2 id="qt-6-4-2">Qt 6.4.2<a class="plink" href="#qt-6-4-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-4-2-qt-core-module-186">Qt Core Module<a class="plink" href="#qt-6-4-2-qt-core-module-186" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-zlib.html#zlib">Data Compression Library (zlib)</a> was updated to version 1.2.13.</li>
+</ul>
+<h3 id="qt-6-4-2-qt-gui-module-187">Qt GUI Module<a class="plink" href="#qt-6-4-2-qt-gui-module-187" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.39.</li>
+</ul>
+<h2 id="qt-6-4-1">Qt 6.4.1<a class="plink" href="#qt-6-4-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-4-1-qt-gui-module-189">Qt GUI Module<a class="plink" href="#qt-6-4-1-qt-gui-module-189" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.1.4.</li>
+<li><a href="qtgui-attribution-libpng.html#libpng">LibPNG</a> was updated to version 1.6.38.</li>
+</ul>
+<h3 id="qt-6-4-1-qt-testlib-module-190">Qt Testlib Module<a class="plink" href="#qt-6-4-1-qt-testlib-module-190" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-catch2.html#catch2">Catch2</a> was updated to version 2.13.10.</li>
+</ul>
+<h3 id="qt-tools-module">Qt Tools Module<a class="plink" href="#qt-tools-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-catch2.html#catch2">Catch2</a> was updated to version 2.13.10.</li>
+</ul>
+<h2 id="qt-6-4-0">Qt 6.4.0<a class="plink" href="#qt-6-4-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-4-0-qt-core-module-193">Qt Core Module<a class="plink" href="#qt-6-4-0-qt-core-module-193" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 7.4.2.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 41.</li>
+</ul>
+<h3 id="qt-imageformats-module">Qt Imageformats Module<a class="plink" href="#qt-imageformats-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.2.4</li>
+</ul>
+<h3 id="qt-6-4-0-qt-network-module-195">Qt Network Module<a class="plink" href="#qt-6-4-0-qt-network-module-195" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-libpsl.html#libpsl">libpsl - C library to handle the Public Suffix List</a> version 664f3dc85259ec65e30248a61fa1c45b7b0e4c3f under "BSD 3-clause "New" or "Revised" License is now documented.</li>
+</ul>
+<h3 id="qt-6-4-0-qt-multimedia-module-196">Qt Multimedia Module<a class="plink" href="#qt-6-4-0-qt-multimedia-module-196" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtspatialaudio-attribution-eigen.html#eigen">Eigen</a> version 3.4.0 under Mozilla Public License 2.0 and BSD 3-Clause "New" or "Revised" License is now documented.</li>
+<li><a href="qtspatialaudio-attribution-pffft.html#pffft">pffft</a> version 7c3b5a7dc510a0f513b9c5b6dc5b56f7aeeda422 under BSD 3-Clause "New" or "Revised" License is now documented.</li>
+<li><a href="qtspatialaudio-attribution-resonance-audio.html#resonance-audio">Resonance Audio</a> version e225aedb5ec76ca6a0fe7079c0b84dbcbb490553 under Apache License 2.0 is now documented.</li>
+</ul>
+<h3 id="qt-6-4-0-qt-quick3d-module-197">Qt Quick3D Module<a class="plink" href="#qt-6-4-0-qt-quick3d-module-197" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.2.3.</li>
+<li><a href="qtquick3d-attribution-embree.html#embree">Intel Embree</a> version 3.13.3 under Apache License 2.0 is now documented.</li>
+<li><a href="qtquick3d-attribution-tinyexr.html#tinyexr">Tiny OpenEXR</a> version 1.0.1 under BSD 3-clause "New" or "Revised" License is now documented.</li>
+<li><a href="qtquick3d-attribution-xatlas.html#xatlas">xatlas</a> was updated to version 16ace528acd2cf1f16a7c0dde99c42c486488dbe.</li>
+<li><a href="qtquick3d-attribution-proceduralsky.html#proceduralsky">ProceduralSky</a> under MIT License is now documented.</li>
+</ul>
+<h3 id="qt-quick3dphysics-module">Qt Quick3DPhysics Module<a class="plink" href="#qt-quick3dphysics-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtquick3dphysics-attribution-physx.html#physx">NVIDIA PhysX SDK</a> version PhysX_4.1.2.29882248 under BSD 3-clause "New" or "Revised" License is now documented.</li>
+</ul>
+<h3 id="qt-6-4-0-qt-tools-module-199">Qt Tools Module<a class="plink" href="#qt-6-4-0-qt-tools-module-199" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-catch2.html#catch2">Catch2</a> version 2.13.9 under Boost Software License 1.0 is now documented.</li>
+</ul>
+<h3 id="qt-6-4-0-qt-wayland-module-200">Qt Wayland Module<a class="plink" href="#qt-6-4-0-qt-wayland-module-200" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtwaylandcompositor-attribution-wayland-text-input-unstable-v1.html#wayland-text-input-unstable-v1">Wayland Text Input Protocol v1</a> version unstable v1 under MIT License is now documented.</li>
+</ul>
+<h2 id="qt-6-3-2">Qt 6.3.2<a class="plink" href="#qt-6-3-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-3-2-qt-gui-module-202">Qt GUI Module<a class="plink" href="#qt-6-3-2-qt-gui-module-202" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.12.1.</li>
+</ul>
+<h3 id="qt-6-3-2-qt-sql-module-203">Qt SQL Module<a class="plink" href="#qt-6-3-2-qt-sql-module-203" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.39.2</li>
+</ul>
+<h2 id="qt-6-3-1">Qt 6.3.1<a class="plink" href="#qt-6-3-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-3-1-qt-core-module-205">Qt Core Module<a class="plink" href="#qt-6-3-1-qt-core-module-205" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.40.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.40.</li>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version d17a65633b0286833727ef21e897a22564695ef5.</li>
+</ul>
+<h3 id="qt-6-3-1-qt-gui-module-206">Qt GUI Module<a class="plink" href="#qt-6-3-1-qt-gui-module-206" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 4.2.1.</li>
+</ul>
+<h2 id="qt-6-3-0">Qt 6.3.0<a class="plink" href="#qt-6-3-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-3-0-qt-core-module-208">Qt Core Module<a class="plink" href="#qt-6-3-0-qt-core-module-208" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">Efficient Binary-Decimal and Decimal-Binary Conversion Routines for IEEE Doubles</a> was updated to version 3.2.0+e634f265db5d296bd7a780f9813d6b8573f5bd90.</li>
+<li>Usage of <i>FreeBSD strtoll and strtoull</i> was removed.</li>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 7.4.0.</li>
+<li><a href="qtcore-attribution-tinycbor.html#tinycbor">TinyCBOR</a> was updated to version 0.6.0.</li>
+<li><a href="qtcore-attribution-zlib.html#zlib">Data Compression Library (zlib)</a> was updated to version 1.2.12.</li>
+<li><a href="qtcore-attribution-unicode-character-database.html#unicode-character-database">Unicode Character Database (UCD)</a> was updated to version 28.</li>
+</ul>
+<h3 id="qt-6-3-0-qt-gui-module-209">Qt GUI Module<a class="plink" href="#qt-6-3-0-qt-gui-module-209" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 3.0.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.1.3.</li>
+</ul>
+<h3 id="qt-6-3-0-qt-imageformats-module-210">Qt Imageformats Module<a class="plink" href="#qt-6-3-0-qt-imageformats-module-210" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.2.2</li>
+</ul>
+<h3 id="qt-6-3-0-qt-quick3d-module-211">Qt Quick3D Module<a class="plink" href="#qt-6-3-0-qt-quick3d-module-211" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to version 5.1.6</li>
+</ul>
+<h3 id="qt-6-3-0-qt-wayland-compositor-module-212">Qt Wayland Compositor Module<a class="plink" href="#qt-6-3-0-qt-wayland-compositor-module-212" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtwaylandcompositor-attribution-wayland-protocol.html#wayland-protocol">Wayland Protocol</a> was updated to version 1.19.0</li>
+<li>Usage of <i>Wayland Text Input Protocol</i> version unstable v4, WIP under HPND license was documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-xdg-activation.html#wayland-xdg-activation">Wayland xdg-activation Protocol</a> version unstable v1, version 1 under MIT license is now documented.</li>
+<li>Usage of <a href="qtwaylandcompositor-attribution-presentation-time-xml.html#presentation-time-xml">Presentation Time Protocol</a> version 1 under MIT license is now documented.</li>
+</ul>
+<h2 id="qt-6-2-4">Qt 6.2.4<a class="plink" href="#qt-6-2-4" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-2-4-qt-core-module-214">Qt Core Module<a class="plink" href="#qt-6-2-4-qt-core-module-214" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version c7fe8ddee7f4e16095e51fbc3dd72f18b7a8567d.</li>
+</ul>
+<h3 id="qt-6-2-4-qt-sql-module-215">Qt SQL Module<a class="plink" href="#qt-6-2-4-qt-sql-module-215" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.37.2</li>
+</ul>
+<h3 id="qt-6-2-4-qt-testlib-module-216">Qt Testlib Module<a class="plink" href="#qt-6-2-4-qt-testlib-module-216" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qttestlib-attribution-catch2.html#catch2">Catch2</a> was updated to version 2.13.8.</li>
+</ul>
+<h2 id="qt-6-2-3">Qt 6.2.3<a class="plink" href="#qt-6-2-3" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-2-3-qt-sql-module-218">Qt SQL Module<a class="plink" href="#qt-6-2-3-qt-sql-module-218" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.37.0</li>
+</ul>
+<h2 id="qt-6-2-2">Qt 6.2.2<a class="plink" href="#qt-6-2-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-2-2-qt-core-module-220">Qt Core Module<a class="plink" href="#qt-6-2-2-qt-core-module-220" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 7.2.0</li>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.39</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.39</li>
+</ul>
+<h2 id="qt-6-2-1">Qt 6.2.1<a class="plink" href="#qt-6-2-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-2-1-qt-core-module-222">Qt Core Module<a class="plink" href="#qt-6-2-1-qt-core-module-222" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.38</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.38</li>
+</ul>
+<h2 id="qt-6-2-0">Qt 6.2.0<a class="plink" href="#qt-6-2-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-2-0-qt-core-module-224">Qt Core Module<a class="plink" href="#qt-6-2-0-qt-core-module-224" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-extra-cmake-modules.html#extra-cmake-modules">extra-cmake-modules</a> was updated to version 5.84.0</li>
+<li><a href="qtcore-attribution-android-gradle-wrapper.html#android-gradle-wrapper">Gradle wrapper</a> was updated to version 6.8.3</li>
+</ul>
+<h3 id="qt-6-2-0-qt-gui-module-225">Qt GUI Module<a class="plink" href="#qt-6-2-0-qt-gui-module-225" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt-embedded-fonts.html#freetype-formats">Freetype 2</a> was updated to version 2.10.4</li>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 2.9.0</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.1.1</li>
+</ul>
+<h3 id="qt-6-2-0-qt-imageformats-module-226">Qt Imageformats Module<a class="plink" href="#qt-6-2-0-qt-imageformats-module-226" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.2.1</li>
+</ul>
+<h3 id="qt-6-2-0-qt-positioning-module-227">Qt Positioning Module<a class="plink" href="#qt-6-2-0-qt-positioning-module-227" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtpositioning-attribution-clipper.html#clipper">Clipper Polygon Clipping Library</a> was updated to version 6.4.2.</li>
+<li>Usage of <a href="qtpositioning-attribution-clip2tri.html#clip2tri">Clip2Tri Polygon Triangulation Library</a> under MIT license is now documented.</li>
+<li>Usage of <a href="qtpositioning-attribution-poly2tri.html#poly2tri">Poly2Tri Polygon Triangulation Library</a> under BSD 3-clause "New" or "Revised" license is now documented.</li>
+</ul>
+<h3 id="qt-6-2-0-qt-quick3d-module-228">Qt Quick3D Module<a class="plink" href="#qt-6-2-0-qt-quick3d-module-228" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtquickcontrols-attribution-shadow-angular-material.html#shadow-angular-material">Shadow values from Angular Material</a> under MIT license is now documented.</li>
+</ul>
+<h3 id="qt-quick-controls-module">Qt Quick Controls Module<a class="plink" href="#qt-quick-controls-module" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtquick3d-attribution-xatlas.html#xatlas">xatlas</a> version a8ffc484335ecc3819c69e1749f142e75e03acdf under MIT license is now documented.</li>
+</ul>
+<h3 id="qt-6-2-0-qt-sql-module-230">Qt SQL Module<a class="plink" href="#qt-6-2-0-qt-sql-module-230" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.36.0</li>
+</ul>
+<h3 id="qt-6-2-0-qt-wayland-compositor-module-231">Qt Wayland Compositor Module<a class="plink" href="#qt-6-2-0-qt-wayland-compositor-module-231" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="qtwaylandcompositor-attribution-wayland-pointer-gestures-protocol.html#wayland-pointer-gestures-protocol">Wayland Pointer Gestures Protocol</a> version unstable v1, version 2 under MIT license is now documented.</li>
+</ul>
+<h2 id="qt-6-1-2">Qt 6.1.2<a class="plink" href="#qt-6-1-2" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-1-2-qt-core-module-233">Qt Core Module<a class="plink" href="#qt-6-1-2-qt-core-module-233" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-blake2.html#blake2">BLAKE2 (reference implementation)</a> was updated to version 54f4faa4c16ea34bcd59d16e8da46a64b259fc07.</li>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.37.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.37.</li>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> was updated to version 38.</li>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version d4e247a71d1b6da08dad906b098c818493166fcc.</li>
+</ul>
+<h3 id="qt-6-1-2-qt-gui-module-234">Qt GUI Module<a class="plink" href="#qt-6-1-2-qt-gui-module-234" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-md4c.html#md4c">MD4C</a> was updated to version 0.4.8.</li>
+</ul>
+<h3 id="qt-6-1-2-qt-image-formats-235">Qt Image Formats<a class="plink" href="#qt-6-1-2-qt-image-formats-235" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.3.0.</li>
+</ul>
+<h2 id="qt-6-1-1">Qt 6.1.1<a class="plink" href="#qt-6-1-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-1-1-qt-gui-module-237">Qt GUI Module<a class="plink" href="#qt-6-1-1-qt-gui-module-237" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.1.0.</li>
+</ul>
+<h3 id="qt-6-1-1-qt-shadertools-module-238">Qt Shadertools Module<a class="plink" href="#qt-6-1-1-qt-shadertools-module-238" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version d137abeef57b2f3fdbdab0ad5590fe99a44ba546.</li>
+</ul>
+<h3 id="qt-6-1-1-qt-sql-module-239">Qt SQL Module<a class="plink" href="#qt-6-1-1-qt-sql-module-239" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.35.5.</li>
+</ul>
+<h2 id="qt-6-1-0">Qt 6.1.0<a class="plink" href="#qt-6-1-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-1-0-qt-3d-module-241">Qt 3D Module<a class="plink" href="#qt-6-1-0-qt-3d-module-241" title="Direct link to this headline"></a></h3>
+<ul>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-clipper.html">Assimp - Clipper</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-irrxml.html">Assimp - irrXML</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-open3dgc.html">Assimp - Open3DGC</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-openddlparser.html">Assimp - The OpenDDL-Parser</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-poly2tri.html">Assimp - Poly2Tri Polygon Triangulation Library</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-rapidjson.html">Assimp - RapidJSON</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-unzip.html">Assimp - Unzip</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-utf8cpp.html">Assimp - Utf8Cpp</a> was removed.</li>
+<li>Usage of <a href="https://doc.qt.io/archives/qt-6.0/qt3d-attribution-assimp-zip.html">Assimp - Zip</a> was removed.</li>
+</ul>
+<h3 id="qt-6-1-0-qt-core-module-242">Qt Core Module<a class="plink" href="#qt-6-1-0-qt-core-module-242" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-doubleconversion.html#doubleconversion">Efficient Binary-Decimal and Decimal-Binary Conversion Routines for IEEE Doubles</a> was updated to version 3.1.5-30-gbf46072.</li>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.36.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">PCRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.36.</li>
+<li><a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> was updated to version f2cce86a42f38265c67caa32c6e0ff61793bb534, fetched on 2021-01-21.</li>
+</ul>
+<h3 id="qt-6-1-0-qt-gui-module-243">Qt GUI Module<a class="plink" href="#qt-6-1-0-qt-gui-module-243" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-harfbuzz-ng.html#harfbuzz-ng">HarfBuzz-NG</a> was updated to version 2.8.0.</li>
+<li><a href="qtgui-attribution-libjpeg.html#libjpeg">LibJPEG-turbo</a> was updated to version 2.0.6.</li>
+<li><a href="qtgui-attribution-md4c.html#md4c">MD4C</a> was updated to version 0.4.7.</li>
+<li><a href="qtgui-attribution-vulkanmemoryallocator.html#vulkanmemoryallocator">Vulkan Memory Allocator</a> was updated to version 2.3.0.</li>
+<li><a href="qtgui-attribution-vulkan-xml-spec.html#vulkan-xml-spec">Vulkan API Registry</a> was updated to version 1.2.166.</li>
+</ul>
+<h3 id="qt-6-1-0-qt-imageformats-module-244">Qt Imageformats Module<a class="plink" href="#qt-6-1-0-qt-imageformats-module-244" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtimageformats-attribution-libtiff.html#libtiff">TIFF Software Distribution (libtiff)</a> was updated to version 4.2.0.</li>
+<li><a href="qtimageformats-attribution-libwebp.html#libwebp">WebP (libwebp)</a> was updated to version 1.2.0.</li>
+</ul>
+<h3 id="qt-6-1-0-qt-sql-module-245">Qt SQL Module<a class="plink" href="#qt-6-1-0-qt-sql-module-245" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtsql-attribution-sqlite.html#sqlite">SQLite</a> was updated to version 3.35.2.</li>
+</ul>
+<h3 id="qt-6-1-0-qt-shadertools-module-246">Qt Shadertools Module<a class="plink" href="#qt-6-1-0-qt-shadertools-module-246" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtshadertools-attribution-glslang.html#glslang">glslang</a> was updated to version 11.1.0.</li>
+<li><a href="qtshadertools-attribution-spirvcross.html#spirvcross">SPIRV-Cross</a> was updated to version 2020-09-17.</li>
+</ul>
+<h2 id="qt-6-0-1">Qt 6.0.1<a class="plink" href="#qt-6-0-1" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-0-1-qt-core-module-248">Qt Core Module<a class="plink" href="#qt-6-0-1-qt-core-module-248" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-pcre2.html#pcre2">PCRE2</a> was updated to version 10.36.</li>
+<li><a href="qtcore-attribution-pcre2-sljit.html#pcre2-sljit">CRE2 - Stack-less Just-In-Time Compiler</a> was updated to version 10.36.</li>
+</ul>
+<h2 id="qt-6-0">Qt 6.0<a class="plink" href="#qt-6-0" title="Direct link to this headline"></a></h2>
+<h3 id="qt-6-0-qt-core-module-250">Qt Core Module<a class="plink" href="#qt-6-0-qt-core-module-250" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtcore-attribution-unicode-cldr.html#unicode-cldr">Unicode Common Locale Data Repository (CLDR)</a> got updated to upstream version v38.</li>
+<li>The copy of the <a href="qtnetwork-attribution-psl-data.html#psl-data">The Public Suffix List</a> got updated on 2020-11-05.</li>
+</ul>
+<h3 id="qt-6-0-qt-gui-module-251">Qt GUI Module<a class="plink" href="#qt-6-0-qt-gui-module-251" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qtgui-attribution-md4c.html#md4c">MD4C</a> was updated to version 0.4.6.</li>
+</ul>
+<h3 id="qt-6-0-qt-3d-module-252">Qt 3D Module<a class="plink" href="#qt-6-0-qt-3d-module-252" title="Direct link to this headline"></a></h3>
+<ul>
+<li><a href="qt3d-attribution-assimp.html#assimp">Open Asset Import Library</a> was updated to 5.0.1</li>
+</ul>
+<h2 id="previous-qt-versions">Previous Qt Versions<a class="plink" href="#previous-qt-versions" title="Direct link to this headline"></a></h2>
+<p>To see license change information for Qt 5.15 and earlier, see <a href="https://doc.qt.io/qt-5.15/license-changes.html">https://doc.qt.io/qt-5.15/license-changes.html</a>.</p>
+</div>
+<!-- @@@license-changes.html -->
+<p class="naviNextPrevious footerNavi">
+<a class="prevPage" href="qt-attribution-llvm.html">LLVM Attribution</a>
+<a class="nextPage" href="sbom.html">Software Bill of Materials</a>
+</p>
+</div>
+<p class="copy-notice">
+<abbr title="Copyright">©</abbr> 2026 The Qt Company Ltd.
+   Documentation contributions included herein are the copyrights of
+   their respective owners.     The documentation provided herein is licensed under the terms of the    <a href="http://www.gnu.org/licenses/fdl.html">GNU Free Documentation    License version 1.3</a> as published by the Free Software Foundation.     Qt and respective logos are <a href="https://doc.qt.io/qt/trademarks.html">    trademarks</a> of The Qt Company Ltd. in Finland and/or other countries
+   worldwide. All other trademarks are property of their respective owners. </p>
+
+                    </div>
+                </article>
+                <aside class="b-sidebar__content__right">
+                    <div class="h-wysiwyg-html" data-scheme>
+                                                <h6><strong>Contents</strong></h6>
+                        <nav>
+                            <ul class="c-tableofcontents js-c-tableofcontents" data-tableofcontents-id="wrapperid" data-margin-top="sm">
+<li class="level1"><p><a href="#qt-6-11-2">Qt 6.11.2</a></p></li>
+<li class="level2"><p><a href="#qt-3d-module">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-core-module">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-gui-module">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-image-formats">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-multimedia-module">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-network-module">Qt Network Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-11-2-qt-3d-module-7">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-sql-module">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-testlib-module">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-11-1">Qt 6.11.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-11-1-qt-gui-module-11">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-quick3d-module">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-11-1-qt-sql-module-13">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-11-0">Qt 6.11.0</a></p></li>
+<li class="level2"><p><a href="#qt-canvas-painter-module">Qt Canvas Painter Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-11-0-qt-core-module-16">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-opc-ua-module">Qt OPC UA module</a></p></li>
+<li class="level2"><p><a href="#qt-open-api-module">Qt Open API Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-11-0-qt-quick3d-module-19">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-shadertools-module">Qt Shadertools module</a></p></li>
+<li class="level2"><p><a href="#qt-wayland-compositor-module">Qt Wayland Compositor Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-10-3">Qt 6.10.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-3d-module-23">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-core-module-24">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-gui-module-25">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-network-module-26">Qt Network Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-quick3d-module-27">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-3-qt-sql-module-28">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-10-2">Qt 6.10.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-2-qt-core-module-30">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-2-qt-gui-module-31">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-2-qt-sql-module-32">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-2-qt-wayland-compositor-module-33">Qt Wayland Compositor Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-10-1">Qt 6.10.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-1-qt-core-module-35">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-1-qt-gui-module-36">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-1-qt-sql-module-37">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-10-0">Qt 6.10.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-0-qt-core-module-39">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-doc-module">Qt Doc Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-0-qt-gui-module-41">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-lottie-module">Qt Lottie Module</a></p></li>
+<li class="level2"><p><a href="#qt-quick-module">Qt Quick Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-0-qt-quick3d-module-44">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-10-0-qt-wayland-compositor-module-45">Qt Wayland Compositor Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-9-3">Qt 6.9.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-3-qt-core-module-47">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-3-qt-gui-module-48">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-3-qt-image-formats-49">Qt Image Formats</a></p></li>
+<li class="level1"><p><a href="#qt-6-9-2">Qt 6.9.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-3d-module-51">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-core-module-52">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-gui-module-53">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-network-module-54">Qt Network Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-quick3d-module-55">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-sql-module-56">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-2-qt-testlib-module-57">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-9-1">Qt 6.9.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-1-qt-gui-module-59">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-1-qt-quick3d-module-60">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-1-qt-sql-module-61">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-1-qt-opc-ua-module-62">Qt OPC UA module</a></p></li>
+<li class="level1"><p><a href="#qt-6-9-0">Qt 6.9.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-0-qt-core-module-64">Qt Core module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-0-qt-gui-module-65">Qt GUI module</a></p></li>
+<li class="level2"><p><a href="#qt-opcua-module">Qt OpcUA module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-0-qt-quick3d-module-67">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-0-qt-shadertools-module-68">Qt Shadertools module</a></p></li>
+<li class="level2"><p><a href="#qt-6-9-0-qt-wayland-compositor-module-69">Qt Wayland Compositor module</a></p></li>
+<li class="level1"><p><a href="#qt-6-8-3">Qt 6.8.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-3-qt-core-module-71">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-3-qt-gui-module-72">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-3-qt-network-module-73">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-grpc-module">Qt GRPC module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-3-qt-sql-module-75">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-3-qt-testlib-module-76">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-8-2">Qt 6.8.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-2-qt-core-module-78">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-2-qt-gui-module-79">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-2-qt-image-formats-80">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-2-qt-sql-module-81">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-8-1">Qt 6.8.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-1-qt-gui-module-83">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-1-qt-image-formats-84">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-1-qt-multimedia-module-85">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-1-qt-sql-module-86">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-8-0">Qt 6.8.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-8-0-qt-testlib-module-88">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-7-3">Qt 6.7.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-3d-module-90">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-quick3d-module-91">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-assistant-module">Qt Assistant Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-core-module-93">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-gui-module-94">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-multimedia-module-95">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-opcua-module-96">Qt OpcUA Module</a></p></li>
+<li class="level2"><p><a href="#qt-positioning-module">Qt Positioning Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-quick3d-module-98">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-shadertools-module-99">Qt Shadertools Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-sql-module-100">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-3-qt-testlib-module-101">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-7-2">Qt 6.7.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-2-qt-3d-module-103">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-2-qt-quick3d-module-104">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-2-qt-gui-module-105">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-sensors-module">Qt Sensors Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-2-qt-sql-module-107">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-7-1">Qt 6.7.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-1-qt-gui-module-109">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-1-qt-image-formats-110">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-1-qt-quick3d-module-111">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-spatial-audio-module">Qt Spatial Audio Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-1-qt-sql-module-113">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-7-0">Qt 6.7.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-0-qt-doc-module-115">Qt Doc Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-0-qt-opcua-module-116">Qt OpcUA Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-0-qt-positioning-module-117">Qt Positioning Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-0-qt-quick-module-118">Qt Quick Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-7-0-qt-shadertools-module-119">Qt Shadertools Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-6-3">Qt 6.6.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-core-module-121">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-gui-module-122">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-multimedia-module-123">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-network-module-124">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-quick3d-module-125">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-sql-module-126">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-3-qt-testlib-module-127">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-6-2">Qt 6.6.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-core-module-129">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-doc-module-130">Qt Doc module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-grpc-module-131">Qt GRPC module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-gui-module-132">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-multimedia-module-133">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-protobuf-module">Qt Protobuf module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-quick3d-module-135">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-2-qt-sql-module-136">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-6-1">Qt 6.6.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-1-qt-gui-module-138">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-1-qt-spatial-audio-module-139">Qt Spatial Audio Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-1-qt-sql-module-140">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-6-0">Qt 6.6.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-0-qt-core-module-142">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-0-qt-gui-module-143">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-0-qt-opcua-module-144">Qt OpcUA Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-6-0-qt-positioning-module-145">Qt Positioning Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-5-3">Qt 6.5.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-core-module-147">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-gui-module-148">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-image-formats-149">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-network-module-150">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-quick3d-module-151">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-3-qt-sql-module-152">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-5-2">Qt 6.5.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-2-qt-gui-module-154">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-2-qt-image-formats-155">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-2-qt-network-module-156">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-2-qt-quick3d-module-157">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-2-qt-sql-module-158">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-5-1">Qt 6.5.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-1-qt-gui-module-160">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-location-module">Qt Location Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-1-qt-multimedia-module-162">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-1-qt-network-module-163">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-1-qt-quick3d-module-164">Qt Quick3D module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-1-qt-sql-module-165">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-webengine-module">Qt Webengine Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-5-0">Qt 6.5.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-core-module-168">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-doc-module-169">Qt Doc Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-gui-module-170">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-location-module-171">Qt Location Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-testlib-module-172">Qt Testlib Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-network-module-173">Qt Network module</a></p></li>
+<li class="level2"><p><a href="#qt-nfc-module">Qt NFC Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-opcua-module-175">Qt OpcUA Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-quick3d-module-176">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-shadertools-module-177">Qt Shadertools Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-5-0-qt-sql-module-178">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-wayland-module">Qt Wayland Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-4-3">Qt 6.4.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-3-qt-core-module-181">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-3-qt-gui-module-182">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-3-qt-image-formats-183">Qt Image Formats</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-3-qt-sql-module-184">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-4-2">Qt 6.4.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-2-qt-core-module-186">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-2-qt-gui-module-187">Qt GUI Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-4-1">Qt 6.4.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-1-qt-gui-module-189">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-1-qt-testlib-module-190">Qt Testlib Module</a></p></li>
+<li class="level2"><p><a href="#qt-tools-module">Qt Tools Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-4-0">Qt 6.4.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-core-module-193">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-imageformats-module">Qt Imageformats Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-network-module-195">Qt Network Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-multimedia-module-196">Qt Multimedia Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-quick3d-module-197">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-quick3dphysics-module">Qt Quick3DPhysics Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-tools-module-199">Qt Tools Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-4-0-qt-wayland-module-200">Qt Wayland Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-3-2">Qt 6.3.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-2-qt-gui-module-202">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-2-qt-sql-module-203">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-3-1">Qt 6.3.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-1-qt-core-module-205">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-1-qt-gui-module-206">Qt GUI Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-3-0">Qt 6.3.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-0-qt-core-module-208">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-0-qt-gui-module-209">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-0-qt-imageformats-module-210">Qt Imageformats Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-0-qt-quick3d-module-211">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-3-0-qt-wayland-compositor-module-212">Qt Wayland Compositor Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-2-4">Qt 6.2.4</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-4-qt-core-module-214">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-4-qt-sql-module-215">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-4-qt-testlib-module-216">Qt Testlib Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-2-3">Qt 6.2.3</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-3-qt-sql-module-218">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-2-2">Qt 6.2.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-2-qt-core-module-220">Qt Core Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-2-1">Qt 6.2.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-1-qt-core-module-222">Qt Core Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-2-0">Qt 6.2.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-core-module-224">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-gui-module-225">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-imageformats-module-226">Qt Imageformats Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-positioning-module-227">Qt Positioning Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-quick3d-module-228">Qt Quick3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-quick-controls-module">Qt Quick Controls Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-sql-module-230">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-2-0-qt-wayland-compositor-module-231">Qt Wayland Compositor Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-1-2">Qt 6.1.2</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-2-qt-core-module-233">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-2-qt-gui-module-234">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-2-qt-image-formats-235">Qt Image Formats</a></p></li>
+<li class="level1"><p><a href="#qt-6-1-1">Qt 6.1.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-1-qt-gui-module-237">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-1-qt-shadertools-module-238">Qt Shadertools Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-1-qt-sql-module-239">Qt SQL Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-1-0">Qt 6.1.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-3d-module-241">Qt 3D Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-core-module-242">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-gui-module-243">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-imageformats-module-244">Qt Imageformats Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-sql-module-245">Qt SQL Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-1-0-qt-shadertools-module-246">Qt Shadertools Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-0-1">Qt 6.0.1</a></p></li>
+<li class="level2"><p><a href="#qt-6-0-1-qt-core-module-248">Qt Core Module</a></p></li>
+<li class="level1"><p><a href="#qt-6-0">Qt 6.0</a></p></li>
+<li class="level2"><p><a href="#qt-6-0-qt-core-module-250">Qt Core Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-0-qt-gui-module-251">Qt GUI Module</a></p></li>
+<li class="level2"><p><a href="#qt-6-0-qt-3d-module-252">Qt 3D Module</a></p></li>
+<li class="level1"><p><a href="#previous-qt-versions">Previous Qt Versions</a></p></li>
+</ul>
+                        </nav>
+                                            </div>
+                                        <div class="h-wysiwyg-html" data-margin-top="md">
+                                                <h6><strong>Next</strong></h6>
+                        <nav>
+                            <ul class="c-tableofcontents js-c-tableofcontents" data-tableofcontents-id="wrapperid" data-margin-top="sm"><li class="level1"><p><a class="" href="sbom.html">Software Bill of Materials</a></p></li></ul>
+                        </nav>
+                                                <h6><strong>Previous</strong></h6>
+                        <nav>
+                            <ul class="c-tableofcontents js-c-tableofcontents" data-tableofcontents-id="wrapperid" data-margin-top="sm"><li class="level1"><p><a class="" href="qt-attribution-llvm.html">LLVM Attribution</a></p></li></ul>
+                        </nav>
+                                            </div>
+                                    </aside>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="footer">
+<div class="l-footer">
+    <div class="l-footer__container">
+        <div class="l-footer__row l-footer__row--no-padding-bottom">
+            <div class="l-footer__column l-footer__company">
+                <div class="l-footer__logo">
+                    <a href="https://www.qt.io/?hsLang=en" class="c-logo-footer">
+                    <img src="/images/qtgroup.svg">
+                    </a>
+                </div>
+                <div class="c-social-media-links">
+                    <a href="https://twitter.com/qtproject" target="_blank" rel="noopener" class="fm_button fm_twitter"><span></span></a>
+                    <a href="https://www.facebook.com/qt/" target="_blank" rel="noopener" class="fm_button fm_facebook"><span></span></a>
+                    <a href="https://www.youtube.com/user/QtStudios" target="_blank" rel="noopener" class="fm_button fm_youtube"><span></span></a>
+                    <a href="https://www.linkedin.com/company/qtgroup/" target="_blank" rel="noopener" class="fm_button fm_linkedin"><span></span></a>
+                </div>
+                <div class="l-footer__contact">
+                        <a class="c-btn " href="https://www.qt.io/contact-us?hsLang=en">Contact Us</a>
+                </div>
+
+            </div>
+            <div class="l-footer__column l-footer__navigation">
+                <div class="c-footer-navigation">
+
+                        <span><div class="hs-menu-wrapper" role="navigation" aria-label="Navigation Menu">
+<ul role="menu">
+  <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children" role="none"><a href="javascript:;" aria-haspopup="true" aria-expanded="false" role="menuitem">Qt Group</a>
+   <ul role="menu" class="hs-menu-children-wrapper">
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/group" role="menuitem">Our Story</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/brand" role="menuitem">Brand</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/newsroom" role="menuitem">News</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/careers" role="menuitem">Careers</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/investors" role="menuitem">Investors</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/product" role="menuitem">Qt Products</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/product/quality-assurance" role="menuitem">Software Quality Products</a></li>
+   </ul></li>
+  <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children" role="none"><a href="javascript:;" aria-haspopup="true" aria-expanded="false" role="menuitem">Licensing</a>
+   <ul role="menu" class="hs-menu-children-wrapper">
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/terms-conditions" role="menuitem">License Agreement</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/licensing/open-source-lgpl-obligations" role="menuitem">Open Source</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/pricing" role="menuitem">Plans and pricing</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/download" role="menuitem">Download</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/faq/overview" role="menuitem">FAQ</a></li>
+   </ul></li>
+  <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children" role="none"><a href="javascript:;" aria-haspopup="true" aria-expanded="false" role="menuitem">Learn Qt</a>
+   <ul role="menu" class="hs-menu-children-wrapper">
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/academy" role="menuitem">For Learners</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/qt-educational-license" role="menuitem">For Students and Teachers</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://doc.qt.io/" role="menuitem" target="_blank" rel="noopener">Qt Documentation</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://forum.qt.io/" role="menuitem" target="_blank" rel="noopener">Qt Forum</a></li>
+   </ul></li>
+  <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children" role="none"><a href="javascript:;" aria-haspopup="true" aria-expanded="false" role="menuitem">Support &amp; Services</a>
+   <ul role="menu" class="hs-menu-children-wrapper">
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/qt-professional-services" role="menuitem">Professional Services</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/customer-success" role="menuitem">Customer Success</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/qt-support/" role="menuitem">Support Services</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/contact-us/partners" role="menuitem">Partners</a></li>
+    <li class="hs-menu-item hs-menu-depth-2" role="none"><a href="https://www.qt.io/qt-world" role="menuitem" target="_blank" rel="noopener">Qt World</a></li>
+   </ul></li>
+ </ul>
+</div></span>
+      </div>
+   </div>
+</div>
+        <div class="l-footer__row">
+            <div class="l-footer__column l-footer__legal">
+                <div class="c-footer-secondary-navigation">
+                    <span><div class="hs-menu-wrapper" role="navigation"  aria-label="Navigation Menu">
+ <ul role="menu">
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="javascript:;" role="menuitem">© 2026 The Qt Company</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="mailto:feedback@qt.io?Subject=Feedback%20about%20doc.qt.io%20site">Feedback</a></li>
+ </ul>
+</div></span>
+                    <p class="c-footer-secondary-navigation__group-notice">Qt Group includes The Qt Company Oy and its global subsidiaries and affiliates.</p>
+                </div>
+            </div>
+            <div class="l-footer__column l-footer__some-links">
+            </div>
+        </div>
+    </div>
+</div>
+</div></body></html>

@@ -1,0 +1,85 @@
+from importlib import metadata
+from pathlib import Path
+import os
+import re
+import sys
+
+from PyInstaller.utils.hooks import collect_all
+
+root = Path(SPECPATH).parent
+resources = root / "resources"
+public_build = os.environ.get("RESPONSIVE_CLASSROOM_PUBLIC_BUILD") == "1"
+datas = [(str(resources / "models" / "sensevoice"), "models/sensevoice"),
+         (str(resources / "assets"), "assets"),
+         (str(resources / "web"), "web"),
+         (str(resources / "licenses"), "licenses/project"),
+         (str(root.parent / "LICENSE"), "."),
+         (str(resources / "THIRDPARTY_NOTICES.md"), ".")]
+if public_build:
+    datas.append((str(resources / "audio" / "default-rest.mp3"), "audio"))
+else:
+    datas.extend([(str(resources / "fixtures"), "fixtures"),
+                  (str(resources / "audio"), "audio")])
+binaries = []
+hiddenimports = ["PySide6.QtNetwork", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets",
+                 "PySide6.QtWebChannel", "PySide6.QtMultimedia", "sherpa_onnx", "sounddevice", "soxr"]
+
+# Keep sherpa's native recognizer/VAD runtime and PortAudio available offline.
+for package in ("sherpa_onnx", "sounddevice", "soxr"):
+    package_datas, package_binaries, package_hidden = collect_all(package)
+    datas.extend(package_datas)
+    binaries.extend(package_binaries)
+    hiddenimports.extend(package_hidden)
+
+for distribution_name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6",
+                          "numpy", "sounddevice", "soxr", "sherpa-onnx"):
+    distribution = metadata.distribution(distribution_name)
+    package_name = distribution.metadata["Name"].replace("/", "_")
+    for entry in distribution.files or ():
+        relative = str(entry).replace("\\", "/")
+        marker = ".dist-info/licenses/"
+        if marker in relative:
+            source = Path(distribution.locate_file(entry))
+            if source.is_file():
+                destination = f"licenses/{package_name}/{relative.split(marker, 1)[1]}"
+                datas.append((str(source), destination.rpartition("/")[0]))
+
+analysis = Analysis(
+    [str(root / "classroom_app.py")],
+    pathex=[str(root)],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=sorted(set(hiddenimports)),
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["tkinter", "unittest", "PySide6.QtMultimediaWidgets", "faster_whisper", "whisper",
+              "ctranslate2", "av", "huggingface_hub", "tokenizers",
+              "onnxruntime", "PySide6.QtCharts", "PySide6.QtDataVisualization",
+              "PySide6.QtGraphs", "PySide6.QtQuick3D", "PySide6.QtQuickTimeline",
+              "PySide6.QtVirtualKeyboard"],
+    noarchive=False,
+    optimize=1,
+)
+# This application uses Widgets + WebEngine, never QML or GPL-only add-ons.
+# Removing unused QML plug-ins also avoids collecting their native dependencies.
+gpl_addons = re.compile(r"charts|datavisualization|graphs|quick3d|quicktimeline|virtualkeyboard", re.I)
+def needed(entry):
+    path = entry[0].replace("\\", "/")
+    return not (path.startswith("PySide6/qml/") or gpl_addons.search(path)
+                or "-asio." in path.lower())
+analysis.datas = [entry for entry in analysis.datas if needed(entry)]
+analysis.binaries = [entry for entry in analysis.binaries if needed(entry)]
+pyz = PYZ(analysis.pure)
+exe = EXE(pyz, analysis.scripts, [], exclude_binaries=True,
+         name="ResponsiveClassroom", console=False, upx=False)
+collect = COLLECT(exe, analysis.binaries, analysis.datas,
+                  strip=False, upx=False, name="ResponsiveClassroom")
+
+if sys.platform == "darwin":
+    app = BUNDLE(collect, name="ResponsiveClassroom.app",
+                 bundle_identifier="org.responsiveclassroom.desktop",
+                 info_plist={"CFBundleDisplayName": "Responsive Classroom",
+                             "NSHighResolutionCapable": True,
+                             "NSMicrophoneUsageDescription":
+                             "Responsive Classroom uses the microphone for classroom noise levels and voice commands. Audio is not recorded or saved."})
