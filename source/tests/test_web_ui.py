@@ -21,7 +21,8 @@ class WebUiTests(unittest.TestCase):
             raise
         self.assertTrue(report['passed'],json.dumps(report,ensure_ascii=False))
         self.assertTrue(all(item['actual_viewport']['width'] == item['width'] and
-                            item['actual_viewport']['height'] == item['height']
+                            item['actual_viewport']['height'] == item['height'] and
+                            item['width'] == item['requested_width'] and item['height'] == item['requested_height']
                             for item in report['layouts'] if 'requested_width' in item))
         self.assertEqual(report['audio_fields'],7)
         self.assertEqual(report['audio_decoders'],{'wav':True,'mp3':True})

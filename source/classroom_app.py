@@ -237,6 +237,7 @@ def ui_smoke_report(path,captures=False):
                 for width,height in ((1040,720),(700,520),(390,740)):
                     window.setMinimumSize(0,0)
                     window.resize(width,height)
+                    _spin(app,lambda:_javascript(app,window,f"innerWidth==={width}&&innerHeight==={height}"))
                     _javascript(app,window,'window.classroom.navigate("classroom")')
                     app.processEvents()
                     geometry=json.loads(_javascript(app,window,'''JSON.stringify((()=>{
@@ -258,6 +259,7 @@ def ui_smoke_report(path,captures=False):
                 _javascript(app,window,'window.classroom.navigate("connection")')
                 for width in (1040,700,390):
                     window.resize(width,720)
+                    _spin(app,lambda:_javascript(app,window,f"innerWidth==={width}&&innerHeight===720"))
                     app.processEvents()
                     headers=json.loads(_javascript(app,window,'''JSON.stringify(['input-details','audio-details'].map(id=>{
                       const s=document.querySelector(`#${id}>summary`),r=s.getBoundingClientRect(),
