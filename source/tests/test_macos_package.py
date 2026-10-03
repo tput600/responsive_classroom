@@ -109,8 +109,13 @@ class MacOSPackageTests(unittest.TestCase):
                 finally:
                     link.unlink()
 
-    def test_rejects_unsupported_architecture(self):
+    def test_accepts_universal2_metadata(self):
         self.metadata['architecture'] = 'universal2'
+        self.stage()
+        self.assertEqual(verify_tree(self.release, **self.metadata)['platform'], 'macos-universal2')
+
+    def test_rejects_unsupported_architecture(self):
+        self.metadata['architecture'] = 'ppc'
         with self.assertRaisesRegex(ValueError, 'architecture'):
             self.stage()
 
@@ -235,6 +240,14 @@ class MacOSBundleChecksTests(unittest.TestCase):
         self.assertEqual(native.call_args_list[0].args[0][:2], ['/usr/bin/lipo', '-archs'])
         self.assertEqual(native.call_args_list[1].args[0],
                          ['/usr/bin/codesign', '--verify', '--deep', '--strict', '--verbose=2', str(self.bundle)])
+
+    def test_universal_bundle_requires_both_architectures(self):
+        for output in ('arm64 x86_64\n', 'x86_64 arm64\n'):
+            with mock.patch.object(build_release.subprocess, 'run', return_value=mock.Mock(stdout=output)):
+                build_release.verify_macos_bundle(self.bundle, '3.0.2', 'universal2')
+        with mock.patch.object(build_release.subprocess, 'run', return_value=mock.Mock(stdout='arm64\n')):
+            with self.assertRaisesRegex(RuntimeError, 'universal2'):
+                build_release.verify_macos_bundle(self.bundle, '3.0.2', 'universal2')
 
     def test_rejects_missing_or_wrong_bundle_metadata(self):
         for field in list(self.metadata):

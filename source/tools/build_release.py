@@ -73,7 +73,8 @@ def verify_macos_bundle(package, version, architecture):
     # This reads the native architecture; it does not modify or combine binaries.
     result = subprocess.run(['/usr/bin/lipo', '-archs', str(executable)], check=True,
                             capture_output=True, text=True)  # nosec B603
-    if result.stdout.split() != [architecture]:
+    expected_archs = {'arm64', 'x86_64'} if architecture == 'universal2' else {architecture}
+    if set(result.stdout.split()) != expected_archs:
         raise RuntimeError(f'Expected native {architecture} executable, got {result.stdout.strip()}')
     try:
         run(['/usr/bin/codesign', '--verify', '--deep', '--strict', '--verbose=2', str(package)])
@@ -152,8 +153,8 @@ def main():
     windows = sys.platform == 'win32'
     if not windows and sys.platform != 'darwin':
         raise RuntimeError('Build Windows releases on Windows; macOS bundles on macOS')
-    architecture = platform.machine()
-    if not windows and architecture not in ('arm64', 'x86_64'):
+    architecture = os.environ.get('RESPONSIVE_CLASSROOM_MAC_ARCH', platform.machine())
+    if not windows and architecture not in ('arm64', 'x86_64', 'universal2'):
         raise RuntimeError(f'Unsupported native macOS architecture: {architecture}')
     version = re.search(r'VERSION = "([^"]+)"',
                         (SOURCE / 'classroom_resources.py').read_text(encoding='utf-8')).group(1)

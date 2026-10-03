@@ -36,6 +36,10 @@ python_license = next((path for path in python_license_candidates if path.is_fil
 if python_license is None:
     raise RuntimeError("The build interpreter's full license text is required")
 datas.append((str(python_license), "licenses/Python-runtime"))
+# Source-built universal runtime includes its static dependency licenses.
+python_dependency_licenses = Path(sys.base_prefix) / "share/licenses"
+if python_dependency_licenses.is_dir():
+    datas.append((str(python_dependency_licenses), "licenses/Python-runtime-dependencies"))
 runtime_notice = root.parent / "build" / "python-runtime.json"
 runtime_notice.parent.mkdir(parents=True, exist_ok=True)
 import json
@@ -113,7 +117,7 @@ analysis.binaries = [entry for entry in analysis.binaries if needed(entry)]
 pyz = PYZ(analysis.pure)
 exe = EXE(pyz, analysis.scripts, [], exclude_binaries=True,
          name="ResponsiveClassroom", console=False, upx=False,
-         target_arch=platform.machine() if sys.platform == "darwin" else None)
+         target_arch=os.environ.get("RESPONSIVE_CLASSROOM_MAC_ARCH", platform.machine()) if sys.platform == "darwin" else None)
 collect = COLLECT(exe, analysis.binaries, analysis.datas,
                   strip=False, upx=False, name="ResponsiveClassroom")
 

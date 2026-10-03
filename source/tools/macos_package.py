@@ -72,7 +72,7 @@ def tree_records(root):
 
 def stage_release(bundle, destination, extras, *, version, architecture, python_version):
     """Copy a sealed bundle unchanged; documentation/manifest are its siblings."""
-    if architecture not in ('arm64', 'x86_64'):
+    if architecture not in ('arm64', 'x86_64', 'universal2'):
         raise ValueError(f'Unsupported macOS architecture: {architecture}')
     if bundle.suffix != '.app' or not bundle.is_dir() or bundle.is_symlink():
         raise ValueError('Expected a regular .app bundle directory')

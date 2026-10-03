@@ -10,7 +10,7 @@ import wave
 from classroom_core import Settings
 from classroom_audio import CommandParser
 APP_NAME = "Responsive Classroom"
-VERSION = "3.0.3"
+VERSION = "3.1.0"
 
 def config_dir():
     if os.name == 'nt':
@@ -57,7 +57,8 @@ def verify_model_assets():
 
 
 def self_test_report(path):
-    results = {'python_version': platform.python_version(), 'model_assets': verify_model_assets()}
+    results = {'python_version': platform.python_version(), 'machine': platform.machine(),
+               'frozen': bool(getattr(sys, 'frozen', False)), 'model_assets': verify_model_assets()}
     if not results['model_assets'] or not all(results['model_assets'].values()):
         raise RuntimeError('SenseVoice 模型檔案與 manifest 驗證失敗')
     from classroom_audio import SenseVoiceSpeech
