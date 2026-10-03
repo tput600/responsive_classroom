@@ -6,6 +6,10 @@ import re
 
 
 _TEXT = {
+    "請允許麥克風權限，才能偵測音量與語音指令": "Allow microphone access to detect noise levels and voice commands",
+    "麥克風權限已拒絕；請在系統設定 → 隱私權與安全性 → 麥克風允許本程式，然後重新啟動":
+        "Microphone access denied. Allow this app in System Settings → Privacy & Security → Microphone, then restart",
+
     "燈板": "LED panels",
     "狀態": "Status",
     "IP 位址": "IP address",

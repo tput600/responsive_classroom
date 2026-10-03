@@ -21,7 +21,11 @@ def main():
         venv.EnvBuilder(with_pip=True).create(environment)
     requirements = root / 'source' / ('requirements-dev.txt' if args.dev else 'requirements.txt')
     # Fixed interpreter/module arguments; paths come from this repository, never a shell.
-    subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(requirements)], check=True)  # nosec B603
+    # Native wheels are available for both supported macOS architectures.
+    # Fail clearly rather than silently compiling an incompatible native runtime.
+    binary_options = ['--only-binary=:all:'] if sys.platform == 'darwin' else []
+    subprocess.run([str(python), '-m', 'pip', 'install', *binary_options,
+                    '-r', str(requirements)], check=True)  # nosec B603
     if args.models:
         subprocess.run([str(python), str(root / 'source/tools/fetch_models.py')], check=True)  # nosec B603
     print('responsive_classroom environment ready in .venv')

@@ -1,4 +1,4 @@
-# 課堂小幫手 Responsive Classroom 3.0.2
+# 課堂小幫手 Responsive Classroom 3.0.3
 
 [English](README.en.md) · 繁體中文
 
@@ -12,7 +12,9 @@
 
 先在 WLED 完成控制板燒錄、Wi-Fi 連線與 8×8（64 顆 LED）設定，並確認電腦和燈板位於可互通的區域網路。程式不負責初次燒錄或 Wi-Fi 配網。校園或公共 Wi-Fi 若隔離裝置，請改用允許彼此連線的網路。
 
-在 Windows x64 上，直接開啟 `ResponsiveClassroom.exe`。請保留旁邊的 `_internal` 資料夾；它包含 Web UI、離線語音模型、字型與播放元件。分享給其他電腦時，傳送完整的 `ResponsiveClassroom-Portable-windows-x64-v3.0.2.zip`，並完整解壓縮後再啟動，不能只傳 EXE。語音辨識在本機執行，不需網際網路。Release 附 SHA-256 檢查檔，用於核對下載完整性；它不是程式碼簽章。
+在 Windows x64 上，直接開啟 `ResponsiveClassroom.exe`。請保留旁邊的 `_internal` 資料夾；它包含 Web UI、離線語音模型、字型與播放元件。分享給其他電腦時，傳送完整的 `ResponsiveClassroom-Portable-windows-x64-v3.0.3.zip`，並完整解壓縮後再啟動，不能只傳 EXE。語音辨識在本機執行，不需網際網路。Release 附 SHA-256 檢查檔，用於核對下載完整性；它不是程式碼簽章。
+
+在 macOS 14+，請選對 `macos-arm64`（Apple Silicon）或 `macos-x86_64`（Intel）完整 ZIP，解壓後使用 `.app`，不要移出其中的執行檔。套件未經 Developer ID 簽署／公證，Gatekeeper 可能阻擋；請閱讀 [Mac 指南](MACOS.md)，不要停用系統安全保護。
 
 ## 2. 連線與校正燈板
 
@@ -118,7 +120,7 @@
 
 Windows 的設定、匯入音源與活動紀錄位於 `%APPDATA%\Responsive Classroom`。設定使用 UTF-8、原子儲存，升級遷移前先備份；自訂計時、音源、觸發詞、安靜基線與板子方向會保留。本版只調整仍完整等於前版預設、且不與自訂注意門檻衝突的討論門檻。活動紀錄可包含狀態、音量和已接受指令，不保存原始錄音；若不需要紀錄，可在設定 JSON 將 `session_logging_enabled` 設為 `false`。語音模型離線執行，錄音不傳送到雲端。
 
-目前交付物是 Windows x64 可攜版；乾淨 VM 尚未驗證，macOS 原生版本也尚未在 Mac 上建置或驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
+v3.0.3 發佈流程要求 Windows x64、macOS arm64／x86_64 原生封裝及 frozen smoke tests 全部成功才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
 
 ## 11. 開發環境與專案結構
 
@@ -145,7 +147,7 @@ py -3.12 source/tools/setup_environment.py --dev --models
 .venv/Scripts/python.exe source/classroom_app.py
 ```
 
-第一次準備需要網際網路下載依賴及模型。模型來源、授權與 SHA-256 固定在 repository；下載或雜湊失敗時會停止，不覆寫有效模型。模型二進位不存入 Git，完整 Release 則包含模型供離線使用。macOS／雲端容器改用 `python3.12` 及 `.venv/bin/python`；macOS 需原生建置驗證。正式自動驗證及可攜版發布均使用 Windows。
+第一次準備需要網際網路下載依賴及模型。模型來源、授權與 SHA-256 固定在 repository；下載或雜湊失敗時會停止，不覆寫有效模型。模型二進位不存入 Git，完整 Release 則包含模型供離線使用。macOS／雲端容器改用 `python3.12` 及 `.venv/bin/python`。本次 macOS 適配、原生建置及驗收步驟見 [MACOS.md](MACOS.md)；Mac 套件依架構分開下載；CI 封裝檢查不等於 Finder、真實收音或燈板實機驗收。
 
 ## 12. 本地與雲端共同修改
 
@@ -170,6 +172,8 @@ git push -u origin feature/my-change
 在 GitHub 按 **Code → Codespaces → Create codespace**，環境會準備固定依賴與離線模型，可修改 UI、核心與演算法，再 commit／push 至 GitHub，由 Windows 自動驗證。Codespaces 不能直接存取使用者電腦的麥克風或教室區域網路燈板；實際收音、音效及燈板驗收需在本地進行。雲端變更 commit／push 後，本地 pull 即可同步。
 
 ## 13. 發佈新版本與檢查
+
+跨平台發佈使用 **Build and release desktop packages**，只有 Windows、Apple Silicon 及 Intel 三種原生封裝與完整性檢查都成功，才建立新的最新 Release。v3.0.3 的首次 main 整合可自動啟動；之後請更新版本及 release notes，再手動執行該 workflow。既有版本不覆蓋。
 
 更新 `source/classroom_resources.py` 的 `VERSION` 及中英文手冊版本，完成測試後，在 Windows 開發環境執行：
 

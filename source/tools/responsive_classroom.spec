@@ -1,8 +1,10 @@
 from importlib import metadata
 from pathlib import Path
 import os
+import platform
 import re
 import sys
+import sysconfig
 
 from PyInstaller.utils.hooks import collect_all
 
@@ -23,21 +25,28 @@ else:
                   (str(resources / "audio"), "audio")])
 binaries = []
 # CPython's runtime is redistributed too, separately from this project's MIT.
-python_license = Path(sys.base_prefix) / "LICENSE.txt"
-if not python_license.is_file():
-    python_license = Path(sys.base_prefix) / "LICENSE"
-if not python_license.is_file():
+python_license_candidates = (
+    Path(sys.base_prefix) / "LICENSE.txt",
+    Path(sys.base_prefix) / "LICENSE",
+    # CPython's Unix install target places the license beside the stdlib.
+    Path(sysconfig.get_path("stdlib")) / "LICENSE.txt",
+    Path(sys.base_prefix) / "Resources/English.lproj/License.rtf",
+)
+python_license = next((path for path in python_license_candidates if path.is_file()), None)
+if python_license is None:
     raise RuntimeError("The build interpreter's full license text is required")
 datas.append((str(python_license), "licenses/Python-runtime"))
 runtime_notice = root.parent / "build" / "python-runtime.json"
 runtime_notice.parent.mkdir(parents=True, exist_ok=True)
 import json
-import platform
 runtime_notice.write_text(json.dumps({"component": "CPython", "version": platform.python_version(),
     "source": f"https://github.com/python/cpython/tree/v{platform.python_version()}",
     "license_file": python_license.name}, indent=2), encoding="utf-8")
 datas.append((str(runtime_notice), "licenses/Python-runtime"))
-hiddenimports = ["PySide6.QtNetwork", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets",
+# PySide6 6.11 links Darwin microphone permission support into QtCore.abi3.so.
+# There is no separate permissions plugin directory in the pinned macOS wheels.
+# https://github.com/pyside/pyside-setup/blob/6.11/sources/pyside6/PySide6/QtCore/CMakeLists.txt
+hiddenimports = ["PySide6.QtCore", "PySide6.QtNetwork", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets",
                  "PySide6.QtWebChannel", "PySide6.QtMultimedia", "sherpa_onnx", "sounddevice", "soxr"]
 
 # Keep sherpa's native recognizer/VAD runtime and PortAudio available offline.
@@ -96,14 +105,23 @@ analysis.datas = [entry for entry in analysis.datas if needed(entry)]
 analysis.binaries = [entry for entry in analysis.binaries if needed(entry)]
 pyz = PYZ(analysis.pure)
 exe = EXE(pyz, analysis.scripts, [], exclude_binaries=True,
-         name="ResponsiveClassroom", console=False, upx=False)
+         name="ResponsiveClassroom", console=False, upx=False,
+         target_arch=platform.machine() if sys.platform == "darwin" else None)
 collect = COLLECT(exe, analysis.binaries, analysis.datas,
                   strip=False, upx=False, name="ResponsiveClassroom")
 
 if sys.platform == "darwin":
+    version = re.search(r'VERSION = "([^"]+)"',
+                        (root / "classroom_resources.py").read_text(encoding="utf-8")).group(1)
     app = BUNDLE(collect, name="ResponsiveClassroom.app",
+                 version=version,
                  bundle_identifier="org.responsiveclassroom.desktop",
                  info_plist={"CFBundleDisplayName": "Responsive Classroom",
                              "NSHighResolutionCapable": True,
+                             "CFBundleShortVersionString": version,
+                             "CFBundleVersion": version,
+                             "LSMinimumSystemVersion": "14.0",
+                             "NSLocalNetworkUsageDescription":
+                             "Responsive Classroom connects to your WLED display on the local network to show classroom signals.",
                              "NSMicrophoneUsageDescription":
                              "Responsive Classroom uses the microphone for classroom noise levels and voice commands. Audio is not recorded or saved."})

@@ -6,12 +6,18 @@ import json
 import os
 from pathlib import Path
 import platform
+import plistlib
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+
+if __package__:
+    from .macos_package import stage_release, verify_archive, verify_tree, write_archive
+else:
+    from macos_package import stage_release, verify_archive, verify_tree, write_archive
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'source'
@@ -45,11 +51,42 @@ def assert_public_package(package):
             raise RuntimeError(f'Missing release asset: {suffix}')
 
 
-def frozen_checks(package, reports, windows):
+def verify_macos_bundle(package, version, architecture):
+    """Fail rather than ship a silently unsigned or incorrectly collected bundle."""
+    with (package / 'Contents/Info.plist').open('rb') as stream:
+        info = plistlib.load(stream)
+    if (info.get('CFBundleShortVersionString') != version
+            or info.get('CFBundleVersion') != version
+            or info.get('LSMinimumSystemVersion') != '14.0'
+            or not info.get('NSMicrophoneUsageDescription')
+            or not info.get('NSLocalNetworkUsageDescription')):
+        raise RuntimeError('macOS bundle version/privacy metadata is missing or incorrect')
+    # The pinned PySide6 wheel statically links Darwin permissions into QtCore;
+    # requiring a dynamic permissions/*.dylib would reject valid native wheels.
+    if not any(path.is_file() for path in package.rglob('QtCore.abi3.so')):
+        raise RuntimeError('PySide6 QtCore (with native permission support) was not bundled')
+    executable = package / 'Contents/MacOS/ResponsiveClassroom'
+    # This reads the native architecture; it does not modify or combine binaries.
+    result = subprocess.run(['/usr/bin/lipo', '-archs', str(executable)], check=True,
+                            capture_output=True, text=True)  # nosec B603
+    if result.stdout.split() != [architecture]:
+        raise RuntimeError(f'Expected native {architecture} executable, got {result.stdout.strip()}')
+    run(['/usr/bin/codesign', '--verify', '--deep', '--strict', '--verbose=2', str(package)])
+
+
+def frozen_checks(package, reports, windows, *, archive=None, version=None, architecture=None):
     # Short packaging checks do not access the microphone or send board packets.
     with tempfile.TemporaryDirectory(prefix='Responsive Classroom 測試 ') as temporary:
         stage = Path(temporary) / package.name
-        shutil.copytree(package, stage, symlinks=not windows)
+        if windows:
+            shutil.copytree(package, stage)
+        else:
+            if archive is None:
+                raise ValueError('macOS smoke tests must run from the extracted release ZIP')
+            # ditto restores framework symlinks and executable modes as macOS users expect.
+            run(['/usr/bin/ditto', '-x', '-k', str(archive), temporary])
+            verify_tree(Path(temporary), version=version, architecture=architecture)
+            verify_macos_bundle(stage, version, architecture)
         executable = (stage / 'ResponsiveClassroom.exe' if windows else
                       stage / 'Contents/MacOS/ResponsiveClassroom')
         env = dict(os.environ)
@@ -62,7 +99,9 @@ def frozen_checks(package, reports, windows):
             env['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
         for flag, filename in (('--self-test-report', 'frozen-model.json'),
                                ('--ui-smoke-report', 'frozen-ui.json')):
-            report = Path(temporary) / filename
+            # Reports live outside the release tree, which must stay byte-for-byte intact.
+            report = (Path(temporary) if windows else reports) / filename
+            report.unlink(missing_ok=True)
             with (reports / (filename + '.log')).open('w', encoding='utf-8') as output:
                 run([str(executable), flag, str(report)], cwd=temporary, env=env,
                     stdout=output, stderr=subprocess.STDOUT, timeout=100)
@@ -77,7 +116,11 @@ def frozen_checks(package, reports, windows):
                   not all(value.get('text_parser', {}).values()) or
                   value.get('synthetic_voice_available')):
                 raise RuntimeError('Public model/parser checks failed or private fixtures were included')
-            shutil.copyfile(report, reports / filename)
+            if windows:
+                shutil.copyfile(report, reports / filename)
+        if not windows:
+            verify_tree(Path(temporary), version=version, architecture=architecture)
+            verify_macos_bundle(stage, version, architecture)
 
 
 def main():
@@ -86,6 +129,9 @@ def main():
     windows = sys.platform == 'win32'
     if not windows and sys.platform != 'darwin':
         raise RuntimeError('Build Windows releases on Windows; macOS bundles on macOS')
+    architecture = platform.machine()
+    if not windows and architecture not in ('arm64', 'x86_64'):
+        raise RuntimeError(f'Unsupported native macOS architecture: {architecture}')
     version = re.search(r'VERSION = "([^"]+)"',
                         (SOURCE / 'classroom_resources.py').read_text(encoding='utf-8')).group(1)
     run([sys.executable, str(SOURCE / 'tools/check_public_tree.py')], cwd=ROOT)
@@ -108,35 +154,41 @@ def main():
             stdout=output, stderr=subprocess.STDOUT, timeout=900)
     package = ROOT / 'dist' / ('ResponsiveClassroom' if windows else 'ResponsiveClassroom.app')
     assert_public_package(package)
-    frozen_checks(package, reports, windows)
-    for filename in ('README.md', 'README.en.md', 'LICENSE'):
-        shutil.copyfile(ROOT / filename, package / filename)
-    entries = [{'path': path.relative_to(package).as_posix(), 'bytes': path.stat().st_size,
-                'sha256': sha256(path)} for path in sorted(package.rglob('*')) if path.is_file()]
-    target = 'windows-x64' if windows else f'macos-{platform.machine()}'
-    manifest = {'app': 'Responsive Classroom', 'version': version, 'platform': target,
-                'python_version': platform.python_version(),
-                'files': entries}
-    (package / 'resource_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+    target = 'windows-x64' if windows else f'macos-{architecture}'
     artifacts = ROOT / 'artifacts'
     artifacts.mkdir(exist_ok=True)
     archive = artifacts / f'ResponsiveClassroom-Portable-{target}-v{version}.zip'
-    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
-        for path in sorted(package.rglob('*')):
-            relative=path.relative_to(package).as_posix()
-            name=relative if windows else package.name+'/'+relative
-            if not windows and path.is_symlink():
-                # Preserve framework links and the enclosing .app on macOS.
-                info=zipfile.ZipInfo(name)
-                info.create_system=3
-                info.external_attr=(0o120777 << 16)
-                zipped.writestr(info,os.readlink(path).encode('utf-8'))
-            elif path.is_file():
-                zipped.write(path,name)
     if windows:
+        frozen_checks(package, reports, windows=True)
+        for filename in ('README.md', 'README.en.md', 'LICENSE'):
+            shutil.copyfile(ROOT / filename, package / filename)
+        entries = [{'path': path.relative_to(package).as_posix(), 'bytes': path.stat().st_size,
+                    'sha256': sha256(path)} for path in sorted(package.rglob('*')) if path.is_file()]
+        manifest = {'app': 'Responsive Classroom', 'version': version, 'platform': target,
+                    'python_version': platform.python_version(), 'files': entries}
+        (package / 'resource_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
+            for path in sorted(package.rglob('*')):
+                if path.is_file():
+                    zipped.write(path, path.relative_to(package).as_posix())
         run([sys.executable, str(SOURCE / 'tools/verify-portable.py'), '--package', str(package),
              '--archive', str(archive), '--report', str(reports / 'integrity.json'),
              '--expected-version', version], cwd=ROOT)
+    else:
+        verify_macos_bundle(package, version, architecture)
+        with tempfile.TemporaryDirectory(prefix='macos-release-', dir=ROOT / 'build') as temporary:
+            release_root = Path(temporary) / 'release'
+            staged_bundle = stage_release(
+                package, release_root,
+                [ROOT / name for name in ('README.md', 'README.en.md', 'MACOS.md', 'LICENSE')],
+                version=version, architecture=architecture, python_version=platform.python_version())
+            write_archive(release_root, archive)
+            integrity = verify_archive(release_root, archive, version=version, architecture=architecture)
+            frozen_checks(staged_bundle, reports, windows=False, archive=archive,
+                          version=version, architecture=architecture)
+            integrity['extracted_bundle_signature'] = 'verified'
+            integrity['frozen_model_and_ui'] = 'passed'
+            (reports / 'integrity.json').write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
     digest = sha256(archive)
     archive.with_suffix('.zip.sha256').write_text(f'{digest}  {archive.name}\n', encoding='ascii')
     print(f'Created {archive.name} ({archive.stat().st_size} bytes); SHA-256 {digest}')
