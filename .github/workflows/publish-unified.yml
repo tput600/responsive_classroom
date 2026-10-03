@@ -1,18 +1,11 @@
 name: Publish unified desktop release
 
-# Explicit, main-only publication. No push/release/workflow_run triggers.
+# One deliberate, reviewed bootstrap for this exact already-tested source/run.
+# It never runs on main, and checkout executes only the approved source SHA.
 on:
-  workflow_dispatch:
-    inputs:
-      candidate_run_id:
-        description: 'Exact successful approved-branch unified-desktop.yml run ID matching current main'
-        required: true
-        type: string
-      draft_release_id:
-        description: 'Optional existing v3.1.0 draft ID to verify and promote; never replaces assets'
-        required: false
-        default: ''
-        type: string
+  push:
+    branches: [codex/publish-v3.1.0]
+    paths: ['.github/workflows/publish-unified.yml']
 
 permissions:
   contents: read
@@ -23,39 +16,34 @@ concurrency:
 
 jobs:
   publish:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/publish-v3.1.0'
     runs-on: macos-15
     environment: responsive_classroom
     timeout-minutes: 40
     permissions:
       actions: read
       contents: write
+    env:
+      APPROVED_RELEASE_COMMIT: 'ac86bd5d21693bb44cef204ac0f02fece28e7f64'
+      APPROVED_CANDIDATE_RUN_ID: '37137371666'
     steps:
-      # Checkout only this dispatch's exact main SHA. Never checkout the run's
-      # arbitrary ref, and never execute scripts obtained from its artifact.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          ref: ${{ github.sha }}
+          ref: 'ac86bd5d21693bb44cef204ac0f02fece28e7f64'
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
-      - name: Test offline publication safety checks
+      - name: Test offline publication safety checks from approved source
         run: PYTHONPATH=source python -m unittest discover -s source/tests -p 'test_publish_unified_release.py' -v
-      - name: Verify exact run, bytes, native evidence and upload before latest
+      - name: Verify pinned native evidence and remote bytes before publishing latest
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          DRAFT_RELEASE_ID: ${{ inputs.draft_release_id }}
         run: |
           set -euo pipefail
-          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid candidate run ID'; exit 1; }
-          args=(--candidate-run-id "$CANDIDATE_RUN_ID" --commit "$GITHUB_SHA" --artifacts "$RUNNER_TEMP/unified-publication-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")
-          if [[ -n "$DRAFT_RELEASE_ID" ]]; then
-            [[ "$DRAFT_RELEASE_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid draft release ID'; exit 1; }
-            python source/tools/publish_unified_release.py resume "${args[@]}" --release-id "$DRAFT_RELEASE_ID"
-          else
-            python source/tools/publish_unified_release.py publish "${args[@]}"
-          fi
+          python source/tools/publish_unified_release.py publish \
+            --candidate-run-id "$APPROVED_CANDIDATE_RUN_ID" \
+            --commit "$APPROVED_RELEASE_COMMIT" \
+            --artifacts "$RUNNER_TEMP/unified-publication-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
