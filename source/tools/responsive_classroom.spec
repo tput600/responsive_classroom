@@ -21,6 +21,21 @@ else:
     datas.extend([(str(resources / "fixtures"), "fixtures"),
                   (str(resources / "audio"), "audio")])
 binaries = []
+# CPython's runtime is redistributed too, separately from this project's MIT.
+python_license = Path(sys.base_prefix) / "LICENSE.txt"
+if not python_license.is_file():
+    python_license = Path(sys.base_prefix) / "LICENSE"
+if not python_license.is_file():
+    raise RuntimeError("The build interpreter's full license text is required")
+datas.append((str(python_license), "licenses/Python-runtime"))
+runtime_notice = root.parent / "build" / "python-runtime.json"
+runtime_notice.parent.mkdir(parents=True, exist_ok=True)
+import json
+import platform
+runtime_notice.write_text(json.dumps({"component": "CPython", "version": platform.python_version(),
+    "source": f"https://github.com/python/cpython/tree/v{platform.python_version()}",
+    "license_file": python_license.name}, indent=2), encoding="utf-8")
+datas.append((str(runtime_notice), "licenses/Python-runtime"))
 hiddenimports = ["PySide6.QtNetwork", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets",
                  "PySide6.QtWebChannel", "PySide6.QtMultimedia", "sherpa_onnx", "sounddevice", "soxr"]
 
@@ -32,7 +47,7 @@ for package in ("sherpa_onnx", "sounddevice", "soxr"):
     hiddenimports.extend(package_hidden)
 
 for distribution_name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6",
-                          "numpy", "sounddevice", "soxr", "sherpa-onnx"):
+                          "numpy", "sounddevice", "soxr", "sherpa-onnx", "sherpa-onnx-core", "cffi"):
     distribution = metadata.distribution(distribution_name)
     package_name = distribution.metadata["Name"].replace("/", "_")
     for entry in distribution.files or ():
@@ -66,7 +81,8 @@ analysis = Analysis(
 gpl_addons = re.compile(r"charts|datavisualization|graphs|quick3d|quicktimeline|virtualkeyboard", re.I)
 def needed(entry):
     path = entry[0].replace("\\", "/")
-    return not (path.startswith("PySide6/qml/") or gpl_addons.search(path)
+    return not (path.startswith("PySide6/qml/")
+                or (path.startswith("PySide6/") and gpl_addons.search(path))
                 or "-asio." in path.lower())
 analysis.datas = [entry for entry in analysis.datas if needed(entry)]
 analysis.binaries = [entry for entry in analysis.binaries if needed(entry)]

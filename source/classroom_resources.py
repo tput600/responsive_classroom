@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import sys
 import wave
@@ -56,7 +57,7 @@ def verify_model_assets():
 
 
 def self_test_report(path):
-    results = {'model_assets': verify_model_assets()}
+    results = {'python_version': platform.python_version(), 'model_assets': verify_model_assets()}
     if not results['model_assets'] or not all(results['model_assets'].values()):
         raise RuntimeError('SenseVoice 模型檔案與 manifest 驗證失敗')
     from classroom_audio import SenseVoiceSpeech

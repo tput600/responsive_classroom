@@ -124,6 +124,7 @@ def ui_smoke_report(path,captures=False):
             containers=QMediaFormat().supportedFileFormats(QMediaFormat.ConversionMode.Decode)
             report['audio_decoders']={'wav':QMediaFormat.FileFormat.Wave in containers,
                                       'mp3':QMediaFormat.FileFormat.MP3 in containers}
+            report['advertised_audio_decoders']=dict(report['audio_decoders'])
             rest_file=default_rest_source()
             probe=QMediaPlayer(window)
             probe.setSource(QUrl.fromLocalFile(str(rest_file)))
@@ -143,6 +144,10 @@ def ui_smoke_report(path,captures=False):
             probe.play()
             _spin(app,lambda:any(v>1e-5 for v in pcm),4)
             report['rest_music']['decoded_pcm_peak']=max(pcm)
+            # Some Linux FFmpeg builds omit MP3 from Qt's advertised container
+            # list despite decoding it. Require actual decoded MP3 PCM instead.
+            report['audio_decoders']['mp3']=(rest_file.suffix.lower()=='.mp3' and
+                report['rest_music']['loaded'] and report['rest_music']['decoded_pcm_peak']>1e-5)
             probe.stop()
             probe.setSource(QUrl())
             report['page_count']=_javascript(app,window,'document.querySelectorAll("#pages>.page").length')

@@ -37,7 +37,8 @@ def assert_public_package(package):
                 'models/sensevoice/manifest.json', 'models/sensevoice/model.int8.onnx',
                 'models/sensevoice/tokens.txt', 'models/sensevoice/silero_vad.onnx',
                 'audio/default-rest.mp3', 'licenses/project/GNU-LGPL-3.0.txt',
-                'licenses/project/GNU-LGPL-2.1.txt', 'licenses/project/ONNXRuntime-1.28.2-ThirdPartyNotices.txt')
+                'licenses/project/GNU-LGPL-2.1.txt', 'licenses/project/ONNXRuntime-1.28.2-ThirdPartyNotices.txt',
+                'licenses/project/CFFI-MIT-0.txt', 'licenses/Python-runtime/python-runtime.json')
     for suffix in required:
         if not any(name == suffix or name.endswith('/' + suffix) for name in names):
             raise RuntimeError(f'Missing release asset: {suffix}')
@@ -47,7 +48,7 @@ def frozen_checks(package, reports, windows):
     # Short packaging checks do not access the microphone or send board packets.
     with tempfile.TemporaryDirectory(prefix='Responsive Classroom 測試 ') as temporary:
         stage = Path(temporary) / package.name
-        shutil.copytree(package, stage)
+        shutil.copytree(package, stage, symlinks=not windows)
         executable = (stage / 'ResponsiveClassroom.exe' if windows else
                       stage / 'Contents/MacOS/ResponsiveClassroom')
         env = dict(os.environ)
@@ -113,6 +114,7 @@ def main():
                 'sha256': sha256(path)} for path in sorted(package.rglob('*')) if path.is_file()]
     target = 'windows-x64' if windows else f'macos-{platform.machine()}'
     manifest = {'app': 'Responsive Classroom', 'version': version, 'platform': target,
+                'python_version': platform.python_version(),
                 'files': entries}
     (package / 'resource_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     artifacts = ROOT / 'artifacts'
@@ -120,8 +122,16 @@ def main():
     archive = artifacts / f'ResponsiveClassroom-Portable-{target}-v{version}.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
         for path in sorted(package.rglob('*')):
-            if path.is_file():
-                zipped.write(path, path.relative_to(package).as_posix())
+            relative=path.relative_to(package).as_posix()
+            name=relative if windows else package.name+'/'+relative
+            if not windows and path.is_symlink():
+                # Preserve framework links and the enclosing .app on macOS.
+                info=zipfile.ZipInfo(name)
+                info.create_system=3
+                info.external_attr=(0o120777 << 16)
+                zipped.writestr(info,os.readlink(path).encode('utf-8'))
+            elif path.is_file():
+                zipped.write(path,name)
     if windows:
         run([sys.executable, str(SOURCE / 'tools/verify-portable.py'), '--package', str(package),
              '--archive', str(archive), '--report', str(reports / 'integrity.json'),
