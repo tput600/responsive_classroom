@@ -1,6 +1,10 @@
 # 課堂小幫手 Responsive Classroom 3.0.2
 
+[English](README.en.md) · 繁體中文
+
 本手冊說明 Web UI 的燈板連線、收音校準、音量調適、語音指令、計時與音源設定，以及本地／雲端的開發與發佈方式。一般使用者下載完整可攜版後，直接開啟程式，不必安裝 Python。
+
+介面可按工具列的「EN」切換英文，按「中文」切回繁體中文；操作手冊可用上方連結切換語言。
 
 原始碼：[tput600/responsive_classroom](https://github.com/tput600/responsive_classroom)；可執行套件：[GitHub Releases](https://github.com/tput600/responsive_classroom/releases)。請下載 Release 的可攜 ZIP；GitHub 的「Download ZIP」只有原始碼，不能直接啟動。
 
@@ -154,7 +158,7 @@ git pull --ff-only
 git switch -c feature/my-change
 # 修改 source 下的程式或 README
 .venv/Scripts/python.exe -m unittest discover -s source/tests -t source -v
-git add source README.md
+git add source README.md README.en.md
 .venv/Scripts/python.exe source/tools/check_public_tree.py
 git diff --cached
 git commit -m "Describe the change"
@@ -167,7 +171,7 @@ git push -u origin feature/my-change
 
 ## 13. 發佈新版本與檢查
 
-更新 `source/classroom_resources.py` 的 `VERSION` 及本手冊版本，完成測試後，在 Windows 開發環境執行：
+更新 `source/classroom_resources.py` 的 `VERSION` 及中英文手冊版本，完成測試後，在 Windows 開發環境執行：
 
 ```powershell
 .venv/Scripts/python.exe source/tools/build_release.py
@@ -181,6 +185,6 @@ git push -u origin feature/my-change
 
 ## 14. 原始碼、模型與第三方授權
 
-專案原始碼與原創示範音源採 [MIT](LICENSE)。SenseVoiceSmall 的模型權重採 **FunASR Model Open Source License Agreement v1.1**，並非 MIT；Silero VAD、sherpa-onnx、Qt／PySide6、FFmpeg、NumPy、PortAudio、SoXR、字型各有自己的條款。完整文本、來源與 LGPL 動態函式庫替換／重建方式隨原始碼與可攜套件提供於 [第三方通知](source/resources/THIRDPARTY_NOTICES.md) 與 `source/resources/licenses/`。
+專案原始碼與原創示範音源採 [MIT](LICENSE)。SenseVoiceSmall 的模型權重採 **FunASR Model Open Source License Agreement v1.1**，並非 MIT；Silero VAD、sherpa-onnx、Qt／PySide6、FFmpeg、NumPy、PortAudio、SoXR、字型各有自己的條款。原始碼的完整文本、來源與 LGPL 動態函式庫替換／重建方式位於 [第三方通知](source/resources/THIRDPARTY_NOTICES.md) 與 `source/resources/licenses/`；可攜版請開啟 `_internal/THIRDPARTY_NOTICES.md` 與 `_internal/licenses/`。
 
 公開版不含 WLED 韌體、不使用個人帳號 token，也不把執行設定、麥克風錄音或私人開發歷史上傳到 GitHub。公開音源僅包含第 8 節已標示來源的預設曲與原創示範曲。套件未經商業程式碼簽章，Windows 可能顯示來源提示；請由本 repository 的 Releases 下載並核對雜湊。錄音來源與錄音散佈授權是不同事項，本專案不替《藍色多瑙河》錄音提供 MIT 再授權。

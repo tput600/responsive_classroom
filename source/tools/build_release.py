@@ -109,7 +109,7 @@ def main():
     package = ROOT / 'dist' / ('ResponsiveClassroom' if windows else 'ResponsiveClassroom.app')
     assert_public_package(package)
     frozen_checks(package, reports, windows)
-    for filename in ('README.md', 'LICENSE'):
+    for filename in ('README.md', 'README.en.md', 'LICENSE'):
         shutil.copyfile(ROOT / filename, package / filename)
     entries = [{'path': path.relative_to(package).as_posix(), 'bytes': path.stat().st_size,
                 'sha256': sha256(path)} for path in sorted(package.rglob('*')) if path.is_file()]
