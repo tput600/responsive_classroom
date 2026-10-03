@@ -49,15 +49,17 @@ jobs:
           key: macos15-arm64-universal-python-${{ hashFiles('source/tools/build_universal_python.sh') }}
       - name: Install and universalize pinned dependencies
         run: |
-          "$RUNNER_TEMP/universal-python/bin/python3.12" source/tools/setup_environment.py --dev --models
+          "$RUNNER_TEMP/universal-python/bin/python3.12" source/tools/setup_environment.py --models
           .venv/bin/python source/tools/prepare_universal_macos.py
           .venv/bin/python -m pip check
-      - name: Source and security checks
+      - name: Source and security checks in separate native tools environment
         run: |
-          .venv/bin/python source/tools/check_public_tree.py
-          .venv/bin/python -m ruff check source --select E9,F63,F7,F82
-          .venv/bin/python -m bandit -r source -x source/tests -ll
-          .venv/bin/python -m pip_audit -r source/requirements.txt --progress-spinner off
+          python -m venv .audit-venv
+          .audit-venv/bin/python -m pip install bandit==1.9.4 pip-audit==2.10.1 ruff==0.16.10
+          .audit-venv/bin/python source/tools/check_public_tree.py
+          .audit-venv/bin/python -m ruff check source --select E9,F63,F7,F82
+          .audit-venv/bin/python -m bandit -r source -x source/tests -ll
+          .audit-venv/bin/python -m pip_audit -r source/requirements.txt --progress-spinner off
       - name: Build sealed universal app and test extracted archive
         env:
           RESPONSIVE_CLASSROOM_MAC_ARCH: universal2
