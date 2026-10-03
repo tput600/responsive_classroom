@@ -11,9 +11,15 @@ def main():
     executable = shutil.which('git')
     if not executable:
         raise RuntimeError('Git is required to inspect public files')
+    top = subprocess.run([executable, 'rev-parse', '--show-toplevel'], cwd=root,
+                         check=True, capture_output=True, text=True)  # nosec B603
+    if Path(top.stdout.strip()).resolve() != root:
+        raise RuntimeError('Run the public check from the project Git checkout')
     # The resolved Git executable receives fixed commands; no shell is used.
     result = subprocess.run([executable, 'ls-files', '-z'], cwd=root, check=True, capture_output=True)  # nosec B603
     names = result.stdout.decode('utf-8').split('\0')
+    if not any(names):
+        raise RuntimeError('The public Git index is empty; add reviewed source files first')
     forbidden_roots = {'.codex', '.venv', '_internal', 'dist', 'build', 'artifacts', 'sessions'}
     patterns = (
         re.compile(rb'(?i)\b[A-Z]:[/\\](?:Users|programing|programming)[/\\]'),
