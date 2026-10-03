@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import threading
 import time
 import unittest
 
@@ -255,22 +256,35 @@ class WebServiceTests(unittest.TestCase):
              "version": "1", "led_count": 64, "rotation": 0, "mirror_x": False,
              "mirror_y": False, "serpentine": False, "enabled": True}
         subject._save(__import__("dataclasses").replace(subject.settings, wled_devices=[board]))
+        gui_thread = threading.get_ident()
+        entered = threading.Event()
+        release = threading.Event()
 
         class Worker:
             is_running = True
+            stop_thread = None
 
             def stop(self, timeout):
-                time.sleep(0.2)
+                self.stop_thread = threading.get_ident()
+                entered.set()
+                if not release.wait(timeout):
+                    raise TimeoutError("test did not release the output worker")
                 self.is_running = False
 
-        subject.worker = Worker()
-        started = time.monotonic()
-        result = call(subject, "enable_board", {"mac": board["mac"], "enabled": False})
-        elapsed = time.monotonic() - started
-        self.assertEqual(result, {"ok": True})
-        self.assertLess(elapsed, 0.1)
-        self.assertEqual(subject.controller.state.base_mode.name, "STANDBY")
-        self.assertFalse(subject.settings.wled_devices[0]["enabled"])
+        worker = subject.worker = Worker()
+        try:
+            result = call(subject, "enable_board", {"mac": board["mac"], "enabled": False})
+            self.assertEqual(result, {"ok": True})
+            self.assertTrue(entered.wait(2), "background stop did not start")
+            self.assertNotEqual(worker.stop_thread, gui_thread)
+            # The action returns while stop() is still waiting. This checks
+            # nonblocking cleanup without a disk/runner-dependent time limit.
+            self.assertTrue(worker.is_running)
+            self.assertTrue(subject._output_stopping)
+            self.assertEqual(subject.controller.state.base_mode.name, "STANDBY")
+            self.assertFalse(subject.settings.wled_devices[0]["enabled"])
+        finally:
+            release.set()
         deadline = time.monotonic() + 2
         while subject._output_stopping and time.monotonic() < deadline:
             APP.processEvents()

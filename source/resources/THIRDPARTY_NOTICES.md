@@ -20,9 +20,12 @@ The application communicates with WLED through its documented local JSON API and
 - **CPython 3.12 runtime.** The portable application includes `python312.dll` and `python3.dll`; Python is licensed under PSF License Version 2 and its retained historical license notices. The build copies the exact interpreter's full license into `licenses/Python-runtime/` and records its patch version and matching official source URL in `python-runtime.json` and the resource manifest. The earlier local development interpreter was 3.12.7; GitHub release builds use the available patched Python 3.12 runtime. This runtime notice is separate from the project's MIT license.
 - **CFFI 2.1.1 backend.** The portable application includes `_cffi_backend.cp312-win_amd64.pyd`, while the CFFI package metadata is not included in the frozen runtime. CFFI identifies this backend as MIT No Attribution (MIT-0); the full installed-distribution license is copied to [`licenses/CFFI-MIT-0.txt`](licenses/CFFI-MIT-0.txt). Preserve this notice with the `.pyd`.
 
+## Supplied music attribution
+
+`audio/blue-danube.mp3` was supplied by the project owner, who explicitly requested its inclusion with a YouTube source credit. Source: [女神来了 on YouTube](https://www.youtube.com/watch?v=32fMNpLsvRY); its description credits "Blue Danube by Sergey Pervov". The recording remains subject to its original right holders' rights and is not licensed under this project's MIT license. A recording redistribution license has not been independently established; a source attribution does not itself grant recording rights. This notice must remain with the supplied file. The original project-generated `audio/default-rest.mp3` is a separately MIT-licensed alternative.
+
 ## Files intentionally excluded from public distribution
 
-- Owner-supplied Blue Danube recording: exclude unless a redistribution license for that recording is documented. Composition/public-domain status alone does not establish recording rights.
 - Windows SAPI-generated command fixtures: exclude from public source and portable packages; retain only in local tests unless their generated-speech terms are confirmed for redistribution.
 - Any GPL-only Qt module, including Qt Graphs, Qt Quick 3D, Qt Quick 3D Physics, Qt Quick Timeline, and Qt Virtual Keyboard, must be absent from the public package unless the whole application is separately distributed under compatible GPL terms. Keep only modules required by the application and their LGPL-compatible runtime dependencies.
 

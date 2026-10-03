@@ -16,7 +16,8 @@ datas = [(str(resources / "models" / "sensevoice"), "models/sensevoice"),
          (str(root.parent / "LICENSE"), "."),
          (str(resources / "THIRDPARTY_NOTICES.md"), ".")]
 if public_build:
-    datas.append((str(resources / "audio" / "default-rest.mp3"), "audio"))
+    datas.extend([(str(resources / "audio" / "default-rest.mp3"), "audio"),
+                  (str(resources / "audio" / "blue-danube.mp3"), "audio")])
 else:
     datas.extend([(str(resources / "fixtures"), "fixtures"),
                   (str(resources / "audio"), "audio")])

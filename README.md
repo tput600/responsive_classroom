@@ -1,4 +1,4 @@
-# 課堂小幫手 Responsive Classroom 3.0.1
+# 課堂小幫手 Responsive Classroom 3.0.2
 
 本手冊說明 Web UI 的燈板連線、收音校準、音量調適、語音指令、計時與音源設定，以及本地／雲端的開發與發佈方式。一般使用者下載完整可攜版後，直接開啟程式，不必安裝 Python。
 
@@ -8,7 +8,7 @@
 
 先在 WLED 完成控制板燒錄、Wi-Fi 連線與 8×8（64 顆 LED）設定，並確認電腦和燈板位於可互通的區域網路。程式不負責初次燒錄或 Wi-Fi 配網。校園或公共 Wi-Fi 若隔離裝置，請改用允許彼此連線的網路。
 
-在 Windows x64 上，直接開啟 `ResponsiveClassroom.exe`。請保留旁邊的 `_internal` 資料夾；它包含 Web UI、離線語音模型、字型與播放元件。分享給其他電腦時，傳送完整的 `ResponsiveClassroom-Portable-windows-x64-v3.0.1.zip`，並完整解壓縮後再啟動，不能只傳 EXE。語音辨識在本機執行，不需網際網路。Release 附 SHA-256 檢查檔，用於核對下載完整性；它不是程式碼簽章。
+在 Windows x64 上，直接開啟 `ResponsiveClassroom.exe`。請保留旁邊的 `_internal` 資料夾；它包含 Web UI、離線語音模型、字型與播放元件。分享給其他電腦時，傳送完整的 `ResponsiveClassroom-Portable-windows-x64-v3.0.2.zip`，並完整解壓縮後再啟動，不能只傳 EXE。語音辨識在本機執行，不需網際網路。Release 附 SHA-256 檢查檔，用於核對下載完整性；它不是程式碼簽章。
 
 ## 2. 連線與校正燈板
 
@@ -94,9 +94,9 @@
 
 ## 8. 自訂音源與隨音樂波動
 
-「連線與收音」的「自訂音源」可為七種模式選擇、試聽或清除 MP3／WAV，並設定播放音量與淡入淡出。公開套件預設附帶專案原創的柔和示範 MP3，開始休息時循環播放，收尾時淡出。已有本地音源及設定會保留。自訂音檔會複製至使用者資料夾，移動原始檔案不影響已匯入的音源。選檔、清除及波動勾選會立即保存；音量與淡入淡出則按標題右側「儲存音源設定」。清除預設曲後不會每次啟動自動加回。
+「連線與收音」的「自訂音源」可為七種模式選擇、試聽或清除 MP3／WAV，並設定播放音量與淡入淡出。套件附帶原提供者指定的《藍色多瑙河》MP3，首次設定時作為休息預設曲，開始休息時循環播放、收尾時淡出；另附專案原創柔和示範 MP3 作為備用。已有本地音源及設定會保留。自訂音檔會複製至使用者資料夾，移動原始檔案不影響已匯入的音源。選檔、清除及波動勾選會立即保存；音量與淡入淡出則按標題右側「儲存音源設定」。清除預設曲後不會每次啟動自動加回。
 
-原本提供的《藍色多瑙河》錄音來源為 [女神来了的 YouTube 影片](https://www.youtube.com/watch?v=32fMNpLsvRY)，影片描述標示「Blue Danube by Sergey Pervov」。這是來源註記，不代表取得錄音散佈授權；錄音權利確認前保留在原提供者的本地環境，可自行匯入使用，公開套件使用上述原創示範音源。
+《藍色多瑙河》音源由專案提供者提供並指定一併發布，來源為 [女神来了的 YouTube 影片](https://www.youtube.com/watch?v=32fMNpLsvRY)，影片描述標示「Blue Danube by Sergey Pervov」，套件檔名為 `audio/blue-danube.mp3`。這份錄音不屬於本專案的 MIT 授權，權利仍歸原權利人；YouTube 來源註記本身不是錄音再授權文件，目前未提供可核實的錄音散佈授權。若要另外公開使用或轉授權該錄音，需確認錄音權利；可改用附帶的 MIT 原創示範曲 `audio/default-rest.mp3`。
 
 「隨音樂波動」可逐模式開啟。播放時依實際解碼音量平滑調整整體亮度，不改變該模式圖案、顏色或動畫；停止、取消勾選或沒有有效音訊時回到原模式畫面，亮度不超過 30%。它不是頻譜圖，也不會另開麥克風。播放音源時語音辨識及音量偵測會暫停，避免音樂被當成人聲或環境音；仍可手動操作。需要語音指令時，先按「停止播放」。音源播放設定請用「儲存音源設定」保存。
 
@@ -141,7 +141,7 @@ py -3.12 source/tools/setup_environment.py --dev --models
 .venv/Scripts/python.exe source/classroom_app.py
 ```
 
-第一次準備需要網際網路下載依賴及模型。模型來源、授權與 SHA-256 固定在 repository；下載或雜湊失敗時會停止，不覆寫有效模型。模型二進位不存入 Git，完整 Release 則包含模型供離線使用。macOS／Linux 改用 `python3.12` 及 `.venv/bin/python`；macOS 需原生建置驗證，Linux 主要作為雲端開發與自動測試環境。
+第一次準備需要網際網路下載依賴及模型。模型來源、授權與 SHA-256 固定在 repository；下載或雜湊失敗時會停止，不覆寫有效模型。模型二進位不存入 Git，完整 Release 則包含模型供離線使用。macOS／雲端容器改用 `python3.12` 及 `.venv/bin/python`；macOS 需原生建置驗證。正式自動驗證及可攜版發布均使用 Windows。
 
 ## 12. 本地與雲端共同修改
 
@@ -161,18 +161,9 @@ git commit -m "Describe the change"
 git push -u origin feature/my-change
 ```
 
-在 GitHub 開 Pull Request，Windows／Linux 自動檢查通過後合併回 `main`；本地再 `git switch main`、`git pull --ff-only`。只有一位維護者時也可測試後直接 commit／push `main`。若 `pull --ff-only` 提示分歧，先整理自己的分支再合併；不要強制推送覆蓋他人修改。
+在 GitHub 開 Pull Request，Windows 自動檢查通過後合併回 `main`；本地再 `git switch main`、`git pull --ff-only`。只有一位維護者時也可測試後直接 commit／push `main`。若 `pull --ff-only` 提示分歧，先整理自己的分支再合併；不要強制推送覆蓋他人修改。
 
-在 GitHub 按 **Code → Codespaces → Create codespace**，環境會準備固定依賴與離線模型。Linux 的測試使用：
-
-```bash
-pulseaudio --start --exit-idle-time=-1
-pactl load-module module-null-sink sink_name=classroom_test
-pactl set-default-sink classroom_test
-QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run -a .venv/bin/python -m unittest discover -s source/tests -t source -v
-```
-
-上述停用沙箱僅限隔離的雲端測試環境，發佈程式沒有加入此旗標；虛擬音訊輸出只供 MP3 解碼測試，並非真人收音驗收。Codespaces 可修改 UI、核心、演算法並執行測試，不能直接存取使用者電腦的麥克風或教室區域網路燈板；實際收音、音效及燈板驗收需在本地進行。雲端變更 commit／push 後，本地 pull 即可同步。
+在 GitHub 按 **Code → Codespaces → Create codespace**，環境會準備固定依賴與離線模型，可修改 UI、核心與演算法，再 commit／push 至 GitHub，由 Windows 自動驗證。Codespaces 不能直接存取使用者電腦的麥克風或教室區域網路燈板；實際收音、音效及燈板驗收需在本地進行。雲端變更 commit／push 後，本地 pull 即可同步。
 
 ## 13. 發佈新版本與檢查
 
@@ -192,4 +183,4 @@ QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run -a .venv/bin/python -m unittest discover 
 
 專案原始碼與原創示範音源採 [MIT](LICENSE)。SenseVoiceSmall 的模型權重採 **FunASR Model Open Source License Agreement v1.1**，並非 MIT；Silero VAD、sherpa-onnx、Qt／PySide6、FFmpeg、NumPy、PortAudio、SoXR、字型各有自己的條款。完整文本、來源與 LGPL 動態函式庫替換／重建方式隨原始碼與可攜套件提供於 [第三方通知](source/resources/THIRDPARTY_NOTICES.md) 與 `source/resources/licenses/`。
 
-公開版不含 WLED 韌體、不使用個人帳號 token，也不把執行設定或原始錄音上傳到 GitHub。套件未經商業程式碼簽章，Windows 可能顯示來源提示；請由本 repository 的 Releases 下載並核對雜湊。分享額外音源時，應另外確認該錄音的散佈權限，來源標註不會取代授權。
+公開版不含 WLED 韌體、不使用個人帳號 token，也不把執行設定、麥克風錄音或私人開發歷史上傳到 GitHub。公開音源僅包含第 8 節已標示來源的預設曲與原創示範曲。套件未經商業程式碼簽章，Windows 可能顯示來源提示；請由本 repository 的 Releases 下載並核對雜湊。錄音來源與錄音散佈授權是不同事項，本專案不替《藍色多瑙河》錄音提供 MIT 再授權。

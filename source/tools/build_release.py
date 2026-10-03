@@ -29,14 +29,15 @@ def sha256(path):
 
 def assert_public_package(package):
     names = [path.relative_to(package).as_posix() for path in package.rglob('*') if path.is_file()]
-    prohibited = re.compile(r'(?i)(?:blue-danube|/fixtures/|/qml/|(?:^|/)(?:\.codex|settings\.json)(?:/|$)|Qt6(?:Graphs|Charts|DataVisualization|Quick3D|QuickTimeline|VirtualKeyboard)|portaudio[^/]*asio)')
+    prohibited = re.compile(r'(?i)(?:/fixtures/|/qml/|(?:^|/)(?:\.codex|settings\.json)(?:/|$)|Qt6(?:Graphs|Charts|DataVisualization|Quick3D|QuickTimeline|VirtualKeyboard)|portaudio[^/]*asio)')
     wrong = [name for name in names if prohibited.search(name)]
     if wrong:
         raise RuntimeError(f'Private or incompatible files in package: {wrong[:10]}')
     required = ('LICENSE', 'THIRDPARTY_NOTICES.md', 'models/sensevoice/LICENSE',
                 'models/sensevoice/manifest.json', 'models/sensevoice/model.int8.onnx',
                 'models/sensevoice/tokens.txt', 'models/sensevoice/silero_vad.onnx',
-                'audio/default-rest.mp3', 'licenses/project/GNU-LGPL-3.0.txt',
+                'audio/default-rest.mp3', 'audio/blue-danube.mp3',
+                'licenses/project/GNU-LGPL-3.0.txt',
                 'licenses/project/GNU-LGPL-2.1.txt', 'licenses/project/ONNXRuntime-1.28.2-ThirdPartyNotices.txt',
                 'licenses/project/CFFI-MIT-0.txt', 'licenses/Python-runtime/python-runtime.json')
     for suffix in required:

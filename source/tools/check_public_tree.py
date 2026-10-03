@@ -32,8 +32,7 @@ def main():
         relative = Path(name)
         if (relative.parts[0] in forbidden_roots or relative.name in {'settings.json', '.env'}
                 or relative.suffix.lower() in {'.zip', '.exe', '.log', '.bak', '.onnx'}
-                or name.startswith('source/resources/fixtures/')
-                or name == 'source/resources/audio/blue-danube.mp3'):
+                or name.startswith('source/resources/fixtures/')):
             failures.append(f'{name}: private/generated/unapproved asset is tracked')
             continue
         path = root / relative

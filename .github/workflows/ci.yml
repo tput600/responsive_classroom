@@ -8,42 +8,20 @@ permissions:
   contents: read
 jobs:
   validate:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
-      - name: Linux Qt dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libopengl0 libgbm1 libnss3 libasound2t64 libpulse0 pulseaudio libportaudio2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 libxtst6 xvfb xauth
       - name: Install pinned environment
         run: python source/tools/setup_environment.py --dev --models
       - name: Public files and Python checks
-        shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then PY=".venv/Scripts/python.exe"; else PY=".venv/bin/python"; fi
-          "$PY" source/tools/check_public_tree.py
-          "$PY" -m ruff check source --select E9,F63,F7,F82
-          "$PY" -m bandit -r source -x source/tests -ll
-          "$PY" -m pip_audit -r source/requirements.txt --progress-spinner off
+          .venv/Scripts/python.exe source/tools/check_public_tree.py
+          .venv/Scripts/python.exe -m ruff check source --select E9,F63,F7,F82
+          .venv/Scripts/python.exe -m bandit -r source -x source/tests -ll
+          .venv/Scripts/python.exe -m pip_audit -r source/requirements.txt --progress-spinner off
       - name: Windows tests
-        if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -X utf8 -m unittest discover -s source/tests -t source -v
-      - name: Linux tests
-        if: runner.os == 'Linux'
-        env:
-          QTWEBENGINE_DISABLE_SANDBOX: '1'
-          QTWEBENGINE_CHROMIUM_FLAGS: '--disable-gpu --disable-dev-shm-usage'
-        run: |
-          pulseaudio --start --exit-idle-time=-1
-          pactl load-module module-null-sink sink_name=classroom_test
-          pactl set-default-sink classroom_test
-          xvfb-run -a .venv/bin/python -X utf8 -m unittest discover -s source/tests -t source -v

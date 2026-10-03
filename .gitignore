@@ -21,10 +21,10 @@ artifacts/
 
 # Models are fetched from pinned upstream; releases bundle them for offline use.
 /source/resources/models/sensevoice/*.onnx
-# Owner audio remains local until redistribution permission is documented.
+# Private command recordings remain local. The supplied music is attributed.
 /source/resources/fixtures/
-/source/resources/audio/blue-danube.mp3
 /*.mp3
+/.ruff_cache/
 
 # Earlier local packaging scripts depend on private audit directories.
 /source/tools/build.ps1
