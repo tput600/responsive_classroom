@@ -61,8 +61,10 @@ class RecoveryTests(unittest.TestCase):
         self.assertIsNone(analyzer.baseline_dbfs)
 
     def test_slow_http_does_not_interrupt_udp_and_initial_failure_recovers(self):
-        device = WledDevice('127.0.1.2', 'test', 'test-mac', 'test', 64)
+        # Darwin binds only configured loopback addresses, unlike Linux's /8.
+        device = WledDevice('127.0.0.1', 'test', 'test-mac', 'test', 64)
         receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(receiver.close)
         receiver.bind((device.ip, 4048))
         receiver.settimeout(3)
         started = time.monotonic()
@@ -127,9 +129,10 @@ class RecoveryTests(unittest.TestCase):
             worker.submit(b'invalid')
 
     def test_beacon_uses_verified_drgb_pixels_and_accepts_its_own_receipt(self):
-        device = WledDevice('127.0.1.10', 'Beacon', 'beacon-mac', '16.0.1', 64,
+        device = WledDevice('127.0.0.1', 'Beacon', 'beacon-mac', '16.0.1', 64,
                             rotation=180)
         receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(receiver.close)
         receiver.bind((device.ip, 21324))
         receiver.settimeout(2)
         calls, statuses = [], []
