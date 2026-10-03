@@ -23,7 +23,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libgbm1 libnss3 libasound2t64 libportaudio2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 libxtst6 xvfb xauth
+          sudo apt-get install -y libegl1 libgl1 libopengl0 libgbm1 libnss3 libasound2t64 libpulse0 libportaudio2 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 libxtst6 xvfb xauth
       - name: Install pinned environment
         run: python source/tools/setup_environment.py --dev --models
       - name: Public files and Python checks
