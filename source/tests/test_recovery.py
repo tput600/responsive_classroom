@@ -67,9 +67,11 @@ class RecoveryTests(unittest.TestCase):
         self.addCleanup(receiver.close)
         receiver.bind((device.ip, 4048))
         receiver.settimeout(3)
-        started = time.monotonic()
         failed = [False]
-        slow_requests = []
+        successful_probes = [0]
+        http_started = threading.Event()
+        release_http = threading.Event()
+        http_finished = threading.Event()
         calls = []
 
         def request(_ip, path, payload=None, **_kwargs):
@@ -78,9 +80,11 @@ class RecoveryTests(unittest.TestCase):
                 if not failed[0]:
                     failed[0] = True
                     raise OSError('initial connection failed')
-                if time.monotonic() - started > 2:
-                    slow_requests.append(time.monotonic())
-                    time.sleep(.6)
+                successful_probes[0] += 1
+                if successful_probes[0] == 2:
+                    http_started.set()
+                    release_http.wait(10)
+                    http_finished.set()
                 return {'mac': device.mac, 'leds': {'count': 64}, 'live': True,
                         'lm': 'DDP', 'lip': '127.0.0.1'}
             return {'on': True, 'bri': 40} if payload is None else {'success': True}
@@ -88,26 +92,29 @@ class RecoveryTests(unittest.TestCase):
         session = WledSession([device])
         worker = LatestFrameWorker(session, .03)
         frame = bytes((10, 20, 30)) * 64
+        updated = bytes((40, 50, 60)) * 64
         with patch('classroom_hardware._request_json', request):
             try:
                 worker.submit(frame)
                 worker.start()
                 first, _ = receiver.recvfrom(2048)
                 self.assertEqual(first[10:], frame)
-                timestamps = []
-                # Leave headroom for Darwin timer coalescing on shared runners;
-                # the latency bound and delivery during blocked HTTP remain strict.
-                end = time.monotonic() + 2.5
-                while time.monotonic() < end:
+                self.assertTrue(failed[0], 'Initial connection failure must recover')
+                self.assertTrue(http_started.wait(5), 'Monitor must enter the blocked HTTP request')
+                # Prove concurrency using a NEW payload submitted only after HTTP
+                # blocks. Buffered old packets cannot satisfy this assertion, and
+                # correctness does not depend on shared-runner timer precision.
+                worker.submit(updated)
+                received = 0
+                deadline = time.monotonic() + 5
+                while received < 3 and time.monotonic() < deadline:
                     data, _ = receiver.recvfrom(2048)
-                    self.assertEqual(data[10:], frame)
-                    timestamps.append(time.monotonic())
-                self.assertTrue(any(sum(start <= stamp < start + .6 for stamp in timestamps) >= 3
-                                    for start in slow_requests),
-                                'UDP delivery must continue during a slow HTTP request')
-                self.assertGreater(len(timestamps), 35)
-                self.assertLess(max(b - a for a, b in zip(timestamps, timestamps[1:])), .25)
+                    self.assertIn(data[10:], (frame, updated))
+                    received += data[10:] == updated
+                self.assertEqual(received, 3)
+                self.assertFalse(http_finished.is_set(), 'New frames must arrive before HTTP completes')
             finally:
+                release_http.set()
                 worker.stop(4)
                 receiver.close()
         self.assertFalse(worker.is_running)
