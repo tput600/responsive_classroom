@@ -1,5 +1,7 @@
 """Release layout/ZIP regressions that do not require macOS or PySide6."""
+import ast
 import json
+import re
 import os
 from pathlib import Path
 import plistlib
@@ -247,6 +249,30 @@ class MacOSBundleChecksTests(unittest.TestCase):
         with mock.patch.object(build_release.subprocess, 'run', return_value=mock.Mock(stdout='x86_64\n')):
             with self.assertRaisesRegex(RuntimeError, 'native arm64'):
                 build_release.verify_macos_bundle(self.bundle, '3.0.2', 'arm64')
+
+
+class QtPackageFilterTests(unittest.TestCase):
+    def test_unused_qml_is_removed_from_windows_and_macos_layouts(self):
+        # Exercise the actual spec predicate without running PyInstaller.
+        spec = Path(__file__).resolve().parents[1] / 'tools/responsive_classroom.spec'
+        tree = ast.parse(spec.read_text(encoding='utf-8'))
+        selected = [node for node in tree.body if
+                    isinstance(node, ast.FunctionDef) and node.name == 'needed' or
+                    isinstance(node, ast.Assign) and any(
+                        isinstance(target, ast.Name) and target.id == 'gpl_addons'
+                        for target in node.targets)]
+        namespace = {'re': re}
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(spec), 'exec'), namespace)
+        needed = namespace['needed']
+        for name in ('PySide6/qml/QtQml/qmldir', 'PySide6/Qt/qml/QtQml/qmldir',
+                     'PySide6/Qt/qml/QtWebSockets/libqmlwebsocketsplugin.dylib',
+                     'PySide6/Qt/lib/QtCharts.framework/Versions/A/QtCharts'):
+            with self.subTest(name=name):
+                self.assertFalse(needed((name, 'unused', 'DATA')))
+        for name in ('PySide6/QtCore.abi3.so', 'PySide6/Qt/lib/QtCore.framework/Versions/A/QtCore',
+                     'PySide6/Qt/lib/QtQml.framework/Versions/A/QtQml', 'web/index.html'):
+            with self.subTest(name=name):
+                self.assertTrue(needed((name, 'required', 'BINARY')))
 
 
 if __name__ == '__main__':

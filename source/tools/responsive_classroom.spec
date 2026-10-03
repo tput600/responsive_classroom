@@ -98,7 +98,7 @@ analysis = Analysis(
 gpl_addons = re.compile(r"charts|datavisualization|graphs|quick3d|quicktimeline|virtualkeyboard", re.I)
 def needed(entry):
     path = entry[0].replace("\\", "/")
-    return not (path.startswith("PySide6/qml/")
+    return not (path.startswith(("PySide6/qml/", "PySide6/Qt/qml/"))
                 or (path.startswith("PySide6/") and gpl_addons.search(path))
                 or "-asio." in path.lower())
 analysis.datas = [entry for entry in analysis.datas if needed(entry)]
