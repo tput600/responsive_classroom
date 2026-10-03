@@ -4,6 +4,21 @@ const $ = id => document.getElementById(id);
 const MODES = ['STANDBY', 'NOTICE', 'DISCUSSION', 'REST', 'QUESTION', 'CORRECT', 'WRONG'];
 const TIMERS = ['question_seconds', 'feedback_seconds', 'rest_seconds', 'rest_reminder_seconds', 'voice_idle_seconds'];
 const WORDS = {
+  captureOverloaded: ['收音處理落後；追上即時音訊前，語音指令暫停。', 'Audio processing is behind. Voice commands pause until live audio catches up.'],
+  audioDiagnostics: ['收音診斷', 'Input diagnostics'],
+  inputAge: ['資料更新', 'Input age'], captureLag: ['處理延遲', 'Processing lag'], captureDropped: ['略過過期音訊區塊', 'Stale audio blocks skipped'],
+  chooseNetwork: ['選擇要搜尋的網段', 'Choose a subnet to search'], searchNetwork: ['搜尋此網段', 'Search this subnet'],
+  settingsTitle: ['連線與收音設定', 'Connection and audio settings'],
+  settingsHelp: ['先連接燈板與麥克風，再依需要調整偵測及音源。', 'Connect panels and a microphone, then adjust detection and audio as needed.'],
+  settingsSections: ['設定區段', 'Settings sections'],
+  boardImmediate: ['加入、同步與移除立即生效；燈板方向需儲存。', 'Adding, syncing and removing panels apply immediately. Save orientation separately.'],
+  inputImmediate: ['切換麥克風與校準立即生效。下方偵測及語音指令修改需儲存。', 'Microphone selection and calibration apply immediately. Save detection and voice-command edits below.'],
+  audioImmediate: ['音量與淡入淡出需儲存。選擇、清除音檔與隨音樂波動立即生效。', 'Save volume and fade changes. Files and music-responsive switches apply immediately.'],
+  thresholdHelp: ['門檻為高於安靜校準基準的音量差（dB），數字越大越不敏感。', 'Thresholds are dB above the calibrated quiet level. Higher values are less sensitive.'],
+  unsaved: ['尚未儲存的修改', 'Unsaved changes'], reset: ['捨棄修改', 'Discard changes'], saving: ['儲存中…', 'Saving…'],
+  noiseUnavailable: ['請先選擇請注意或討論模式，並確認麥克風可用。', 'Choose Attention or Discussion and connect an available microphone.'],
+  noNetworks: ['沒有可搜尋的網段；可直接輸入 IP。', 'No subnet available; enter a panel IP instead.'],
+  allowedRange: ['範圍', 'Range'],
   brand: ['課堂小幫手', 'Classroom Helper'], navigation: ['主要導覽', 'Main navigation'],
   classroom: ['課堂', 'Classroom'], connection: ['連線與收音', 'Connection'], timers: ['計時', 'Timers'],
   STANDBY: ['待機', 'Standby'], NOTICE: ['請注意', 'Attention'], DISCUSSION: ['討論', 'Discussion'], REST: ['休息', 'Rest'],
@@ -19,7 +34,7 @@ const WORDS = {
   noSpeech: ['尚無語音輸入', 'No speech yet'], listening: ['正在收音', 'Listening'],
   boards: ['燈板', 'Light panels'],
   boardIp: ['燈板 IP', 'Panel IP address'], connectBoard: ['加入燈板', 'Add panel'], findBoards: ['搜尋燈板', 'Find panels'],
-  localNetwork: ['加入燈板', 'Add panels'], network: ['搜尋網段', 'Search subnet'], search: ['搜尋燈板', 'Find panels'],
+  localNetwork: ['加入燈板', 'Add panels'], network: ['搜尋網段', 'Search subnet'], search: ['自動搜尋', 'Auto search'],
   searching: ['搜尋中…', 'Searching…'], connecting: ['連線中…', 'Connecting…'], add: ['加入', 'Add'],
   enabled: ['同步', 'Sync'], board: ['燈板', 'Panel'], state: ['狀態', 'Status'], remove: ['移除', 'Remove'],
   selectPanel: ['選取燈板', 'Select panel'], addSelected: ['加入所選燈板', 'Add selected panels'],
@@ -82,6 +97,53 @@ const WORDS = {
 let backend, state, language = 'zh_TW', hydratedRevision = -1;
 const dirty = new Set();
 const boardRows = new Map();
+const draftVersions = new Map(), pending = new Map(), orientationDrafts = new Map();
+const GROUPS = {'noise-form':['noise-form','voice-form'], 'voice-form':['noise-form','voice-form'], 'timers-form':['timers-form'], audio:['audio'], 'orientation-form':['orientation-form']};
+function markDirty(key) {
+  if (!GROUPS[key]) return;
+  dirty.add(key); draftVersions.set(key, (draftVersions.get(key) || 0) + 1); renderDrafts();
+}
+function renderDrafts() {
+  document.querySelectorAll('[data-draft-status]').forEach(e => {
+    const changed = GROUPS[e.dataset.draftStatus].some(k => dirty.has(k));
+    e.hidden = !changed; e.querySelector('span').textContent = text('unsaved');
+  });
+}
+function clearDraft(keys, versions) {
+  keys.forEach(k => { if (!versions || versions.get(k) === draftVersions.get(k)) dirty.delete(k); });
+  renderDrafts();
+}
+async function saveDraft(key, button, action, payload, messageId) {
+  if (button.dataset.saving) return false;
+  const versions = draftVersionsFor(key);
+  button.dataset.saving = 'true'; button.disabled = true; button.setAttribute('aria-busy','true');
+  const original = button.textContent; button.textContent = text('saving');
+  try {
+    if (!await command(action, payload, messageId)) return false;
+    clearDraft(GROUPS[key], versions); message(messageId,text('saved'));
+    if (key === 'orientation-form' && versions.get(key) === draftVersions.get(key)) orientationDrafts.delete(payload.mac);
+    return true;
+  } finally { delete button.dataset.saving; button.disabled = false; button.removeAttribute('aria-busy'); button.textContent=original; }
+}
+function draftVersionsFor(key) { return new Map(GROUPS[key].map(k => [k,draftVersions.get(k)])); }
+function makeDraftStatus(key, target) {
+  const bar = document.createElement('div'); bar.className = 'draft-status'; bar.dataset.draftStatus = key; bar.hidden = true;
+  const status = document.createElement('span'); status.setAttribute('role','status'); bar.append(status);
+  const reset = translated('button','reset','button quiet small'); reset.type = 'button';
+  reset.onclick = () => {
+    clearDraft(GROUPS[key]);
+    if (key === 'orientation-form') { orientationDrafts.delete($('orientation-board').value); orientationValue(); }
+    else if (state) hydrateSettings(state.settings);
+  };
+  const actions=document.createElement('div'); actions.className='draft-actions'; actions.append(reset);
+  const save=translated('button','save','button primary small');save.type='button';
+  save.onclick=()=>{
+    if(key==='audio')$('save-audio').click();
+    else if(key==='noise-form')$('save-noise').click();
+    else $(key).requestSubmit();
+  };
+  actions.append(save);bar.append(actions); target.append(bar);
+}
 let frame = new Uint8Array(192), frameChanges = 0, paintScheduled = false;
 const text = key => (WORDS[key] || [key, key])[language === 'en_US' ? 1 : 0];
 const setText = (id, value) => { const e = $(id); if (e.textContent !== String(value ?? '')) e.textContent = value ?? ''; };
@@ -105,9 +167,10 @@ function translatePage() {
   document.querySelectorAll('[data-t]').forEach(e => { e.textContent = text(e.dataset.t); });
   document.querySelectorAll('[data-aria]').forEach(e => e.setAttribute('aria-label', text(e.dataset.aria)));
   document.querySelectorAll('[data-title]').forEach(e => { e.title = text(e.dataset.title); e.setAttribute('aria-label', e.title); });
+  hydratedRevision = -1;
   $('language').textContent = language === 'en_US' ? '中文' : 'EN';
   $('language').setAttribute('aria-label', language === 'en_US' ? '切換繁體中文介面' : 'Switch to English');
-  renderState(state);
+  renderState(state); renderDrafts();
 }
 
 function navigate(page) {
@@ -120,7 +183,9 @@ function navigate(page) {
 
 async function command(action, payload = {}, messageId = 'connection-error') {
   if (!backend) { message(messageId, text('notReady'), true); $(messageId).hidden = false; return false; }
-  return new Promise(resolve => backend.command(action, JSON.stringify(payload), response => {
+  const key = `${action}:${JSON.stringify(payload)}`;
+  if (pending.has(key)) return pending.get(key);
+  const task = new Promise(resolve => backend.command(action, JSON.stringify(payload), response => {
     try {
       const result = JSON.parse(response);
       if (!result.ok) { message(messageId, localMessage(result.error), true); $(messageId).hidden = false; }
@@ -128,13 +193,19 @@ async function command(action, payload = {}, messageId = 'connection-error') {
       resolve(Boolean(result.ok));
     } catch (error) { message(messageId, String(error), true); $(messageId).hidden = false; resolve(false); }
   }));
+  pending.set(key, task);
+  try { return await task; } finally { pending.delete(key); }
 }
 
+function revealControl(e) {
+  for (let parent = e.parentElement; parent; parent = parent.parentElement) if (parent.tagName === 'DETAILS') parent.open = true;
+  e.scrollIntoView({block:'center'}); e.focus();
+}
 function numeric(id) {
   const e = $(id), value = Number(e.value.trim());
   const valid = e.value.trim() !== '' && Number.isFinite(value) && value >= Number(e.dataset.min) && value <= Number(e.dataset.max) && (e.dataset.number !== 'int' || Number.isInteger(value));
-  e.setCustomValidity(valid ? '' : text('invalidNumber'));
-  if (!valid) { e.reportValidity(); throw new Error(text('invalidNumber')); }
+  e.setCustomValidity(valid ? '' : text('invalidNumber')); e.setAttribute('aria-invalid',String(!valid));
+  if (!valid) { revealControl(e); e.reportValidity(); throw new Error(text('invalidNumber')); }
   return value;
 }
 
@@ -166,8 +237,16 @@ function makeFields() {
     input.dataset.number = 'int'; input.dataset.min = key === 'voice_idle_seconds' ? '0' : '1'; input.dataset.max = '86400';
     unit.append(input, translated('span', 'seconds')); label.append(unit); $('timers-form').append(label);
   });
-  const save = translated('button', 'saveTimers', 'button primary'); save.type = 'submit'; $('timers-form').append(save);
+  const save = translated('button', 'saveTimers', 'button primary'); save.id = 'save-timers'; save.type = 'submit'; $('timers-form').append(save);
+  makeDraftStatus('timers-form', $('timers-form').parentElement);
+  makeDraftStatus('noise-form', $('noise-form'));
+  makeDraftStatus('audio', $('audio-details').querySelector('.region-content'));
+  makeDraftStatus('orientation-form', $('orientation-form').parentElement);
+  document.querySelectorAll('[data-number]').forEach(e => {
+    e.setAttribute('aria-description', `${text('allowedRange')}: ${e.dataset.min}–${e.dataset.max}`);
+  });
 }
+
 
 const NOISE_IDS = {
   'noise-rising':'noise_rising_db', 'noise-loud':'noise_loud_db', 'rising-exit':'noise_rising_exit_db', 'loud-exit':'noise_loud_exit_db',
@@ -187,29 +266,30 @@ async function saveInputSettings(event, messageId) {
     const corrections = {};
     for (const line of $('corrections').value.split('\n').filter(s => s.trim())) {
       const match = line.match(/^\s*(.+?)\s*[=＝]\s*(.+?)\s*$/);
-      if (!match) { message(messageId, text('invalidCorrection'), true); return; }
+      if (!match) { revealControl($('corrections')); message(messageId, text('invalidCorrection'), true); return; }
       corrections[match[1]] = match[2];
     }
     payload.corrections = corrections;
-    if (await command('save_input_settings', payload, messageId)) {
-      dirty.delete('noise-form'); dirty.delete('voice-form');
-      message(messageId, text('saved'));
-    }
+    await saveDraft('noise-form', $('save-noise'), 'save_input_settings', payload, messageId);
   } catch (_) {}
 }
 
+function setField(id, value) {
+  const e = $(id), next = String(value ?? '');
+  if (document.activeElement !== e && e.value !== next) e.value = next;
+}
 function hydrateSettings(settings) {
-  if (!dirty.has('timers-form')) TIMERS.forEach(k => { $(k).value = settings[k]; });
+  if (!dirty.has('timers-form')) TIMERS.forEach(k => { setField(k, settings[k]); });
   if (!dirty.has('noise-form') && !dirty.has('voice-form')) {
     $('speech-noise-guard').checked = settings.speech_noise_guard !== false;
-    Object.entries(NOISE_IDS).forEach(([id, key]) => { $(id).value = settings[key]; });
+    Object.entries(NOISE_IDS).forEach(([id, key]) => { setField(id, settings[key]); });
     ['rising_db','loud_db','rising_exit_db','loud_exit_db'].forEach((key, i) => {
-      $(['discussion-rising','discussion-loud','discussion-rising-exit','discussion-loud-exit'][i]).value = settings.discussion_noise[key];
+      setField(['discussion-rising','discussion-loud','discussion-rising-exit','discussion-loud-exit'][i], settings.discussion_noise[key]);
     });
-    MODES.forEach(mode => { $(`alias-${mode}`).value = (settings.command_aliases[mode] || []).join(', '); });
-    $('corrections').value = Object.entries(settings.command_corrections || {}).map(([a,b]) => `${a} = ${b}`).join('\n');
+    MODES.forEach(mode => { setField(`alias-${mode}`, (settings.command_aliases[mode] || []).join(', ')); });
+    setField('corrections', Object.entries(settings.command_corrections || {}).map(([a,b]) => `${a} = ${b}`).join('\n'));
   }
-  if (!dirty.has('audio')) { $('audio-volume').value = settings.audio_volume_percent; $('audio-fade').value = settings.audio_fade_ms; }
+  if (!dirty.has('audio')) { setField('audio-volume', settings.audio_volume_percent); setField('audio-fade', settings.audio_fade_ms); }
   MODES.forEach(mode => {
     const file = settings.audio_files[mode.toLowerCase()] || '', name = file.split(/[\\/]/).pop();
     setText(`audio-name-${mode}`, name || text('noAudio')); $(`audio-name-${mode}`).title = file;
@@ -224,7 +304,7 @@ function updateOptions(select, values, selected) {
     select.replaceChildren(...values.map(([value, label]) => { const e = document.createElement('option'); e.value = value; e.textContent = label; return e; }));
     select.dataset.options = signature;
   }
-  if (selected !== undefined && document.activeElement !== select) select.value = selected;
+  if (selected !== undefined && document.activeElement !== select && select.value !== String(selected)) select.value = selected;
 }
 
 function orientationValue() {
@@ -283,7 +363,7 @@ function renderState(value) {
   setText('countdown', current.remaining_seconds === null ? '' : `${Math.ceil(current.remaining_seconds)} ${text('seconds')}`);
   setText('pattern-label', text(patternKey(current)));
   $('stop-audio-live').hidden = !statuses.audio?.playing;
-  document.querySelectorAll('[data-mode]').forEach(e => { const selected = e.dataset.mode === current.mode; e.classList.toggle('selected', selected); e.setAttribute('aria-pressed', String(selected)); });
+  document.querySelectorAll('[data-mode]').forEach(e => { const selected = e.dataset.mode === current.mode; e.classList.toggle('selected', selected); if(e.getAttribute('aria-pressed')!==String(selected))e.setAttribute('aria-pressed', String(selected)); });
   setText('question-duration', `${settings.question_seconds} ${text('seconds')}`);
   document.querySelectorAll('.feedback-duration').forEach(e => { e.textContent = `${settings.feedback_seconds} ${text('seconds')}`; });
   [['voice-toggle',settings.voice_enabled,'voiceOff','voiceOn'],['noise-toggle',current.noise_enabled,'noiseOff','noiseOn']].forEach(([id,on,a,b]) => {
@@ -291,6 +371,8 @@ function renderState(value) {
   });
   const noiseMode = ['NOTICE','DISCUSSION'].includes(current.base_mode);
   $('noise-toggle').disabled = !noiseMode || !statuses.microphone.available;
+  $('noise-toggle').title = $('noise-toggle').disabled ? text('noiseUnavailable') : '';
+  $('stop-audio').disabled = !statuses.audio?.playing;
   $('stop-audio-live').hidden = !statuses.audio?.playing;
   const active = state.boards.filter(b => b.enabled !== false), online = active.filter(b => b.status === 'connected');
   const boardKey = !statuses.output.enabled ? 'boardStatusPaused' : online.length ? 'boardStatusConnected' : active.some(b=>['error','conflict'].includes(b.status)) ? 'boardStatusError' : active.length ? 'boardStatusConnecting' : 'idle';
@@ -307,29 +389,42 @@ function renderState(value) {
   const n = state.noise, level = Number.isFinite(n.dbfs) ? `${n.dbfs.toFixed(1)} dBFS` : '— dBFS';
   setText('live-dbfs', level); setText('noise-reading', level + (n.speech_excluded ? ` · ${text('speechExcluded')}` : n.speech_guard_ready === false ? ` · ${text('vadPreparing')}` : Number.isFinite(n.relative_db) ? ` · ${n.relative_db >= 0 ? '+' : ''}${n.relative_db.toFixed(1)} dB` : ''));
   $('noise-reading').title=$('noise-reading').textContent;
+  $('capture-warning').hidden = !n.capture_overloaded;
+  setText('capture-warning', n.capture_overloaded ? text('captureOverloaded') : '');
+  setText('input-age', `${text('inputAge')}: ${Number.isFinite(n.age_ms) ? Math.round(n.age_ms)+' ms' : '—'}`);
+  setText('capture-lag', `${text('captureLag')}: ${Number.isFinite(n.capture_lag_ms) ? Math.round(n.capture_lag_ms)+' ms' : '—'}`);
+  setText('capture-dropped', `${text('captureDropped')}: ${n.capture_dropped || 0}`);
   $('live-meter').value = Number.isFinite(n.dbfs) ? Math.max(-100,n.dbfs) : -100;
   $('calibration-progress').value = n.calibration_progress || 0; $('calibrate').disabled = state.busy.calibration || !statuses.microphone.available;
   $('calibrate').textContent = state.busy.calibration ? text('calibrating') : text('calibrate');
   setText('transcript', state.transcript.corrected || state.transcript.raw || text(state.transcript.active ? 'listening' : 'noSpeech'));
-  $('transcript').title = state.transcript.raw || ''; setText('command-result', localMessage(state.transcript.status));
-  renderBoards(state.boards);
+  $('transcript').title = state.transcript.raw || ''; setText('command-result', n.capture_overloaded ? text('captureOverloaded') : localMessage(state.transcript.status));
+  $('command-result').title = $('command-result').textContent;
+  const boardSignature = JSON.stringify([language,state.boards]);
+  if ($('board-list').dataset.signature !== boardSignature) { renderBoards(state.boards); $('board-list').dataset.signature = boardSignature; }
   updateOptions($('microphone'), (state.microphones.length ? state.microphones : [{id:'',name:''}]).map(m=>[m.id, m.id ? m.name : text('defaultMic')]), settings.microphone_device_id);
   const networks = state.networks.map(n=>[n.cidr, `${n.name} · ${n.cidr}`]), selectedNetwork = $('network').value;
   const networkSelection = networks.some(([cidr])=>cidr===selectedNetwork) ? selectedNetwork : networks[0]?.[0];
-  updateOptions($('network'), networks, networkSelection);
+  updateOptions($('network'), networks.length ? networks : [['',text('noNetworks')]], networkSelection);
+  $('network').disabled = !networks.length; $('network').title = !networks.length ? text('noNetworks') : '';
+  if (networks.length <= 1) $('network-details').hidden = true;
+  $('network-help').hidden = networks.length > 0;
+  $('scan-network').disabled = state.busy.scan || !networks.length;
+  $('scan-button').setAttribute('aria-expanded',String(!$('network-details').hidden));
   $('scan-button').disabled = state.busy.scan || !state.networks.length; $('scan-button').textContent = text(state.busy.scan ? 'searching' : 'search');
   $('connect-button').disabled = state.busy.connect; $('connect-button').textContent = text(state.busy.connect ? 'connecting' : 'connectBoard');
   const foundSignature = JSON.stringify([language,state.found_boards]);
   if ($('found-boards').dataset.signature !== foundSignature) {
+    const selectedFound = new Set(Array.from($('found-boards').querySelectorAll('input:checked'), e=>e.value));
     const entries = state.found_boards.map(b => {
       const row=document.createElement('label'); row.className='found-panel';
-      const check=document.createElement('input'); check.type='checkbox'; check.value=b.ip; check.dataset.foundPanel='';
+      const check=document.createElement('input'); check.type='checkbox'; check.value=b.ip; check.dataset.foundPanel=''; check.checked=selectedFound.has(b.ip);
       check.setAttribute('aria-label',`${text('selectPanel')} ${b.name || 'WLED'} ${b.ip}`);
       const identity=document.createElement('span'); const name=document.createElement('strong'),ip=document.createElement('small');
       name.textContent=b.name || 'WLED'; ip.textContent=`${b.ip} · ${b.mac}`; identity.append(name,ip); row.append(check,identity); return row;
     });
     if(entries.length){
-      const add=translated('button','addSelected','button primary'); add.id='add-selected-boards'; add.type='button'; add.disabled=true;
+      const add=translated('button','addSelected','button primary'); add.id='add-selected-boards'; add.type='button'; add.disabled=!entries.some(row=>row.querySelector('input').checked);
       entries.forEach(row=>{row.querySelector('input').onchange=()=>{add.disabled=!$('found-boards').querySelector('input:checked');};});
       add.onclick=()=>command('add_found',{ips:Array.from($('found-boards').querySelectorAll('input:checked'),e=>e.value)},'board-message');
       entries.push(add);
@@ -337,7 +432,7 @@ function renderState(value) {
     $('found-boards').replaceChildren(...entries);
     $('found-boards').dataset.signature = foundSignature;
   }
-  ['board','noise','voice','audio','timers'].forEach(key => { if (state.messages[key]) message(`${key}-message`, localMessage(state.messages[key])); });
+  ['board','noise','voice','audio','timers'].forEach(key => { const e=$(`${key}-message`), value=state.messages[key]; if (value && e.dataset.serverMessage !== `${language}:${value}`) { e.dataset.serverMessage=`${language}:${value}`; message(e.id, localMessage(value)); } });
 }
 
 function requestPaint() {
@@ -348,7 +443,7 @@ function requestPaint() {
 
 function paintMatrix() {
     if($('page-classroom').hidden) return;
-    const canvas=$('matrix'), ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true}), box=$('matrix-stage').getBoundingClientRect();
+    const canvas=$('matrix'), ctx=canvas.getContext('2d',{alpha:false}), box=$('matrix-stage').getBoundingClientRect();
     const size=Math.max(1,Math.floor(Math.min(box.width,box.height))), dpr=window.devicePixelRatio || 1;
     canvas.style.width=`${size}px`; canvas.style.height=`${size}px`;
     if (canvas.width !== Math.round(size*dpr)) { canvas.width=Math.round(size*dpr); canvas.height=canvas.width; }
@@ -374,21 +469,42 @@ function wireEvents() {
   $('save-noise').addEventListener('click', event => event.stopPropagation());
   $('save-audio').addEventListener('click', event => event.stopPropagation());
   $('connect-form').onsubmit=e=>{e.preventDefault();command('connect',{ip:$('board-ip').value.trim()},'board-message');};
-  $('scan-button').onclick=()=>command('scan',{cidr:$('network').value},'board-message');
+  $('scan-button').setAttribute('aria-controls','network-details');
+  $('scan-button').onclick=()=>{
+    if (!state?.networks.length) return;
+    if (state.networks.length === 1) { command('scan',{cidr:state.networks[0].cidr},'board-message'); return; }
+    $('network-details').hidden = !$('network-details').hidden;
+    $('scan-button').setAttribute('aria-expanded',String(!$('network-details').hidden));
+    if (!$('network-details').hidden) $('network').focus();
+  };
+  $('scan-network').onclick=()=>command('scan',{cidr:$('network').value},'board-message');
   $('refresh-microphones').onclick=()=>command('refresh_microphones',{},'noise-message');
   $('microphone').onchange=()=>command('microphone',{device_id:$('microphone').value},'noise-message');
   $('calibrate').onclick=()=>command('calibrate',{},'noise-message');
-  $('orientation-board').onchange=()=>{dirty.delete('orientation-form');orientationValue();};
-  $('orientation-form').onsubmit=async e=>{e.preventDefault();if(await command('orientation',{mac:$('orientation-board').value,rotation:Number($('rotation').value),serpentine:$('serpentine').checked,mirror_x:$('mirror-x').checked,mirror_y:$('mirror-y').checked},'board-message'))dirty.delete('orientation-form');};
-  $('timers-form').onsubmit=async e=>{e.preventDefault();try{const p=Object.fromEntries(TIMERS.map(k=>[k,numeric(k)]));if(await command('save_timers',p,'timers-message'))dirty.delete('timers-form');}catch(_) {}};
+  let orientationSelection = '';
+  $('orientation-board').addEventListener('focus',()=>{orientationSelection=$('orientation-board').value;});
+  $('orientation-board').onchange=()=>{
+    if (dirty.has('orientation-form') && orientationSelection) orientationDrafts.set(orientationSelection, ['rotation','serpentine','mirror-x','mirror-y'].map(id=>$(id).type==='checkbox'?$(id).checked:$(id).value));
+    dirty.delete('orientation-form'); orientationValue(); orientationSelection=$('orientation-board').value;
+    const draft=orientationDrafts.get(orientationSelection);
+    if (draft) { ['rotation','serpentine','mirror-x','mirror-y'].forEach((id,i)=>{if($(id).type==='checkbox')$(id).checked=draft[i];else $(id).value=draft[i];}); markDirty('orientation-form'); }
+    renderDrafts();
+  };
+  $('orientation-form').onsubmit=async e=>{e.preventDefault();await saveDraft('orientation-form',e.target.querySelector('button[type=submit]'),'orientation',{mac:$('orientation-board').value,rotation:Number($('rotation').value),serpentine:$('serpentine').checked,mirror_x:$('mirror-x').checked,mirror_y:$('mirror-y').checked},'board-message');};
+  $('timers-form').onsubmit=async e=>{e.preventDefault();try{const p=Object.fromEntries(TIMERS.map(k=>[k,numeric(k)]));await saveDraft('timers-form',$('save-timers'),'save_timers',p,'timers-message');}catch(_) {}};
   $('noise-form').onsubmit=e=>saveInputSettings(e,'noise-message');
   $('voice-form').onsubmit=e=>saveInputSettings(e,'voice-message');
-  $('save-audio').onclick=async()=>{try{if(await command('audio_settings',{volume_percent:numeric('audio-volume'),fade_ms:numeric('audio-fade')},'audio-message')){dirty.delete('audio');message('audio-message',text('saved'));}}catch(_) {}};
+  $('save-audio').onclick=async()=>{try{await saveDraft('audio',$('save-audio'),'audio_settings',{volume_percent:numeric('audio-volume'),fade_ms:numeric('audio-fade')},'audio-message');}catch(_) {}};
   ['stop-audio','stop-audio-live'].forEach(id=>{$(id).onclick=()=>command('stop_audio',{},'audio-message');});
-  document.addEventListener('input',e=>{e.target.setCustomValidity?.('');const form=e.target.closest('form');if(form)dirty.add(form.id);if(['audio-volume','audio-fade'].includes(e.target.id))dirty.add('audio');});
-  document.addEventListener('change',e=>{const form=e.target.closest('form');if(form)dirty.add(form.id);});
+  document.addEventListener('input',e=>{e.target.setCustomValidity?.(''); e.target.removeAttribute('aria-invalid');const form=e.target.closest('form');if(form)markDirty(form.id);if(['audio-volume','audio-fade'].includes(e.target.id))markDirty('audio');});
+  document.addEventListener('change',e=>{const form=e.target.closest('form');if(form && e.target.id!=='orientation-board')markDirty(form.id);});
   // Numeric controls are text inputs. Selects also reject wheel changes, focused or not.
-  document.addEventListener('wheel',e=>{if(e.target.closest('input,select,textarea'))e.preventDefault();},{capture:true,passive:false});
+  document.addEventListener('wheel',e=>{if(e.target.closest('input,select'))e.preventDefault();},{capture:true,passive:false});
+  document.querySelectorAll('[data-section]').forEach(button=>button.onclick=()=>{
+    const section=$(button.dataset.section);
+    for (let e=section;e;e=e.parentElement) if(e.tagName==='DETAILS')e.open=true;
+    section.scrollIntoView({block:'start'}); section.querySelector('summary').focus({preventScroll:true});
+  });
   new ResizeObserver(requestPaint).observe($('matrix-stage'));
 }
 

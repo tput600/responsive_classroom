@@ -1,9 +1,9 @@
-# One Windows + macOS desktop candidate
+# One Windows + macOS desktop package
 
 The combined archive contains the complete Windows x64 portable application and
 one universal2 macOS application. Intel and Apple Silicon Macs use the same app.
 The macOS minimum deployment target is **macOS 14.0**. This is a packaging
-candidate, not a publication command or a claim of completed manual acceptance.
+package, not a publication command or a claim of completed manual acceptance.
 
 ## Recipient layout
 
@@ -29,7 +29,7 @@ ResponsiveClassroom-Desktop-v3.1.0.zip
   executable permissions survive, then open `macOS/ResponsiveClassroom.app`.
   Keep the entire app bundle intact. The native runtime is included; recipients
   do not install Python. Nested helper apps inside the main app are normal.
-- The macOS candidate does **not** have an Apple Developer ID signature and is
+- The macOS package does **not** have an Apple Developer ID signature and is
   **not notarized**. Ad-hoc signing is not Developer ID distribution approval.
   If macOS blocks it, stop and obtain a properly signed/notarized build from the
   maintainer. Do not disable Gatekeeper, the Chromium sandbox or other security
@@ -51,7 +51,7 @@ Run the standard-library-only helper on macOS (recommended) or Linux with a POSI
 macOS can preserve non-0777 symlink permissions; Linux rejects such inputs
 explicitly rather than changing a sealed bundle’s recorded permissions.
 Inputs must already have passed their platform build and frozen model/UI checks.
-The macOS input must be the universal2 candidate, not either thin-architecture
+The macOS input must be the universal2 package, not either thin-architecture
 ZIP. The assembler does not execute either application or publish anything.
 
 ```sh
@@ -123,7 +123,7 @@ The helper:
   staging path or the runner umask. Native application builds themselves are not
   claimed to be reproducible.
 - Re-extracts the final ZIP safely, compares all recorded modes/bytes/links, and
-  validates both original manifests again before exposing the new candidate.
+  validates both original manifests again before exposing the new package.
 
 The root manifest's architecture labels come from the verified universal2 build
 pipeline, not a new binary audit performed by this wrapper. Retain native Mach-O
@@ -142,3 +142,7 @@ PYTHONPATH=source python -m unittest tests.test_desktop_archive -v
 These use synthetic executable bytes and do not launch software, use the network,
 access the microphone or prove real native compatibility. Native build tests and
 manual acceptance remain separate.
+
+## Publication cleanup in v3.1.0
+
+The old Windows-only release workflow, three-archive cross-platform publisher, and one-time v3.0.3 draft recovery workflow have been retired. Their Git history and published releases remain intact. There is one current publication entry point, the manual `publish-unified.yml`; `macos.yml` remains an artifact-only architecture-specific diagnostic. The assembly output is not automatically published.

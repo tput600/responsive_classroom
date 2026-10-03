@@ -192,14 +192,14 @@ jobs:
           python source/tools/assemble_desktop_archive.py \
             --windows inputs/ResponsiveClassroom-Portable-windows-x64-v3.1.0.zip \
             --macos inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.0.zip \
-            --version 3.1.0 --output artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0-candidate.zip \
+            --version 3.1.0 --output artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip \
             --report build/reports/unified-integrity.json --validation-evidence validation-evidence.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ResponsiveClassroom-AllPlatforms-v3.1.0-candidate
+          name: ResponsiveClassroom-AllPlatforms-v3.1.0
           path: |
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0-candidate.zip
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0-candidate.zip.sha256
+            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip
+            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip.sha256
             build/reports/unified-integrity.json
           if-no-files-found: error
           compression-level: 0

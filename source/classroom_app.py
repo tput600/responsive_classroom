@@ -245,7 +245,8 @@ def ui_smoke_report(path,captures=False):
                       return {width:innerWidth,height:innerHeight,scrollX:page.scrollWidth-page.clientWidth,scrollY:page.scrollHeight-page.clientHeight,
                         clipped:controls.filter(e=>{const b=e.getBoundingClientRect();return b.left<r.left-.5||b.right>r.right+.5||b.top<r.top-.5||b.bottom>r.bottom+.5||b.width<1||b.height<1}).map(e=>e.id||e.dataset.mode),
                         minimumModeHeight:Math.min(...Array.from(document.querySelectorAll('[data-mode]'),e=>e.getBoundingClientRect().height))};})())'''))
-                    geometry['language']=language
+                    geometry.update({'language':language,'requested_width':width,'requested_height':height,
+                                     'actual_viewport':{'width':geometry['width'],'height':geometry['height']}})
                     report['layouts'].append(geometry)
                     if captures:
                         deadline=time.monotonic()+.2
@@ -261,10 +262,11 @@ def ui_smoke_report(path,captures=False):
                     headers=json.loads(_javascript(app,window,'''JSON.stringify(['input-details','audio-details'].map(id=>{
                       const s=document.querySelector(`#${id}>summary`),r=s.getBoundingClientRect(),
                         h=s.querySelector('h2').getBoundingClientRect(),b=s.querySelector('button').getBoundingClientRect();
-                      return {page:'settings-header',id,scrollX:s.scrollWidth-s.clientWidth,
+                      return {page:'settings-header',id,width:innerWidth,height:innerHeight,scrollX:s.scrollWidth-s.clientWidth,
                         clipped:b.right>r.right+.5||b.left<h.right-1};}))'''))
                     for header in headers:
-                        header.update({'width':width,'language':language})
+                        header.update({'requested_width':width,'requested_height':720,'language':language,
+                                       'actual_viewport':{'width':header['width'],'height':header['height']}})
                     report['layouts'].extend(headers)
                 window.resize(1040,720)
                 for page in ('connection','timers'):

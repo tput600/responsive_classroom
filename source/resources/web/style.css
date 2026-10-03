@@ -121,3 +121,20 @@ html,body{overflow:hidden}
 .board-table .action-column{width:68px}
 .board-table .icon-button{width:44px;min-height:44px}
 @media(max-width:650px){.board-table .action-column{width:56px}}
+/* Settings: predictable navigation and visible draft boundaries. */
+.settings-heading{margin-bottom:14px;padding-bottom:14px}.settings-nav{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:2;background:var(--canvas);padding:10px 0 14px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.settings-nav button{min-height:40px;border:1px solid var(--line);border-radius:7px;background:var(--surface);padding:6px 14px;color:var(--teal);font-weight:600}.settings-nav button:hover{background:var(--soft)}
+.settings-region,.voice-region{scroll-margin-top:76px}.settings-region .section-help{margin-top:0;margin-bottom:14px;max-width:80ch}.settings-region .region-content{padding-top:16px}
+.draft-status{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff4dc;border:1px solid #dfc489;border-radius:8px;padding:10px 12px;margin-top:16px;color:#664a15;font-size:13px}.draft-status .button{background:transparent;color:inherit;border-color:#b99a60}
+#noise-form>.draft-status{margin-top:18px}.timer-content>.draft-status{margin-top:20px}.field input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--error)}
+.audio-diagnostics{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--muted);padding:8px 0 14px}.audio-diagnostics span{font-variant-numeric:tabular-nums}
+@media(max-width:650px){.settings-nav{gap:6px;padding:8px 0}.settings-nav button{padding:5px 9px;font-size:12px}.settings-region,.voice-region{scroll-margin-top:104px}.timer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px}.timer-grid>.field>span:first-child{font-size:13px}.timer-grid>.button{font-size:13px}.noise-feedback{flex-wrap:wrap}.numeric-reading{white-space:normal!important}.draft-status{gap:8px}.audio-file{grid-template-columns:minmax(0,1fr) auto 40px 40px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+.form-message:empty,#found-boards:empty{display:none}.board-region .empty-state{padding:12px}.settings-region .region-content>.section-help{margin-bottom:12px}
+.draft-actions{display:flex;gap:8px;flex:none}.draft-status .button.primary{background:var(--teal);border-color:var(--teal);color:white}
+
+.capture-warning{background:#fff4dc;color:#664a15;border-left:3px solid #bc8d31;padding:10px 12px;margin:8px 0;font-size:13px}
+
+/* One panel-add flow; choose a subnet only when more than one is available. */
+.board-add-flow{grid-template-columns:minmax(0,1fr) auto;gap:10px 12px}.board-add-flow>.connection-toolbar{min-width:0}.board-add-flow>.network-choice{grid-column:1/-1;display:flex;flex-wrap:wrap;background:var(--soft);border-radius:8px;padding:12px;gap:10px}.network-choice label{font-size:13px;font-weight:500}.network-choice select{flex:1;min-width:180px}.board-add-flow>#network-help{grid-column:1/-1;margin:0;font-size:12px}.board-add-flow>.connection-toolbar>input{flex-basis:auto}.board-add-flow>#scan-button{align-self:start}
+@media(max-width:650px){.board-add-flow{grid-template-columns:minmax(0,1fr)}.board-add-flow>#scan-button{justify-self:start}.network-choice label{flex-basis:100%}.network-choice select{min-width:0;flex-basis:100%}}

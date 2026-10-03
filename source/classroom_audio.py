@@ -31,6 +31,7 @@ class NoiseReading:
     calibration_result: dict | None = None
     speech_excluded: bool = False
     speech_guard_ready: bool = True
+    captured_at: float = 0.0
 
 
 class NoiseAnalyzer:
@@ -249,7 +250,7 @@ class NoiseAnalyzer:
                             else AudioHealth.UNCALIBRATED,
                             completed_calibration,
                             excluded,
-                            not guard_unavailable)
+                            not guard_unavailable, now)
 
     def _advance_state(self, relative_db: float, now: float, profile: NoiseProfile) -> None:
         settings = self.settings
@@ -361,6 +362,10 @@ class SenseVoiceSpeech:
         # Noise exclusion must not inherit the sensitive command VAD's gain.
         # A separate Silero detector observes the original microphone waveform.
         config.silero_vad.threshold = 0.5
+        # Meter guarding needs fast onset, not the command endpoint delay.
+        # NoiseAnalyzer adds its own 350 ms recovery hold after this detector.
+        config.silero_vad.min_speech_duration = 0.096
+        config.silero_vad.min_silence_duration = 0.16
         config.silero_vad.max_speech_duration = 30.0
         self.noise_vad = sherpa_onnx.VoiceActivityDetector(config, 32.0)
         # Keep quiet speech audible to Silero while limiting the gain of already
@@ -432,6 +437,13 @@ class SenseVoiceSpeech:
 
 
 @dataclass(frozen=True)
+class CaptureFrame:
+    samples: object
+    captured_at: float
+    sequence: int
+
+
+@dataclass(frozen=True)
 class SpeechJob:
     samples: object
     revision: int
@@ -441,6 +453,31 @@ class SpeechJob:
     partial: bool = False
 
 
+class SpeechJobQueue(queue.Queue):
+    """Keep one final and one live probe; live traffic cannot erase an endpoint."""
+
+    def __init__(self):
+        super().__init__(maxsize=2)
+
+    def put_latest(self, job):
+        with self.not_empty:
+            pending = list(self.queue)
+            if isinstance(job, SpeechJob):
+                # A final replaces its own speculative window. A newer final
+                # supersedes the older final, so overload remains bounded.
+                keep = [item for item in pending if isinstance(item, SpeechJob)
+                        and not item.partial and job.partial]
+                if keep and (keep[0].epoch, keep[0].utterance) == (job.epoch, job.utterance):
+                    return True
+                self.queue.clear()
+                self.queue.extend(keep[-1:])
+            else:
+                self.queue.clear()
+            self.queue.append(job)
+            self.not_empty.notify()
+            return bool(pending)
+
+
 class RollingCommandBuffer:
     """Bounded raw-audio context for command checks during continuous speech."""
 
@@ -448,6 +485,7 @@ class RollingCommandBuffer:
     window_samples = 19200  # 1.2 seconds; do not wait for the whole window.
     hop_samples = 4000      # 250 ms between checks.
     minimum_samples = 5120  # Same 320 ms minimum as the ordinary decoder.
+    preroll_samples = 7680  # 480 ms preserves consonants before VAD onset.
 
     def __init__(self):
         self._chunks = deque()
@@ -456,6 +494,12 @@ class RollingCommandBuffer:
         self._last_active = None
         self.utterance = 0
         self.revision = 0
+
+    def finish(self):
+        """Close the endpoint without lending its command to the next window."""
+        self._chunks.clear()
+        self._size = 0
+        self._last_active = None
 
     def push(self, samples, active: bool, revision: int):
         import numpy as np
@@ -466,8 +510,13 @@ class RollingCommandBuffer:
         self._chunks.append(values.copy())
         self._size += values.size
         self._total += values.size
-        while self._size > self.window_samples:
-            excess = self._size - self.window_samples
+        # During a long pause keep onset context, not the previous command.
+        limit = (self.window_samples if active or
+                 (self._last_active is not None and
+                  self._total - self._last_active <= int(.45 * self.sample_rate))
+                 else self.preroll_samples if self.utterance else self.window_samples)
+        while self._size > limit:
+            excess = self._size - limit
             head = self._chunks.popleft()
             removed = min(excess, head.size)
             self._size -= removed
@@ -511,7 +560,7 @@ class AudioRuntime:
         self.noise.sample_rate = self.sample_rate
         self.latest: NoiseReading | None = None
         self._queue: queue.Queue = queue.Queue(maxsize=12)
-        self._jobs: queue.Queue = queue.Queue(maxsize=1)
+        self._jobs: queue.Queue = SpeechJobQueue()
         self._commands: queue.Queue = queue.Queue(maxsize=8)
         self._stop = threading.Event()
         self._listen = threading.Event()
@@ -519,6 +568,11 @@ class AudioRuntime:
         self._failed_devices: set[int] = set()
         self._thread = self._decoder = None
         self._stream = self._vad = None
+        self._capture_sequence = 0
+        self.capture_dropped = 0
+        self.capture_lag_seconds = 0.0
+        self.capture_overloaded = False
+        self._capture_recovery_until = 0.0
         self.set_listening(settings.voice_enabled)
 
     @staticmethod
@@ -617,7 +671,9 @@ class AudioRuntime:
 
     @staticmethod
     def _enqueue_latest_job(jobs: queue.Queue, job) -> bool:
-        """Keep at most the newest pending utterance while decoding is busy."""
+        """Keep final/live work bounded; legacy queues retain latest-only behavior."""
+        if isinstance(jobs, SpeechJobQueue):
+            return jobs.put_latest(job)
         replaced = False
         while True:
             try:
@@ -635,7 +691,8 @@ class AudioRuntime:
                          now: float | None = None) -> bool:
         current_time = time.monotonic() if now is None else now
         age = current_time - queued_at
-        return (0.0 <= age <= 3.0 and epoch == self._epoch and
+        return (not self._stop.is_set() and not self.capture_overloaded and
+                0.0 <= age <= 3.0 and epoch == self._epoch and
                 revision == self.manual_revision() and self._listen.is_set() and
                 not self.noise.is_calibrating)
 
@@ -739,17 +796,23 @@ class AudioRuntime:
                 self.on_status('microphone', ok, text)
 
         def callback(indata, _frames, _time, flags):
+            self._capture_sequence += 1
+            # A timestamp survives queueing: old audio must never become a new
+            # command merely because the consumer has only just dequeued it.
             if flags.input_overflow:
+                self._capture_sequence += 1  # force a discontinuity reset
                 try:
                     self._commands.put_nowait(('overflow', 0))
                 except queue.Full:
                     pass
+            frame = CaptureFrame(indata[:, 0].copy(), time.monotonic(), self._capture_sequence)
             try:
-                self._queue.put_nowait(indata[:, 0].copy())
+                self._queue.put_nowait(frame)
             except queue.Full:
                 try:
                     self._queue.get_nowait()
-                    self._queue.put_nowait(indata[:, 0].copy())
+                    self.capture_dropped += 1
+                    self._queue.put_nowait(frame)
                 except (queue.Empty, queue.Full):
                     pass
 
@@ -778,14 +841,16 @@ class AudioRuntime:
                     last_stale = last_block
                     silence_started = None
                     previous_active = False
+                    vad_was_running = False
                     calibration_vad_active = False
                     epoch = self._epoch
                     revision = self.manual_revision()
                     rolling = RollingCommandBuffer()
+                    last_sequence = None
                     retry = 0
                     while not self._stop.is_set():
                         try:
-                            raw = self._queue.get(timeout=.15)
+                            frame = self._queue.get(timeout=.15)
                         except queue.Empty:
                             idle = time.monotonic() - last_block
                             if idle > 2 or not stream.active:
@@ -802,6 +867,38 @@ class AudioRuntime:
                             continue
                         now = last_block = time.monotonic()
                         last_stale = now
+                        raw = frame.samples
+                        self.capture_lag_seconds = max(0.0, now - frame.captured_at)
+                        discontinuous = (last_sequence is not None and
+                                         frame.sequence != last_sequence + 1)
+                        last_sequence = frame.sequence
+                        if discontinuous or self.capture_lag_seconds > .15:
+                            self._capture_recovery_until = now + .5
+                            self.capture_overloaded = True
+                            status(False, '收音處理落後；請降低系統負載或重新選擇麥克風')
+                            # Dropped samples cannot be concatenated into a word,
+                            # a speech hold, or a calibration interval.
+                            self._epoch += 1
+                            rolling = RollingCommandBuffer()
+                            resampler = soxr.ResampleStream(self.sample_rate, 16000, 1,
+                                                           dtype='float32')
+                            if self._vad is not None:
+                                self._vad.reset()
+                            epoch = self._epoch
+                            if previous_active:
+                                self.on_voice(False)
+                            previous_active = False
+                            self.noise._last_feed = None
+                            self.noise._smooth.clear()
+                            self.noise._candidate = None
+                            self.noise.state = NoiseState.UNKNOWN
+                            self.noise._speech_started = self.noise._speech_last = None
+                            self.noise._speech_resume_after = 0.0
+                            self.noise._calibration_last_feed = None
+                            if self.capture_lag_seconds > .15:
+                                self.capture_dropped += 1
+                                continue
+                        self.capture_overloaded = now < self._capture_recovery_until
                         try:
                             action, value = self._commands.get_nowait()
                             if action == 'calibrate':
@@ -819,6 +916,7 @@ class AudioRuntime:
                                       mode in (BaseMode.NOTICE, BaseMode.DISCUSSION)))
                         segments = []
                         if vad is not None and needs_vad:
+                            vad_was_running = True
                             if epoch != self._epoch:
                                 vad.reset()
                                 if previous_active and self._listen.is_set():
@@ -827,6 +925,10 @@ class AudioRuntime:
                                 epoch = self._epoch
                                 rolling = RollingCommandBuffer()
                             if not was_calibrating and calibration_vad_active:
+                                # A new rolling identity must not collide with
+                                # the decoder's pre-calibration deduplication key.
+                                self._epoch += 1
+                                epoch = self._epoch
                                 vad.reset()
                                 calibration_vad_active = False
                                 previous_active = False
@@ -835,7 +937,7 @@ class AudioRuntime:
                                 revision = self.manual_revision()
                             resampled = resampler.resample_chunk(raw, last=False)
                             segments = vad.accept(resampled)
-                            speech_active = vad.noise_speech_active
+                            speech_active = None if self.capture_overloaded else vad.noise_speech_active
                             partial = (rolling.push(resampled, vad.active, self.manual_revision())
                                        if self._listen.is_set() and not was_calibrating else None)
                             if was_calibrating:
@@ -851,15 +953,18 @@ class AudioRuntime:
                         else:
                             speech_active = None
                             partial = None
-                            if vad is not None and previous_active:
+                            if vad is not None and vad_was_running:
                                 vad.reset()
+                                resampler = soxr.ResampleStream(self.sample_rate, 16000, 1,
+                                                               dtype='float32')
+                                vad_was_running = False
                                 if self._listen.is_set():
                                     self.on_voice(False)
                                 previous_active = False
                                 epoch = self._epoch
                                 rolling = RollingCommandBuffer()
                         try:
-                            self.latest = self.noise.feed(raw, now=now, classify=should_classify,
+                            self.latest = self.noise.feed(raw, now=frame.captured_at, classify=should_classify,
                                                           mode=mode, context_revision=context_revision,
                                                           speech_active=speech_active)
                         except ValueError as exc:
@@ -876,7 +981,8 @@ class AudioRuntime:
                                 status(False, '沒有收到聲音，請取消麥克風靜音或改選輸入')
                         else:
                             silence_started = None
-                            status(True, '麥克風正在收音' if not self.latest.clipped else '聲音削波，請降低系統麥克風音量')
+                            if not self.capture_overloaded:
+                                status(True, '麥克風正在收音' if not self.latest.clipped else '聲音削波，請降低系統麥克風音量')
                         if now - last_meter >= .1:
                             self.on_noise(self.latest)
                             last_meter = now
@@ -887,12 +993,14 @@ class AudioRuntime:
                         if partial is not None:
                             samples, utterance, captured_revision = partial
                             self._enqueue_latest_job(self._jobs, SpeechJob(
-                                samples, captured_revision, epoch, time.monotonic(), utterance, True))
+                                samples, captured_revision, epoch, frame.captured_at, utterance, True))
                         for samples in segments:
                             self._enqueue_latest_job(
                                 self._jobs,
                                 SpeechJob(samples, rolling.revision if rolling.utterance else revision, epoch,
-                                          time.monotonic(), rolling.utterance))
+                                          frame.captured_at, rolling.utterance))
+                        if segments:
+                            rolling.finish()
             except Exception as exc:
                 if not self._stop.is_set():
                     self._epoch += 1  # Results captured before a disconnect are stale.

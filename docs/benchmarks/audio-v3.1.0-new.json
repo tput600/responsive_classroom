@@ -1,0 +1,462 @@
+{
+  "realtime_replays": {
+    "wrong/clean": {
+      "callback_to_first_command_s": 1.1296563409996452,
+      "capture_dropped": 0
+    },
+    "continuous/clean": {
+      "callback_to_first_command_s": 1.4840354480002134,
+      "capture_dropped": 0
+    }
+  },
+  "method": "Synthetic eSpeak NG en-us 150 wpm; 16 kHz/10 ms frames; seed 73. Audio timestamps exclude inference and capture scheduling; decode timings are measured separately. Not natural classroom accuracy.",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "sherpa_onnx": "1.13.8",
+  "module_sha256": "ec993d991e8c92e129cab9b9b1a7d6710991a676ab2836aa025d44ac7cc50550",
+  "results": [
+    {
+      "case": "question/clean",
+      "expected": "QUESTION",
+      "detected": false,
+      "fixture_sha256": "90d002580b1648978a4576cb424417b8a6a2acd1b3b866bd0853c67ae10c27b1",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 1.64,
+      "noise_guard_onset_s": 0.71,
+      "last_guard_s": 1.43,
+      "onset_delay_s": 0.1550625,
+      "guard_tail_s": 0.258375,
+      "decode_p50_s": 0.06452380900009302,
+      "decode_p95_s": 0.07555070639864425,
+      "decode_calls": 5,
+      "transcripts": []
+    },
+    {
+      "case": "question/quiet",
+      "expected": "QUESTION",
+      "detected": false,
+      "fixture_sha256": "c40c0059f073e3f0b524135f5fe268ce0f6f5f9f92f85c3dcbefb0b9b4384f98",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 1.67,
+      "noise_guard_onset_s": 0.74,
+      "last_guard_s": 1.82,
+      "onset_delay_s": 0.18506250000000002,
+      "guard_tail_s": 0.6483750000000001,
+      "decode_p50_s": 0.06135943300250801,
+      "decode_p95_s": 0.0701426606014138,
+      "decode_calls": 5,
+      "transcripts": []
+    },
+    {
+      "case": "question/snr10",
+      "expected": "QUESTION",
+      "detected": false,
+      "fixture_sha256": "938df9e354fea947364d45ee53bdbbbead54f92c24a8551d1de317f1e2d81f5f",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 1.5,
+      "onset_delay_s": 0.21506250000000005,
+      "guard_tail_s": 0.3283750000000001,
+      "decode_p50_s": 0.06567054700099106,
+      "decode_p95_s": 0.0817413997501717,
+      "decode_calls": 6,
+      "transcripts": []
+    },
+    {
+      "case": "notice/clean",
+      "expected": "NOTICE",
+      "detected": false,
+      "fixture_sha256": "38d8ef64b7e69716d4125b0b75e4458588d48bcc631e2d156b120d4f02135586",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 1.48,
+      "noise_guard_onset_s": 0.64,
+      "last_guard_s": 1.31,
+      "onset_delay_s": 0.14,
+      "guard_tail_s": 0.26693750000000005,
+      "decode_p50_s": 0.06029015450076258,
+      "decode_p95_s": 0.06899236199933512,
+      "decode_calls": 4,
+      "transcripts": []
+    },
+    {
+      "case": "notice/quiet",
+      "expected": "NOTICE",
+      "detected": false,
+      "fixture_sha256": "9d8d4eff71e17a287807ac7c0ee3aa40a7cc19eba07ba94a97fd0aaf4380c979",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 1.54,
+      "noise_guard_onset_s": 0.68,
+      "last_guard_s": 1.75,
+      "onset_delay_s": 0.18000000000000005,
+      "guard_tail_s": 0.7069375,
+      "decode_p50_s": 0.0637360449982225,
+      "decode_p95_s": 0.07052880639967044,
+      "decode_calls": 5,
+      "transcripts": []
+    },
+    {
+      "case": "notice/snr10",
+      "expected": "NOTICE",
+      "detected": false,
+      "fixture_sha256": "f89753022737a1d3ff8a4d5594003025547dde1db13422f0ac426383fed897d4",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": 0.68,
+      "last_guard_s": 1.34,
+      "onset_delay_s": 0.18000000000000005,
+      "guard_tail_s": 0.2969375000000001,
+      "decode_p50_s": 0.066564095499416,
+      "decode_p95_s": 0.06927877949874528,
+      "decode_calls": 6,
+      "transcripts": []
+    },
+    {
+      "case": "wrong/clean",
+      "expected": "WRONG",
+      "detected": true,
+      "fixture_sha256": "7e3b150df885f7f1794fa5e60b1176f9ba8730bf38bffba076bcd6109339251f",
+      "first_command_audio_s": 1.02,
+      "first_endpoint_audio_s": 1.51,
+      "noise_guard_onset_s": 0.64,
+      "last_guard_s": 1.34,
+      "onset_delay_s": 0.14,
+      "guard_tail_s": 0.2951250000000001,
+      "decode_p50_s": 0.058304857499024365,
+      "decode_p95_s": 0.06666165905007801,
+      "decode_calls": 4,
+      "transcripts": [
+        {
+          "at": 1.02,
+          "partial": true,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        },
+        {
+          "at": 1.27,
+          "partial": true,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        },
+        {
+          "at": 1.51,
+          "partial": false,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        }
+      ]
+    },
+    {
+      "case": "wrong/quiet",
+      "expected": "WRONG",
+      "detected": true,
+      "fixture_sha256": "d5aee943342b10c6162f1ee1744b22dde6d21d2cd3c999a8ecda1396d0529a58",
+      "first_command_audio_s": 1.02,
+      "first_endpoint_audio_s": 1.57,
+      "noise_guard_onset_s": 1.16,
+      "last_guard_s": 1.56,
+      "onset_delay_s": 0.6599999999999999,
+      "guard_tail_s": 0.515125,
+      "decode_p50_s": 0.06241837900233804,
+      "decode_p95_s": 0.06996166600001744,
+      "decode_calls": 5,
+      "transcripts": [
+        {
+          "at": 1.02,
+          "partial": true,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        },
+        {
+          "at": 1.27,
+          "partial": true,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        },
+        {
+          "at": 1.52,
+          "partial": true,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        },
+        {
+          "at": 1.57,
+          "partial": false,
+          "text": "Wrong.",
+          "intent": "WRONG"
+        }
+      ]
+    },
+    {
+      "case": "wrong/snr10",
+      "expected": "WRONG",
+      "detected": false,
+      "fixture_sha256": "03897d987d102e51f3e62cd6134596ef2d813ad164a6805333c698ddff8fe30e",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 1.34,
+      "onset_delay_s": 0.27,
+      "guard_tail_s": 0.2951250000000001,
+      "decode_p50_s": 0.06693134099987219,
+      "decode_p95_s": 0.07254900700063445,
+      "decode_calls": 5,
+      "transcripts": []
+    },
+    {
+      "case": "sentence/clean",
+      "expected": "CORRECT",
+      "detected": false,
+      "fixture_sha256": "106c906594fc819fe3772ae5dc297029515f8a448e64bcc7c2e482af08dd8848",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 2.21,
+      "noise_guard_onset_s": 0.68,
+      "last_guard_s": 1.98,
+      "onset_delay_s": 0.1670625,
+      "guard_tail_s": 0.1828749999999999,
+      "decode_p50_s": 0.06618525700105238,
+      "decode_p95_s": 0.07354871120078314,
+      "decode_calls": 7,
+      "transcripts": []
+    },
+    {
+      "case": "sentence/quiet",
+      "expected": "CORRECT",
+      "detected": false,
+      "fixture_sha256": "ef6bef65c5f06f29b3f6671e7fe5ed1b2e9ad01f7708ad6532279c48caa67808",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": 2.28,
+      "noise_guard_onset_s": 0.71,
+      "last_guard_s": 2.33,
+      "onset_delay_s": 0.19706249999999992,
+      "guard_tail_s": 0.532875,
+      "decode_p50_s": 0.06668366899975808,
+      "decode_p95_s": 0.07840176264835463,
+      "decode_calls": 8,
+      "transcripts": []
+    },
+    {
+      "case": "sentence/snr10",
+      "expected": "CORRECT",
+      "detected": false,
+      "fixture_sha256": "9fac266ea50a369df76bb06a05f1a6e195406bd80c1827cf199c1627dd05d8a8",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": 0.71,
+      "last_guard_s": 2.01,
+      "onset_delay_s": 0.19706249999999992,
+      "guard_tail_s": 0.2128749999999997,
+      "decode_p50_s": 0.0664764089997334,
+      "decode_p95_s": 0.07150888020187267,
+      "decode_calls": 9,
+      "transcripts": []
+    },
+    {
+      "case": "continuous/clean",
+      "expected": "QUESTION",
+      "detected": true,
+      "fixture_sha256": "a924edc9c241c57a2a77b761c3f72bb8cf55246a6e4e63451eccdbf24f8ce340",
+      "first_command_audio_s": 1.37,
+      "first_endpoint_audio_s": 4.74,
+      "noise_guard_onset_s": 0.74,
+      "last_guard_s": 4.76,
+      "onset_delay_s": 0.18506250000000002,
+      "guard_tail_s": 0.20756249999999987,
+      "decode_p50_s": 0.06709460799902445,
+      "decode_p95_s": 0.09414737980114289,
+      "decode_calls": 17,
+      "transcripts": [
+        {
+          "at": 1.37,
+          "partial": true,
+          "text": "Last question.",
+          "intent": "QUESTION"
+        },
+        {
+          "at": 1.62,
+          "partial": true,
+          "text": "Last question.",
+          "intent": "QUESTION"
+        },
+        {
+          "at": 4.74,
+          "partial": false,
+          "text": "Last question and please tell me what you think about this answer.",
+          "intent": "QUESTION"
+        }
+      ]
+    },
+    {
+      "case": "continuous/quiet",
+      "expected": "QUESTION",
+      "detected": true,
+      "fixture_sha256": "5f5b0f6a1d9bf3bd15d7a755a6c0222fba9901dfe3fde40dc85a995b0db0197d",
+      "first_command_audio_s": 4.71,
+      "first_endpoint_audio_s": 4.71,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 5.08,
+      "onset_delay_s": 0.21506250000000005,
+      "guard_tail_s": 0.5275625000000002,
+      "decode_p50_s": 0.06678773100065882,
+      "decode_p95_s": 0.09136861220031271,
+      "decode_calls": 17,
+      "transcripts": [
+        {
+          "at": 4.71,
+          "partial": false,
+          "text": "Cl question. and please tell me what you think out this answer.",
+          "intent": "QUESTION"
+        }
+      ]
+    },
+    {
+      "case": "continuous/snr10",
+      "expected": "QUESTION",
+      "detected": true,
+      "fixture_sha256": "5f9f28cd8bc854b53bafcd6dd1016d43ef22fb429beb1dddcc79a99d9b706644",
+      "first_command_audio_s": 4.9,
+      "first_endpoint_audio_s": 4.9,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 4.95,
+      "onset_delay_s": 0.21506250000000005,
+      "guard_tail_s": 0.39756250000000026,
+      "decode_p50_s": 0.06721430600009626,
+      "decode_p95_s": 0.09497363019981997,
+      "decode_calls": 17,
+      "transcripts": [
+        {
+          "at": 4.9,
+          "partial": false,
+          "text": "Last question and please tell me what you think come out this answer.",
+          "intent": "QUESTION"
+        }
+      ]
+    },
+    {
+      "case": "pause/clean",
+      "expected": "QUESTION",
+      "detected": true,
+      "fixture_sha256": "84e25ba1eab25b7705ea0568f1eff1d8330b035bacbfa5e8bc90a50a914f28ea",
+      "first_command_audio_s": 2.53,
+      "first_endpoint_audio_s": 2.53,
+      "noise_guard_onset_s": 0.74,
+      "last_guard_s": 2.36,
+      "onset_delay_s": 0.18506250000000002,
+      "guard_tail_s": 0.26831249999999995,
+      "decode_p50_s": 0.06757274099982169,
+      "decode_p95_s": 0.07856495900123263,
+      "decode_calls": 8,
+      "transcripts": [
+        {
+          "at": 2.53,
+          "partial": false,
+          "text": "Last question.",
+          "intent": "QUESTION"
+        }
+      ]
+    },
+    {
+      "case": "pause/quiet",
+      "expected": "QUESTION",
+      "detected": true,
+      "fixture_sha256": "ea201ccb102e85b59390ad6c7c096c6be28402b76fbf3c59abae4c716ed99e92",
+      "first_command_audio_s": 2.6,
+      "first_endpoint_audio_s": 2.6,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 2.62,
+      "onset_delay_s": 0.21506250000000005,
+      "guard_tail_s": 0.5283125000000002,
+      "decode_p50_s": 0.06694345600044471,
+      "decode_p95_s": 0.07913579279847908,
+      "decode_calls": 9,
+      "transcripts": [
+        {
+          "at": 2.6,
+          "partial": false,
+          "text": "Cl question.",
+          "intent": "QUESTION"
+        }
+      ]
+    },
+    {
+      "case": "pause/snr10",
+      "expected": "QUESTION",
+      "detected": false,
+      "fixture_sha256": "c6a5105b60163ae80551a371772843c6e2e632b2f3f5c1e86957109518080c92",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": 0.77,
+      "last_guard_s": 2.43,
+      "onset_delay_s": 0.21506250000000005,
+      "guard_tail_s": 0.33831250000000024,
+      "decode_p50_s": 0.07547470799909206,
+      "decode_p95_s": 0.08793140979978488,
+      "decode_calls": 9,
+      "transcripts": []
+    },
+    {
+      "case": "white_noise",
+      "expected": null,
+      "detected": false,
+      "fixture_sha256": "fc7537ea90966a02739a88f032ffc7cc86d2ee4771a8c9c3afe9abd86bbce299",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": null,
+      "last_guard_s": null,
+      "onset_delay_s": null,
+      "guard_tail_s": null,
+      "decode_p50_s": null,
+      "decode_p95_s": null,
+      "decode_calls": 0,
+      "transcripts": []
+    },
+    {
+      "case": "fan_hum",
+      "expected": null,
+      "detected": false,
+      "fixture_sha256": "d9c34e7394189186255a71be5b46f2e4be3e4911021147e7959b18d4e7343032",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": null,
+      "last_guard_s": null,
+      "onset_delay_s": null,
+      "guard_tail_s": null,
+      "decode_p50_s": null,
+      "decode_p95_s": null,
+      "decode_calls": 0,
+      "transcripts": []
+    },
+    {
+      "case": "impacts",
+      "expected": null,
+      "detected": false,
+      "fixture_sha256": "1f8d980b82a165c993518bb17625726f07e1f7315bcb1a35f4f039ede3f2ddd8",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": null,
+      "last_guard_s": null,
+      "onset_delay_s": null,
+      "guard_tail_s": null,
+      "decode_p50_s": null,
+      "decode_p95_s": null,
+      "decode_calls": 0,
+      "transcripts": []
+    },
+    {
+      "case": "silence",
+      "expected": null,
+      "detected": false,
+      "fixture_sha256": "ea0787f65f73b0013d03b359490e3125211b28ad5c1502ffb1544c0ded4192f5",
+      "first_command_audio_s": null,
+      "first_endpoint_audio_s": null,
+      "noise_guard_onset_s": null,
+      "last_guard_s": null,
+      "onset_delay_s": null,
+      "guard_tail_s": null,
+      "decode_p50_s": null,
+      "decode_p95_s": null,
+      "decode_calls": 0,
+      "transcripts": []
+    }
+  ]
+}

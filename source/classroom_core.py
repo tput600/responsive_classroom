@@ -211,17 +211,17 @@ class Settings:
                 raise ValueError(f"calibration {key} is invalid")
         if c["sample_rate"] is not None and (not isinstance(c["sample_rate"], int) or isinstance(c["sample_rate"], bool) or c["sample_rate"] <= 0):
             raise ValueError("calibration sample_rate is invalid")
-        if not isinstance(self.brightness_percent, int) or not 1 <= self.brightness_percent <= 80:
+        if not isinstance(self.brightness_percent, int) or isinstance(self.brightness_percent, bool) or not 1 <= self.brightness_percent <= 80:
             raise ValueError("brightness_percent must be from 1 to 80")
         if not isinstance(self.gamma_enabled, bool):
             raise ValueError("gamma_enabled must be a boolean")
         if not isinstance(self.gamma, (int, float)) or isinstance(self.gamma, bool) or not 0.5 <= self.gamma <= 5:
             raise ValueError("gamma must be from 0.5 to 5")
-        if not isinstance(self.renderer_fps, int) or not 5 <= self.renderer_fps <= 60:
+        if not isinstance(self.renderer_fps, int) or isinstance(self.renderer_fps, bool) or not 5 <= self.renderer_fps <= 60:
             raise ValueError("renderer_fps must be from 5 to 60")
         for name in ("minimum_transition_ms", "default_fade_ms"):
             value = getattr(self, name)
-            if not isinstance(value, int) or not 0 <= value <= 1000:
+            if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 1000:
                 raise ValueError(f"{name} must be from 0 to 1000 milliseconds")
         if (not isinstance(self.max_flash_hz, (int, float)) or isinstance(self.max_flash_hz, bool)
                 or not 0.1 <= self.max_flash_hz <= 2.0):
@@ -229,7 +229,7 @@ class Settings:
         if (not isinstance(self.red_flash_hz, (int, float)) or isinstance(self.red_flash_hz, bool)
                 or not 0.1 <= self.red_flash_hz <= self.max_flash_hz):
             raise ValueError("red_flash_hz must be within the configured flash limit")
-        if self.rotation_direction not in {"clockwise", "counterclockwise"}:
+        if not isinstance(self.rotation_direction, str) or self.rotation_direction not in {"clockwise", "counterclockwise"}:
             raise ValueError("rotation_direction must be clockwise or counterclockwise")
         for name in ("noise_rising_db", "noise_loud_db", "noise_rising_enter_seconds",
                      "noise_loud_enter_seconds", "noise_rising_exit_db",
@@ -237,7 +237,7 @@ class Settings:
             value = getattr(self, name)
             if not isinstance(value, (int, float)) or isinstance(value, bool) or not 0 < value <= 120:
                 raise ValueError(f"{name} must be a number from 0 to 120")
-        if not isinstance(self.noise_smoothing_ms, int) or not 100 <= self.noise_smoothing_ms <= 5000:
+        if not isinstance(self.noise_smoothing_ms, int) or isinstance(self.noise_smoothing_ms, bool) or not 100 <= self.noise_smoothing_ms <= 5000:
             raise ValueError("noise_smoothing_ms must be from 100 to 5000")
         if self.noise_loud_db <= self.noise_rising_db:
             raise ValueError("Loud threshold must exceed Rising threshold")
@@ -249,7 +249,7 @@ class Settings:
                 self.discussion_noise["rising_exit_db"] > self.discussion_noise["rising_db"] or
                 self.discussion_noise["loud_exit_db"] > self.discussion_noise["loud_db"]):
             raise ValueError("discussion_noise thresholds are invalid")
-        if self.language not in {"zh_TW", "en_US"}:
+        if not isinstance(self.language, str) or self.language not in {"zh_TW", "en_US"}:
             raise ValueError("language must be zh_TW or en_US")
         if (not isinstance(self.debug_rest, bool) or not isinstance(self.voice_enabled, bool) or
                 not isinstance(self.speech_noise_guard, bool)):
@@ -258,9 +258,9 @@ class Settings:
             raise ValueError("setup_complete must be a boolean")
         if not isinstance(self.session_logging_enabled, bool):
             raise ValueError("session_logging_enabled must be a boolean")
-        if not isinstance(self.audio_volume_percent, int) or not 0 <= self.audio_volume_percent <= 100:
+        if not isinstance(self.audio_volume_percent, int) or isinstance(self.audio_volume_percent, bool) or not 0 <= self.audio_volume_percent <= 100:
             raise ValueError("audio_volume_percent must be from 0 to 100")
-        if not isinstance(self.audio_fade_ms, int) or not 0 <= self.audio_fade_ms <= 10000:
+        if not isinstance(self.audio_fade_ms, int) or isinstance(self.audio_fade_ms, bool) or not 0 <= self.audio_fade_ms <= 10000:
             raise ValueError("audio_fade_ms must be from 0 to 10000")
         if (not isinstance(self.audio_reactive_modes, dict) or
                 set(self.audio_reactive_modes) != set(_default_audio_files()) or
@@ -272,9 +272,13 @@ class Settings:
             raise ValueError("stt_test_phrase must contain 1 to 120 characters")
         if not isinstance(self.microphone_device_id, str):
             raise ValueError("microphone_device_id must be a string")
-        if self.noise_baseline_dbfs is not None and not -120 <= self.noise_baseline_dbfs <= 0:
+        if self.noise_baseline_dbfs is not None and (
+                not isinstance(self.noise_baseline_dbfs, (int, float)) or
+                isinstance(self.noise_baseline_dbfs, bool) or not -120 <= self.noise_baseline_dbfs <= 0):
             raise ValueError("noise_baseline_dbfs must be between -120 and 0")
-        if self.spl_calibration_offset_db is not None and not -80 <= self.spl_calibration_offset_db <= 80:
+        if self.spl_calibration_offset_db is not None and (
+                not isinstance(self.spl_calibration_offset_db, (int, float)) or
+                isinstance(self.spl_calibration_offset_db, bool) or not -80 <= self.spl_calibration_offset_db <= 80):
             raise ValueError("spl_calibration_offset_db must be between -80 and 80")
         color_names = set(_default_colors())
         if not isinstance(self.colors, dict) or set(self.colors) != color_names:
@@ -308,12 +312,12 @@ class Settings:
                 raise ValueError(f"{name} ring and comet brightness must decrease from head to tail")
         if self.pattern_levels["orange"][0] > 5:
             raise ValueError("orange ring background must not exceed 5 percent")
-        if set(self.rest_end_periods) != {"stage_a", "stage_b", "stage_c"} or any(
+        if not isinstance(self.rest_end_periods, dict) or set(self.rest_end_periods) != {"stage_a", "stage_b", "stage_c"} or any(
             not isinstance(v, (int, float)) or isinstance(v, bool) or not 0.25 <= v <= 60
             for v in self.rest_end_periods.values()
         ):
             raise ValueError("rest_end_periods must define three periods from 0.25 to 60 seconds")
-        if set(self.rest_end_stage_seconds) != {"stage_a", "stage_b"} or any(
+        if not isinstance(self.rest_end_stage_seconds, dict) or set(self.rest_end_stage_seconds) != {"stage_a", "stage_b"} or any(
             not isinstance(v, (int, float)) or isinstance(v, bool) or not 0.1 <= v <= 86400
             for v in self.rest_end_stage_seconds.values()
         ) or self.rest_end_stage_seconds["stage_a"] <= self.rest_end_stage_seconds["stage_b"]:
@@ -349,7 +353,19 @@ class Settings:
         for board in self.wled_devices:
             if not isinstance(board, dict):
                 raise ValueError("Each WLED board setting must be an object")
-            ipaddress.ip_address(str(board.get("ip", "")))
+            ipaddress.IPv4Address(str(board.get("ip", "")))
+            for name in ("name", "version", "mac"):
+                if name in board and not isinstance(board[name], str):
+                    raise ValueError(f"WLED {name} must be a string")
+            if "rotation" in board and (type(board["rotation"]) is not int or
+                                        board["rotation"] not in (0, 90, 180, 270)):
+                raise ValueError("WLED rotation must be 0, 90, 180, or 270")
+            if "led_count" in board and (type(board["led_count"]) is not int or
+                                         not 1 <= board["led_count"] <= 4096):
+                raise ValueError("WLED LED count must be between 1 and 4096")
+            for name in ("mirror_x", "mirror_y", "serpentine"):
+                if name in board and not isinstance(board[name], bool):
+                    raise ValueError(f"WLED {name} must be a boolean")
             mac = str(board.get("mac", "")).lower()
             if not mac or mac in macs:
                 raise ValueError("Each WLED board must have a unique MAC address")
@@ -412,7 +428,11 @@ class SettingsRepository:
             return Settings()
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                raise ValueError("Settings must be a JSON object")
             version = data.pop("schema_version", 0)
+            if type(version) is not int:
+                raise ValueError("Settings schema_version must be an integer")
             if version == 0:
                 old_rest = data.pop("rest_debug_seconds", 10)
                 migrated = Settings(
@@ -572,13 +592,42 @@ class SettingsRepository:
                     data["discussion_noise"] = defaults.discussion_noise
             data.pop("schema_version", None)
             allowed = Settings.__dataclass_fields__.keys()
-            settings = Settings(**{k: v for k, v in data.items() if k in allowed})
+            values = {k: v for k, v in data.items() if k in allowed}
+            try:
+                settings = Settings(**values)
+            except (ValueError, TypeError):
+                if version != SCHEMA_VERSION:
+                    raise
+                # Recover unrelated preferences without overwriting the damaged
+                # file. Older schemas still use their established migration path.
+                return self._recover_current(values)
             if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
                 self.save(settings)
             return settings
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
             log.warning("Could not load settings from %s; using defaults: %s", self.path, exc)
             return Settings()
+
+    def _recover_current(self, values: dict) -> Settings:
+        # Validate coupled values together so valid custom pairs (for example
+        # rising/loud thresholds) are not tested against incompatible defaults.
+        groups = [
+            ("noise_rising_db", "noise_loud_db", "noise_rising_exit_db", "noise_loud_exit_db"),
+            ("max_flash_hz", "red_flash_hz"),
+        ]
+        grouped = {key for group in groups for key in group}
+        groups.extend((key,) for key in values if key not in grouped)
+        recovered = {}
+        for group in groups:
+            candidate = {key: values[key] for key in group if key in values}
+            try:
+                Settings(**{**recovered, **candidate})
+            except (ValueError, TypeError) as exc:
+                log.warning("Ignoring invalid settings field(s) %s in %s: %s",
+                            ", ".join(group), self.path, exc)
+            else:
+                recovered.update(candidate)
+        return Settings(**recovered)
 
     def save(self, settings: Settings) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

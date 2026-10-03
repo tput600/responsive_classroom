@@ -1,4 +1,4 @@
-"""Assemble one verified Windows + universal2 macOS candidate; never publish it.
+"""Assemble one verified Windows + universal2 macOS release package; never publish it.
 
 Run on a POSIX filesystem so macOS symlinks and executable modes can be checked.
 Only the standard library is needed. Platform builds and native smoke tests must
@@ -250,7 +250,7 @@ def verify_macos(root, version):
 
 
 def readme(version):
-    return f'''Responsive Classroom {version} - Windows + macOS 桌面候選包
+    return f'''Responsive Classroom {version} - Windows + macOS 桌面整合包
 
 Windows x64：完整解壓縮後，開啟 Windows/ResponsiveClassroom.exe。
 請保留 Windows/_internal 及其他檔案，不要只移動 EXE；不需另裝 Python。
@@ -261,7 +261,7 @@ macOS 14 或更新版本：Intel 與 Apple Silicon 共用一個 universal2 App�
 原生模型／介面自動測試與人工驗收不同；兩種 Mac 都仍需檢查 Finder 啟動、
 麥克風／區域網路權限、實體音訊裝置及 Gatekeeper。
 
-這是候選包，尚未核准公開發佈。Mac App 沒有 Apple Developer ID 簽章，
+Mac App 沒有 Apple Developer ID 簽章，
 也未公證；臨時簽章不代表 Gatekeeper 會接受。如果系統阻擋，請停止並向
 維護者取得正式簽章／公證版本。不要關閉 Gatekeeper、Chromium 沙箱或
 其他安全保護。Blue Danube 錄音的再散布授權尚未獨立確認；來源標註
@@ -280,7 +280,7 @@ retain symlinks and executable modes. Keep the complete app intact. Native
 model/UI smoke tests are separate from manual Finder, microphone/local-network
 consent, physical-device and Gatekeeper acceptance on both architectures.
 
-This candidate is not an approved public release. The macOS app has no Apple
+The macOS app has no Apple
 Developer ID signature and is not notarized. Ad-hoc signing does not guarantee
 Gatekeeper acceptance. If blocked, stop and obtain a properly signed/notarized
 build from the maintainer. Do not disable Gatekeeper, Chromium's sandbox or
@@ -349,7 +349,7 @@ def assemble(windows, macos, output, *, version, validation_evidence=None):
         (root / 'README.txt').chmod(0o644)
         manifest = {
             'schema_version': 1, 'app': 'Responsive Classroom', 'version': version,
-            'kind': 'combined-desktop-candidate',
+            'kind': 'combined-desktop-release',
             'platforms': ['windows-x64', 'macos-universal2'],
             'macos': {'minimum_system_version': '14.0', 'architectures': ['arm64', 'x86_64'],
                       'developer_id_signed': False, 'notarized': False,
@@ -384,7 +384,7 @@ def assemble(windows, macos, output, *, version, validation_evidence=None):
         verify_windows(restored / 'Windows', version)
         verify_macos(restored / 'macOS', version)
         digest = sha256(candidate)
-        report = {'status': 'ok', 'version': version, 'candidate': True,
+        report = {'status': 'ok', 'version': version, 'candidate': False,
                   'archive': output.name, 'archive_bytes': candidate.stat().st_size,
                   'expanded_bytes': expanded, 'archive_sha256': digest,
                   'manifest_entries': len(manifest['files']),
@@ -402,7 +402,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--windows', required=True, type=Path, help='Verified Windows x64 portable ZIP')
     parser.add_argument('--macos', required=True, type=Path, help='Verified universal2 macOS ZIP')
-    parser.add_argument('--output', required=True, type=Path, help='New combined candidate ZIP')
+    parser.add_argument('--output', required=True, type=Path, help='New combined desktop ZIP')
     parser.add_argument('--version', required=True, help='Exact version shared by both payloads')
     parser.add_argument('--report', type=Path, help='Optional assembly-only integrity report JSON')
     parser.add_argument('--validation-evidence', type=Path, help='Optional existing native test evidence JSON to retain')

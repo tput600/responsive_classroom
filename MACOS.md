@@ -2,29 +2,26 @@
 
 ## 狀態 / Status
 
-v3.0.3 的 Mac 候選包必須通過對應架構的原生建置及 frozen smoke tests 才會發佈。這些自動檢查不能替代 macOS 的 Finder 啟動、CoreAudio 收音、TCC 權限與 Gatekeeper 驗證。Windows EXE 無法直接在 macOS 開啟。
+v3.1.0 的整合包同時包含 `Windows/ResponsiveClassroom.exe` 與 `macOS/ResponsiveClassroom.app`。Mac 是單一 universal2 App，包含 Intel x86_64 與 Apple Silicon arm64 執行碼，目標為 macOS 14 或更新版本。請使用 Mac「封存工具程式」完整解壓，不要搬出 App 內的執行檔。
 
-The release pipeline requires native builds and frozen smoke tests on each Mac architecture. These automated checks are not full user acceptance: Finder launch, CoreAudio capture, TCC permissions, and Gatekeeper still need manual validation.
-
-- 本次候選封裝目標為 macOS 14 或更新版本；目前依賴解析可能選到 NumPy 的 macOS 14 wheel，因此不宣稱支援 macOS 13。Candidate bundles target macOS 14+; the selected NumPy wheel may require 14 even though Qt supports 13.
-- 分開建置 Apple Silicon (`arm64`) 與 Intel (`x86_64`)，不要把兩者合稱 universal2。Build each architecture on its native runner using a matching Python 3.12 interpreter.
-- 不共用 Windows、Intel 或 Rosetta 建立的 `.venv`。Use a fresh checkout and native virtual environment for each architecture.
-- 所有模型及原生套件在首次建置時下載；完成的 `.app` 才能離線執行。Initial setup downloads dependencies and verified models; the completed bundle is offline-capable.
+The release gate runs the exact same universal2 Mac archive natively on Intel and Apple Silicon, checks every Mach-O binary for both slices, verifies ad-hoc signatures before and after extraction, and exercises the offline model and WebEngine UI. These checks do not replace Finder, physical audio devices, TCC permissions, or Gatekeeper acceptance.
 
 ## 在 Mac 建置 / Build on a Mac
 
-在已安裝原生 Python 3.12 的 Mac，從 repository 根目錄執行：
+使用原生 macOS 14+ 與 Xcode/Command Line Tools SDK 14+，從 repository 根目錄執行。腳本會依固定版本與 SHA-256 從官方來源編譯 CPython 3.12.15、OpenSSL 與 liblzma，再建立通用依賴環境；初次建置需要網際網路。
 
 ```sh
-python3.12 -c 'import platform; print(platform.machine())'
-python3.12 source/tools/setup_environment.py --dev --models
-.venv/bin/python -m unittest discover -s source/tests -t source -v
-.venv/bin/python source/tools/build_release.py
+bash source/tools/build_universal_python.sh "$HOME/responsive-universal-python"
+"$HOME/responsive-universal-python/bin/python3.12" source/tools/setup_environment.py --models
+.venv/bin/python source/tools/prepare_universal_macos.py
+RESPONSIVE_CLASSROOM_MAC_ARCH=universal2 .venv/bin/python source/tools/build_release.py
 ```
 
-`artifacts/` contains the architecture-specific ZIP and SHA-256 checksum; `build/reports/` contains build and smoke-test evidence. Keep the complete `.app` intact when moving it. Do not move its executable or edit files inside it. Manuals and release manifests are placed beside the bundle to avoid invalidating the code signature.
+Python安裝目錄必須是新的空目錄；不要沿用其他架構的 `.venv`。開發用 Ruff/Bandit/pip-audit 放在另一個環境，不混入成品。`artifacts/` 包含 universal2 ZIP 與 SHA-256，`build/reports/` 包含檢查證據。模型與函式庫在打包完成後可離線使用。
 
-建置必須在 macOS 完成，不能從 Linux 交叉打包。Build on macOS, not via Linux cross-compilation. The manual **Build macOS candidates** workflow prepares artifacts without publication. **Build and release desktop packages** publishes only after all three platform builds pass. Consult the exact release commit and linked Actions run for evidence.
+The **Build unified desktop candidate** workflow builds Windows and universal2 macOS, runs the identical Mac archive on both native runner architectures, then assembles one all-platform ZIP. Publication is separate and requires the successful exact-commit evidence. Optional architecture-specific builds remain available through **Build macOS candidates** for diagnosis.
+
+Manuals and manifests live outside the signed app. Do not edit files inside the `.app` after signing.
 
 ## 麥克風與區域網路 / Microphone and local network
 

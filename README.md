@@ -1,4 +1,4 @@
-# 課堂小幫手 Responsive Classroom 3.0.3
+# 課堂小幫手 Responsive Classroom 3.1.0
 
 [English](README.en.md) · 繁體中文
 
@@ -12,13 +12,16 @@
 
 先在 WLED 完成控制板燒錄、Wi-Fi 連線與 8×8（64 顆 LED）設定，並確認電腦和燈板位於可互通的區域網路。程式不負責初次燒錄或 Wi-Fi 配網。校園或公共 Wi-Fi 若隔離裝置，請改用允許彼此連線的網路。
 
-在 Windows x64 上，直接開啟 `ResponsiveClassroom.exe`。請保留旁邊的 `_internal` 資料夾；它包含 Web UI、離線語音模型、字型與播放元件。分享給其他電腦時，傳送完整的 `ResponsiveClassroom-Portable-windows-x64-v3.0.3.zip`，並完整解壓縮後再啟動，不能只傳 EXE。語音辨識在本機執行，不需網際網路。Release 附 SHA-256 檢查檔，用於核對下載完整性；它不是程式碼簽章。
+下載同一份 `ResponsiveClassroom-AllPlatforms-v3.1.0.zip` 並完整解壓縮；不需要安裝 Python。
 
-在 macOS 14+，請選對 `macos-arm64`（Apple Silicon）或 `macos-x86_64`（Intel）完整 ZIP，解壓後使用 `.app`，不要移出其中的執行檔。套件未經 Developer ID 簽署／公證，Gatekeeper 可能阻擋；請閱讀 [Mac 指南](MACOS.md)，不要停用系統安全保護。
+- Windows x64：開啟 `Windows/ResponsiveClassroom.exe`。保留旁邊完整的 `_internal` 與其他檔案，不能只傳 EXE。
+- macOS 14+：開啟 `macOS/ResponsiveClassroom.app`。這是同時包含 Intel 與 Apple Silicon 執行碼的單一 universal2 App，不需另外選處理器版本。請使用 Mac 的「封存工具程式」解壓，保留整個 `.app` 與內部連結。
+
+離線模型、Web UI、字型及播放元件已包含在完整套件中；語音辨識在本機執行。Release 的 SHA-256 檢查檔用於核對下載完整性，不是程式碼簽章。Mac App 未經 Apple Developer ID 簽署／公證，Gatekeeper 可能阻擋；請閱讀 [Mac 指南](MACOS.md)，不要停用系統安全保護。
 
 ## 2. 連線與校正燈板
 
-在「連線與收音」頁輸入自己的燈板 IP，按「加入燈板」。也可選擇本機網段按「搜尋燈板」，勾選找到的裝置後一次「加入所選燈板」。搜尋只涵蓋所選的本機網段；跨網段時請手動輸入 IP。下方每一列的「同步」勾選決定是否將畫面送到該燈板，最多八塊。介面提供的是格式範例，不是可直接套用的裝置地址。
+在「連線與收音」頁輸入自己的燈板 IP，按「加入燈板」。也可在同一區按「自動搜尋」，勾選找到的裝置後一次「加入所選燈板」。只有一個可用網段時直接搜尋；多個網段時才展開選擇，不會自動掃描所有網路。搜尋只涵蓋所選的本機網段；跨網段時請手動輸入 IP。下方每一列的「同步」勾選決定是否將畫面送到該燈板，最多八塊。介面提供的是格式範例，不是可直接套用的裝置地址。
 
 連線狀態先顯示等待確認，收到裝置回報後才顯示「已確認接收」。在「燈板方向」選擇裝置，調整旋轉、蛇形排列及水平／垂直鏡像，再按「儲存」。若畫面呈現散點或方向顛倒，先核對這些設定，避免 WLED 與程式重複排列像素。移除燈板只會移除程式中的裝置設定。
 
@@ -120,7 +123,7 @@
 
 Windows 的設定、匯入音源與活動紀錄位於 `%APPDATA%\Responsive Classroom`。設定使用 UTF-8、原子儲存，升級遷移前先備份；自訂計時、音源、觸發詞、安靜基線與板子方向會保留。本版只調整仍完整等於前版預設、且不與自訂注意門檻衝突的討論門檻。活動紀錄可包含狀態、音量和已接受指令，不保存原始錄音；若不需要紀錄，可在設定 JSON 將 `session_logging_enabled` 設為 `false`。語音模型離線執行，錄音不傳送到雲端。
 
-v3.0.3 發佈流程要求 Windows x64、macOS arm64／x86_64 原生封裝及 frozen smoke tests 全部成功才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
+v3.1.0 發佈流程要求 Windows x64、macOS arm64／x86_64 原生封裝及 frozen smoke tests 全部成功才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
 
 ## 11. 開發環境與專案結構
 
@@ -173,7 +176,7 @@ git push -u origin feature/my-change
 
 ## 13. 發佈新版本與檢查
 
-跨平台發佈使用 **Build and release desktop packages**，只有 Windows、Apple Silicon 及 Intel 三種原生封裝與完整性檢查都成功，才建立新的最新 Release。v3.0.3 的首次 main 整合可自動啟動；之後請更新版本及 release notes，再手動執行該 workflow。既有版本不覆蓋。
+先用 **Build unified desktop candidate** 建置同一版本的 Windows 與單一 universal2 Mac App，通過兩種 Mac 處理器的實際模型／UI 測試後組成一份整合 ZIP。正式發布使用獨立的手動 **Publish unified desktop release** 流程；它要求 main 與已通過的建置 commit 完全一致，驗證同一 run 的平台測試、成品與遠端雜湊後才發布。main 推送不會自動發布，既有版本不覆蓋。
 
 更新 `source/classroom_resources.py` 的 `VERSION` 及中英文手冊版本，完成測試後，在 Windows 開發環境執行：
 

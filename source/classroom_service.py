@@ -11,22 +11,38 @@ import time
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QMicrophonePermission, QObject, QThread, QTimer, Qt, Signal, Slot
-
 from classroom_audio import AudioRuntime, CommandParser
 from classroom_core import (
-    AudioHealth, BaseMode, ClassroomController, NoiseState, Overlay, PatternMapper,
-    RestStage, Settings, SettingsRepository,
+    AudioHealth,
+    BaseMode,
+    ClassroomController,
+    PatternMapper,
+    Settings,
+    SettingsRepository,
 )
 from classroom_hardware import (
-    LatestFrameWorker, WledDevice, WledSession, discover_subnet, inspect_device, local_networks,
+    LatestFrameWorker,
+    WledDevice,
+    WledSession,
+    discover_subnet,
+    inspect_device,
+    local_networks,
 )
-from classroom_logging import SessionLogger
 from classroom_i18n import translate
+from classroom_logging import SessionLogger
 from classroom_playback import AudioPlayback
 from classroom_resources import VERSION, default_rest_source
 from pattern_renderer import FrameBlender, music_wave
-
+from PySide6.QtCore import (
+    QCoreApplication,
+    QMicrophonePermission,
+    QObject,
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+    Slot,
+)
 
 TIMER_KEYS = ("question_seconds", "feedback_seconds", "rest_seconds",
               "rest_reminder_seconds", "voice_idle_seconds")
@@ -157,6 +173,7 @@ class ClassroomService(QObject):
         overlay_remaining = self.controller.remaining_seconds("overlay")
         rest_remaining = self.controller.remaining_seconds("base") if state.base_mode is BaseMode.REST else None
         noise = self._reading
+        captured_at = getattr(noise, "captured_at", 0.0) or 0.0
         return {
             "version": VERSION,
             "settings": asdict(self.settings),
@@ -175,6 +192,10 @@ class ClassroomService(QObject):
                                    "detection_paused": self.playback.suppress_detection}},
             "noise": {"dbfs": getattr(noise, "dbfs", None), "smoothed_dbfs": getattr(noise, "smoothed_dbfs", None),
                       "relative_db": getattr(noise, "relative_db", None),
+                      "age_ms": max(0.0, (time.monotonic() - captured_at) * 1000) if captured_at > 0 else None,
+                      "capture_lag_ms": max(0.0, getattr(self.audio, "capture_lag_seconds", 0.0) * 1000),
+                      "capture_dropped": getattr(self.audio, "capture_dropped", 0),
+                      "capture_overloaded": bool(getattr(self.audio, "capture_overloaded", False)),
                       "health": self._enum_name(getattr(noise, "health", None)),
                       "speech_excluded": bool(noise.speech_excluded) if noise is not None else False,
                       "speech_guard_ready": bool(noise.speech_guard_ready) if noise is not None else True,
@@ -639,8 +660,20 @@ class ClassroomService(QObject):
         if (self._closing or not self.start_io or not self._output_enabled or self.worker or
                 self._output_stopping):
             return
-        devices = [WledDevice(**{key: value for key, value in item.items() if key != "enabled"})
-                   for item in self.settings.wled_devices if item.get("enabled", True)]
+        devices = []
+        # Older settings legitimately stored only IP/MAC. Ignore unknown metadata
+        # rather than splatting it into the transport constructor at startup.
+        for item in self.settings.wled_devices:
+            if not item.get("enabled", True):
+                continue
+            values = {"name": "WLED", "version": "unknown", "led_count": 64}
+            values.update({key: value for key, value in item.items()
+                           if key in WledDevice.__dataclass_fields__})
+            try:
+                devices.append(WledDevice(**values))
+            except (TypeError, ValueError) as exc:
+                self._hardware_messages[item.get("ip", "")] = f"燈板設定失敗：{exc}"
+
         if not devices:
             return
         session = WledSession(devices, self._hardware_status)

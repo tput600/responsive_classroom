@@ -112,7 +112,14 @@ class AudioPlayback(QObject):
             self._set_volume()
 
     def handle_state(self, state: ClassroomState) -> None:
+        previous = getattr(self, "_last_state", None)
         self._last_state = state
+        if (previous is not None and state != previous and
+                (state.base_mode, state.overlay, state.rest_stage) ==
+                (previous.base_mode, previous.overlay, previous.rest_stage)):
+            # Noise and microphone health updates are not new cue events, even
+            # when the previous one-shot has finished and cleared its play key.
+            return
         if state.overlay is not None:
             mode = {Overlay.QUESTION: "question", Overlay.CORRECT: "correct",
                     Overlay.WRONG: "wrong"}[state.overlay]

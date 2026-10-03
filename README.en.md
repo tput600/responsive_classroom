@@ -1,4 +1,4 @@
-# Responsive Classroom 3.0.3
+# Responsive Classroom 3.1.0
 
 English · [繁體中文](README.md)
 
@@ -12,13 +12,16 @@ Source: [tput600/responsive_classroom](https://github.com/tput600/responsive_cla
 
 Flash and configure WLED first, connect the panel to Wi-Fi, and configure an 8×8 matrix with 64 LEDs. The computer and panels must be on a network that allows them to communicate. This application does not flash firmware or perform the initial Wi-Fi setup. Campus or public Wi-Fi may isolate devices; use a network that permits communication between them.
 
-On Windows x64, open `ResponsiveClassroom.exe`. Keep the accompanying `_internal` folder: it contains the Web UI, offline speech models, fonts, and playback components. To share the application, send the complete `ResponsiveClassroom-Portable-windows-x64-v3.0.3.zip`. Recipients must extract the entire ZIP before starting the EXE. Sending the EXE alone is insufficient. Speech recognition runs locally without an internet connection. The Release includes a SHA-256 checksum for download integrity; it is not a code signature.
+Download and fully extract one `ResponsiveClassroom-AllPlatforms-v3.1.0.zip`. Python is not required.
 
-On macOS 14+, choose the complete `macos-arm64` (Apple Silicon) or `macos-x86_64` (Intel) ZIP. Extract it and keep the `.app` intact. These candidates are not Developer ID signed or notarized and Gatekeeper may block them; read the [Mac guide](MACOS.md) and do not disable system security protections.
+- Windows x64: open `Windows/ResponsiveClassroom.exe`. Keep the entire adjacent `_internal` directory and all other files; the EXE alone is insufficient.
+- macOS 14+: open `macOS/ResponsiveClassroom.app`. This single universal2 app contains both Intel and Apple Silicon executable code. Use macOS Archive Utility and keep the app and its internal links intact.
+
+Offline speech models, the Web UI, fonts, and playback components are included. Speech recognition runs locally. The SHA-256 sidecar verifies download integrity and is not a code signature. The Mac app is not Apple Developer ID signed or notarized; Gatekeeper may block it. Read the [Mac guide](MACOS.md) and do not disable system security protections.
 
 ## 2. Connect and orient light panels
 
-Open **Connection**, enter your panel's IP address, and select **Add panel**. Alternatively, choose a local subnet, select **Find panels**, check the discovered devices, and select **Add selected panels**. Discovery covers only the selected local subnet. Enter an IP address manually for devices outside it.
+Open **Connection**, enter your panel's IP address, and select **Add panel**. Alternatively, select **Auto search** in the same panel-adding area, check the discovered devices, and select **Add selected panels**. A single available subnet starts immediately; multiple subnets reveal a chooser instead of scanning every network. Discovery covers only the selected local subnet. Enter an IP address manually for devices outside it.
 
 The **Sync** checkbox in each added panel's row determines whether that panel receives the classroom display. Up to eight panels can synchronize. Example addresses in the interface are format examples, not addresses that will work on your network.
 
@@ -156,7 +159,7 @@ On Windows, settings, imported audio, and activity records are stored in `%APPDA
 
 Activity logs can contain state changes, volume readings, and accepted commands. Raw microphone recordings are not saved. To disable activity records, set `session_logging_enabled` to `false` in the settings JSON. Speech runs offline; microphone audio is not uploaded to the cloud.
 
-The v3.0.3 release pipeline requires Windows x64 and separate macOS arm64/x86_64 native packages and frozen smoke tests to pass before publication. Mac candidates target macOS 14+ and are not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
+The v3.1.0 release pipeline requires Windows x64 and separate macOS arm64/x86_64 native packages and frozen smoke tests to pass before publication. Mac candidates target macOS 14+ and are not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
 
 For panel connection problems, confirm that WLED is online and the network permits communication between the computer and panel. Try a manual IP or discovery on the local subnet. For orientation problems, check that panel's rotation, mirroring, and serpentine settings.
 
@@ -213,7 +216,7 @@ Select **Code → Codespaces → Create codespace** on GitHub. The container pre
 
 ## 13. Publish a new version
 
-Use **Build and release desktop packages** for a cross-platform release. Windows, Apple Silicon, and Intel native builds and integrity checks must all succeed before a new latest Release is created. The initial v3.0.3 integration on main can start it automatically; later versions require updated release notes and an explicit manual workflow run. Existing versions are never overwritten.
+Use **Build unified desktop candidate** to build Windows and one universal2 Mac app, execute the same Mac archive natively on both architectures, and assemble one ZIP. The separate manual **Publish unified desktop release** flow requires the successful build commit to match main exactly. It verifies that run’s native tests, artifacts, and remote asset hashes before publishing. Pushing main never publishes automatically, and existing versions are never overwritten.
 
 Update `VERSION` in `source/classroom_resources.py` and both manuals. After testing, run in the Windows development environment:
 

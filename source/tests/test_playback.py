@@ -104,6 +104,19 @@ class AudioPlaybackTests(unittest.TestCase):
                 playback.apply_settings(Settings(question_seconds=17, audio_fade_ms=0,
                                                  audio_files=settings.audio_files))
                 self.assertEqual(playback._player.play_count, 1)
+                playback._player.state = Player.PlaybackState.StoppedState
+                playback._on_media_status(Player.MediaStatus.EndOfMedia)
+                playback.handle_state(ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.QUIET))
+                self.assertEqual(playback._player.play_count, 1)
+                playback._suppress_until = 0
+                self.assertFalse(playback.suppress_detection)
+                health_state = ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.UNKNOWN,
+                                              microphone_error="disconnected")
+                playback.handle_state(health_state)
+                self.assertEqual(playback._player.play_count, 1)
+                # Explicitly repeating the current mode still replays an ended cue.
+                playback.handle_state(health_state)
+                self.assertEqual(playback._player.play_count, 2)
                 playback.handle_state(ClassroomState(BaseMode.REST, rest_stage=RestStage.RESTING))
                 self.assertEqual(playback._player.loops, Player.Loops.Infinite)
                 self.assertTrue(playback.suppress_detection)
