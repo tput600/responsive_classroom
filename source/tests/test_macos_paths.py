@@ -17,7 +17,9 @@ class MacResourcePathsTests(unittest.TestCase):
             with (patch.object(resources.sys, 'frozen', True, create=True),
                   patch.object(resources.sys, '_MEIPASS', str(contents / 'Frameworks'), create=True),
                   patch.object(resources.sys, 'executable', str(contents / 'MacOS/ResponsiveClassroom'))):
-                self.assertEqual(resources.application_root(), bundle)
+                # Windows temporary paths may use an 8.3 alias; the runtime
+                # intentionally resolves the executable to its canonical path.
+                self.assertEqual(resources.application_root(), bundle.resolve())
 
     def test_non_bundle_frozen_layout_preserves_meipass_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
