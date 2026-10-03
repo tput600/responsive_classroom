@@ -59,17 +59,33 @@ def current_repository():
     return repository
 
 
+def list_releases():
+    """Authenticated listing includes drafts, which tag lookup does not resolve."""
+    pages = json.loads(github('api', '--paginate', '--slurp',
+                              f'repos/{current_repository()}/releases?per_page=100'))
+    if (not isinstance(pages, list) or any(not isinstance(page, list) for page in pages)
+            or any(not isinstance(item, dict) for page in pages for item in page)):
+        raise RuntimeError('Unexpected GitHub releases response')
+    return [item for page in pages for item in page]
+
+
+def find_release_id(tag):
+    matches = [item for item in list_releases() if item.get('tag_name') == tag]
+    if len(matches) != 1 or type(matches[0].get('id')) is not int or matches[0]['id'] <= 0:
+        raise ValueError('Expected exactly one remote release with a valid ID for this tag')
+    return matches[0]['id']
+
+
 def release_exists(tag):
     """Use successful list queries, so authentication/API errors never mean absent."""
     validate_tag(tag)
     repository = current_repository()
     refs = json.loads(github('api', f'repos/{repository}/git/matching-refs/tags/{tag}'))
-    release_tags = github('api', '--paginate', '--jq', '.[].tag_name',
-                          f'repos/{repository}/releases?per_page=100').splitlines()
+    releases = list_releases()
     if not isinstance(refs, list):
         raise RuntimeError('Unexpected GitHub tag response')
     return (any(ref['ref'] == f'refs/tags/{tag}' for ref in refs)
-            or tag in release_tags)
+            or any(item.get('tag_name') == tag for item in releases))
 
 
 def prepare(tag, event, *, root=ROOT):
@@ -137,10 +153,11 @@ def verify_remote_tag(tag, commit, *, required):
     raise ValueError('Unable to resolve release tag to the verified commit')
 
 
-def verify_uploaded_release(tag, commit, assets, *, draft):
+def verify_uploaded_release(tag, commit, assets, *, draft, release_id):
     repository = current_repository()
-    details = json.loads(github('api', f'repos/{repository}/releases/tags/{tag}'))
-    if (details.get('tag_name') != tag or details.get('target_commitish') != commit
+    details = json.loads(github('api', f'repos/{repository}/releases/{release_id}'))
+    if (details.get('id') != release_id or details.get('tag_name') != tag
+            or details.get('target_commitish') != commit
             or details.get('draft') is not draft or details.get('prerelease') is not False):
         raise ValueError('Remote release version, commit, or publication state does not match')
     uploaded = details.get('assets', [])
@@ -159,6 +176,20 @@ def verify_uploaded_release(tag, commit, assets, *, draft):
     return details
 
 
+def promote_release(tag, commit, assets, release_id):
+    verify_uploaded_release(tag, commit, assets, draft=True, release_id=release_id)
+    github('api', '--method', 'PATCH',
+           f'repos/{current_repository()}/releases/{release_id}',
+           '-F', 'draft=false', '-f', 'make_latest=true',
+           '-f', f'tag_name={tag}', '-f', f'target_commitish={commit}')
+    published = verify_uploaded_release(tag, commit, assets, draft=False,
+                                        release_id=release_id)
+    latest = json.loads(github('api', f'repos/{current_repository()}/releases/latest'))
+    if latest.get('id') != published.get('id') or latest.get('tag_name') != tag:
+        raise ValueError('Published release was not confirmed as latest')
+    print(published['html_url'])
+
+
 def publish(tag, commit, artifacts, *, root=ROOT):
     if not re.fullmatch(r'[0-9a-fA-F]{40}', commit):
         raise ValueError('Publication requires the exact 40-character workflow commit SHA')
@@ -174,13 +205,22 @@ def publish(tag, commit, artifacts, *, root=ROOT):
     github('release', 'create', tag, *(str(path) for path in assets),
            '--draft', '--target', commit,
            '--title', f'Responsive Classroom {tag}', '--notes-file', str(notes), timeout=900)
-    verify_uploaded_release(tag, commit, assets, draft=True)
-    github('release', 'edit', tag, '--draft=false', '--latest')
-    published = verify_uploaded_release(tag, commit, assets, draft=False)
-    latest = json.loads(github('api', f'repos/{current_repository()}/releases/latest'))
-    if latest.get('id') != published.get('id') or latest.get('tag_name') != tag:
-        raise ValueError('Published release was not confirmed as latest')
-    print(published['html_url'])
+    promote_release(tag, commit, assets, find_release_id(tag))
+
+
+def resume(tag, commit, artifacts, *, release_id, root=ROOT):
+    """Promote only an explicitly selected, fully verified existing draft."""
+    if type(release_id) is not int or release_id <= 0:
+        raise ValueError('Resume requires an explicit positive release ID')
+    if not re.fullmatch(r'[0-9a-fA-F]{40}', commit):
+        raise ValueError('Publication requires the exact 40-character workflow commit SHA')
+    if source_tag(root) != validate_tag(tag):
+        raise ValueError('Requested release tag does not match the checked-out source')
+    assets = verify_artifacts(artifacts, tag)
+    if find_release_id(tag) != release_id:
+        raise ValueError('Explicit release ID does not match the existing release for this tag')
+    # No create/upload/delete commands: recovery must preserve the original assets.
+    promote_release(tag, commit, assets, release_id)
 
 
 def main():
@@ -190,17 +230,22 @@ def main():
     preflight.add_argument('--tag', required=True)
     preflight.add_argument('--event', choices=('push', 'workflow_dispatch'), required=True)
     preflight.add_argument('--output', required=True, type=Path)
-    publication = commands.add_parser('publish')
-    publication.add_argument('--tag', required=True)
-    publication.add_argument('--commit', required=True)
-    publication.add_argument('--artifacts', required=True, type=Path)
+    for command in ('publish', 'resume'):
+        publication = commands.add_parser(command)
+        publication.add_argument('--tag', required=True)
+        publication.add_argument('--commit', required=True)
+        publication.add_argument('--artifacts', required=True, type=Path)
+        if command == 'resume':
+            publication.add_argument('--release-id', required=True, type=int)
     args = parser.parse_args()
     if args.command == 'prepare':
         eligible = prepare(args.tag, args.event)
         with args.output.open('a', encoding='utf-8') as output:
             output.write(f'eligible={str(eligible).lower()}\ntag={args.tag}\n')
-    else:
+    elif args.command == 'publish':
         publish(args.tag, args.commit, args.artifacts)
+    else:
+        resume(args.tag, args.commit, args.artifacts, release_id=args.release_id)
 
 
 if __name__ == '__main__':

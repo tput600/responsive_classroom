@@ -1,0 +1,73 @@
+name: Finish verified v3.0.3 release
+
+# One-time recovery of this task's fully uploaded draft. No asset replacement.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/finish-v3.0.3.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-crossplatform
+  cancel-in-progress: false
+
+jobs:
+  finish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: responsive_classroom
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Test publication recovery logic
+        run: python -m unittest discover -s source/tests -t source -p test_publish_release.py -v
+      - name: Confirm original native builds and exact artifact commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$GH_REPO/actions/runs/37130198889" > source-run.json
+          gh api "repos/$GH_REPO/actions/runs/37130198889/jobs?per_page=100" > source-jobs.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          run = json.loads(Path('source-run.json').read_text())
+          assert run['head_sha'] == 'b5ac0d8a6054b96f0504aaee3390857c70702da8'
+          assert run['head_branch'] == 'main' and run['status'] == 'completed'
+          jobs = json.loads(Path('source-jobs.json').read_text())['jobs']
+          for name in ('Build windows-x64', 'Build macos-arm64', 'Build macos-x86_64'):
+              matches = [job for job in jobs if job['name'] == name]
+              assert len(matches) == 1 and matches[0]['conclusion'] == 'success', name
+          print('All three original native builds succeeded at the exact release commit.')
+          PY
+      - name: Download original verified packages without rebuilding
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 37130198889
+          pattern: release-package-v3.0.3-*
+          merge-multiple: true
+          path: release-artifacts
+      - name: Verify existing draft by ID and publish latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          python source/tools/publish_release.py resume
+          --tag v3.0.3
+          --commit b5ac0d8a6054b96f0504aaee3390857c70702da8
+          --release-id 402553195
+          --artifacts release-artifacts

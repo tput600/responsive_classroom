@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -132,14 +133,17 @@ class PublishReleaseTests(unittest.TestCase):
     @mock.patch.dict(os.environ, {'GH_REPO': 'example/classroom'})
     @mock.patch.object(release, 'github')
     def test_prefix_tag_does_not_count_as_an_existing_exact_tag(self, github):
-        github.side_effect = ['[{"ref":"refs/tags/v3.0.30"}]', 'v3.0.2\nv3.0.30\n']
+        github.side_effect = ['[{"ref":"refs/tags/v3.0.30"}]',
+                              '[[{"tag_name":"v3.0.2"}],[{"tag_name":"v3.0.30"}]]']
         self.assertFalse(release.release_exists('v3.0.3'))
         self.assertIn('--paginate', github.call_args.args)
+        self.assertIn('--slurp', github.call_args.args)
 
     @mock.patch.dict(os.environ, {'GH_REPO': 'example/classroom'})
     @mock.patch.object(release, 'github')
     def test_either_existing_tag_or_release_prevents_publication(self, github):
-        for refs, tags in (('[{"ref":"refs/tags/v3.0.3"}]', ''), ('[]', 'v3.0.3\n')):
+        for refs, tags in (('[{"ref":"refs/tags/v3.0.3"}]', '[[]]'),
+                           ('[]', '[[{"tag_name":"v3.0.3","draft":true}]]')):
             with self.subTest(refs=refs, tags=tags):
                 github.side_effect = [refs, tags]
                 self.assertTrue(release.release_exists('v3.0.3'))
@@ -174,7 +178,8 @@ class PublishReleaseTests(unittest.TestCase):
     def test_publication_verifies_draft_then_promotes_exact_commit(self, github, exists):
         reference = {'ref': 'refs/tags/v3.0.3', 'object': {'type': 'commit', 'sha': self.commit}}
         github.side_effect = [
-            '', json.dumps(self.release_payload()), '[]', '',
+            '', json.dumps([[self.release_payload()]]),
+            json.dumps(self.release_payload()), '[]', '',
             json.dumps(self.release_payload(draft=False)), json.dumps([reference]),
             json.dumps({'id': 123, 'tag_name': 'v3.0.3'}),
         ]
@@ -189,18 +194,27 @@ class PublishReleaseTests(unittest.TestCase):
         self.assertNotIn('--latest', arguments)
         self.assertNotIn('--clobber', arguments)
         self.assertEqual(github.call_args_list[0].kwargs, {'timeout': 900})
-        self.assertEqual(github.call_args_list[3].args,
-                         ('release', 'edit', 'v3.0.3', '--draft=false', '--latest'))
+        self.assertEqual(github.call_args_list[1].args,
+                         ('api', '--paginate', '--slurp',
+                          'repos/example/classroom/releases?per_page=100'))
+        self.assertEqual(github.call_args_list[2].args,
+                         ('api', 'repos/example/classroom/releases/123'))
+        self.assertEqual(github.call_args_list[4].args,
+                         ('api', '--method', 'PATCH', 'repos/example/classroom/releases/123',
+                          '-F', 'draft=false', '-f', 'make_latest=true',
+                          '-f', 'tag_name=v3.0.3', '-f', f'target_commitish={self.commit}'))
+        self.assertEqual(github.call_args_list[5].args,
+                         ('api', 'repos/example/classroom/releases/123'))
 
     @mock.patch.object(release, 'release_exists', return_value=False)
     @mock.patch.object(release, 'github')
     def test_partial_upload_remains_unpublished_draft(self, github, exists):
         details = self.release_payload()
         details['assets'].pop()
-        github.side_effect = ['', json.dumps(details)]
+        github.side_effect = ['', json.dumps([[details]]), json.dumps(details)]
         with self.assertRaisesRegex(ValueError, 'exactly the six'):
             release.publish('v3.0.3', self.commit, self.artifacts, root=self.root)
-        self.assertEqual(github.call_count, 2)
+        self.assertEqual(github.call_count, 3)
         self.assertEqual(github.call_args_list[0].args[:2], ('release', 'create'))
         self.assertEqual(github.call_args_list[1].args[0], 'api')
 
@@ -214,11 +228,12 @@ class PublishReleaseTests(unittest.TestCase):
                 github.return_value = json.dumps(details)
                 with self.assertRaisesRegex(ValueError, 'upload or digest'):
                     release.verify_uploaded_release('v3.0.3', self.commit,
-                                                    list(self.artifacts.iterdir()), draft=True)
+                                                    list(self.artifacts.iterdir()), draft=True,
+                                                    release_id=123)
 
     @mock.patch.object(release, 'github')
     def test_incorrect_release_commit_or_state_blocks_promotion(self, github):
-        for field, value in (('target_commitish', 'main'), ('tag_name', 'v3.0.4'),
+        for field, value in (('id', 456), ('target_commitish', 'main'), ('tag_name', 'v3.0.4'),
                              ('draft', False), ('prerelease', True)):
             with self.subTest(field=field, value=value):
                 details = self.release_payload()
@@ -226,7 +241,113 @@ class PublishReleaseTests(unittest.TestCase):
                 github.return_value = json.dumps(details)
                 with self.assertRaisesRegex(ValueError, 'does not match'):
                     release.verify_uploaded_release('v3.0.3', self.commit,
-                                                    list(self.artifacts.iterdir()), draft=True)
+                                                    list(self.artifacts.iterdir()), draft=True,
+                                                    release_id=123)
+
+    @mock.patch.object(release, 'github')
+    def test_resume_verifies_explicit_draft_without_reuploading(self, github):
+        reference = {'ref': 'refs/tags/v3.0.3', 'object': {'type': 'commit', 'sha': self.commit}}
+        # A second page proves recovery does not assume the first 100 releases.
+        github.side_effect = [
+            json.dumps([[{'id': 122, 'tag_name': 'v3.0.2'}], [self.release_payload()]]),
+            json.dumps(self.release_payload()), json.dumps([reference]), '',
+            json.dumps(self.release_payload(draft=False)), json.dumps([reference]),
+            json.dumps({'id': 123, 'tag_name': 'v3.0.3'}),
+        ]
+        release.resume('v3.0.3', self.commit, self.artifacts, release_id=123, root=self.root)
+        self.assertEqual(github.call_args_list[0].args,
+                         ('api', '--paginate', '--slurp',
+                          'repos/example/classroom/releases?per_page=100'))
+        self.assertEqual(github.call_args_list[1].args,
+                         ('api', 'repos/example/classroom/releases/123'))
+        mutations = [call.args for call in github.call_args_list
+                     if call.args[0] != 'api' or '--method' in call.args]
+        self.assertEqual(mutations, [
+            ('api', '--method', 'PATCH', 'repos/example/classroom/releases/123',
+             '-F', 'draft=false', '-f', 'make_latest=true',
+             '-f', 'tag_name=v3.0.3', '-f', f'target_commitish={self.commit}')])
+        self.assertFalse(any('/releases/tags/' in str(call) for call in github.call_args_list))
+
+    @mock.patch.object(release, 'github')
+    def test_resume_refuses_wrong_explicit_id(self, github):
+        github.return_value = json.dumps([[self.release_payload()]])
+        with self.assertRaisesRegex(ValueError, 'Explicit release ID does not match'):
+            release.resume('v3.0.3', self.commit, self.artifacts, release_id=456, root=self.root)
+        github.assert_called_once()
+
+    @mock.patch.object(release, 'github')
+    def test_resume_refuses_changed_id_commit_or_published_release(self, github):
+        for field, value in (('id', 456), ('target_commitish', 'b' * 40), ('draft', False)):
+            with self.subTest(field=field):
+                github.reset_mock()
+                details = self.release_payload()
+                details[field] = value
+                github.side_effect = [json.dumps([[self.release_payload()]]), json.dumps(details)]
+                with self.assertRaisesRegex(ValueError, 'does not match'):
+                    release.resume('v3.0.3', self.commit, self.artifacts,
+                                   release_id=123, root=self.root)
+                self.assertEqual(github.call_count, 2)
+                self.assertTrue(all(call.args[0] == 'api' for call in github.call_args_list))
+
+    @mock.patch.object(release, 'github')
+    def test_resume_checks_every_remote_asset_digest_size_and_state(self, github):
+        for index in range(6):
+            for field, value in (('digest', 'sha256:' + 'b' * 64), ('size', 0),
+                                 ('state', 'starter')):
+                with self.subTest(asset=index, field=field):
+                    github.reset_mock()
+                    details = self.release_payload()
+                    details['assets'][index][field] = value
+                    github.side_effect = [json.dumps([[details]]), json.dumps(details)]
+                    with self.assertRaisesRegex(ValueError, 'upload or digest'):
+                        release.resume('v3.0.3', self.commit, self.artifacts,
+                                       release_id=123, root=self.root)
+                    self.assertTrue(all(call.args[0] == 'api' for call in github.call_args_list))
+
+    @mock.patch.object(release, 'github')
+    def test_resume_refuses_existing_tag_on_wrong_commit(self, github):
+        reference = {'ref': 'refs/tags/v3.0.3', 'object': {'type': 'commit', 'sha': 'b' * 40}}
+        github.side_effect = [json.dumps([[self.release_payload()]]),
+                              json.dumps(self.release_payload()), json.dumps([reference])]
+        with self.assertRaisesRegex(ValueError, 'different commit'):
+            release.resume('v3.0.3', self.commit, self.artifacts, release_id=123, root=self.root)
+        self.assertTrue(all(call.args[0] == 'api' for call in github.call_args_list))
+
+    @mock.patch.object(release, 'github')
+    def test_resume_requires_explicit_positive_id_and_verified_local_inputs(self, github):
+        for release_id in (None, 0, -1, True, '123'):
+            with self.subTest(release_id=release_id), self.assertRaisesRegex(ValueError, 'release ID'):
+                release.resume('v3.0.3', self.commit, self.artifacts,
+                               release_id=release_id, root=self.root)
+        with self.assertRaisesRegex(ValueError, 'exact 40-character'):
+            release.resume('v3.0.3', 'main', self.artifacts, release_id=123, root=self.root)
+        next(self.artifacts.glob('*.zip')).write_bytes(b'corrupt')
+        with self.assertRaisesRegex(ValueError, 'Checksum mismatch'):
+            release.resume('v3.0.3', self.commit, self.artifacts, release_id=123, root=self.root)
+        github.assert_not_called()
+
+    @mock.patch.object(release, 'resume')
+    def test_resume_cli_requires_release_id(self, resume):
+        with mock.patch.object(sys, 'argv', ['publish_release.py', 'resume', '--tag', 'v3.0.3',
+                                            '--commit', self.commit, '--artifacts', str(self.artifacts)]):
+            with mock.patch('sys.stderr'), self.assertRaises(SystemExit) as error:
+                release.main()
+        self.assertEqual(error.exception.code, 2)
+        resume.assert_not_called()
+
+    @mock.patch.object(release, 'github')
+    def test_release_lookup_refuses_missing_duplicate_or_malformed_list(self, github):
+        for response in ('[[]]', json.dumps([[self.release_payload(), self.release_payload()]]),
+                         '[[{"tag_name":"v3.0.3","id":null}]]'):
+            with self.subTest(response=response):
+                github.return_value = response
+                with self.assertRaisesRegex(ValueError, 'exactly one remote release'):
+                    release.find_release_id('v3.0.3')
+        for response in ('{}', '[{}]', '[[null]]'):
+            with self.subTest(response=response):
+                github.return_value = response
+                with self.assertRaisesRegex(RuntimeError, 'Unexpected GitHub releases'):
+                    release.find_release_id('v3.0.3')
 
     @mock.patch.object(release, 'github')
     def test_absent_draft_tag_is_allowed_but_published_tag_is_required(self, github):
