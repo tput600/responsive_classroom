@@ -69,6 +69,7 @@ class RecoveryTests(unittest.TestCase):
         receiver.settimeout(3)
         started = time.monotonic()
         failed = [False]
+        slow_requests = []
         calls = []
 
         def request(_ip, path, payload=None, **_kwargs):
@@ -78,6 +79,7 @@ class RecoveryTests(unittest.TestCase):
                     failed[0] = True
                     raise OSError('initial connection failed')
                 if time.monotonic() - started > 2:
+                    slow_requests.append(time.monotonic())
                     time.sleep(.6)
                 return {'mac': device.mac, 'leds': {'count': 64}, 'live': True,
                         'lm': 'DDP', 'lip': '127.0.0.1'}
@@ -93,11 +95,16 @@ class RecoveryTests(unittest.TestCase):
                 first, _ = receiver.recvfrom(2048)
                 self.assertEqual(first[10:], frame)
                 timestamps = []
-                end = time.monotonic() + 1.7
+                # Leave headroom for Darwin timer coalescing on shared runners;
+                # the latency bound and delivery during blocked HTTP remain strict.
+                end = time.monotonic() + 2.5
                 while time.monotonic() < end:
                     data, _ = receiver.recvfrom(2048)
                     self.assertEqual(data[10:], frame)
                     timestamps.append(time.monotonic())
+                self.assertTrue(any(sum(start <= stamp < start + .6 for stamp in timestamps) >= 3
+                                    for start in slow_requests),
+                                'UDP delivery must continue during a slow HTTP request')
                 self.assertGreater(len(timestamps), 35)
                 self.assertLess(max(b - a for a, b in zip(timestamps, timestamps[1:])), .25)
             finally:
