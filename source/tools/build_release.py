@@ -34,6 +34,10 @@ def sha256(path):
 
 
 def assert_public_package(package):
+    broken = [path.relative_to(package).as_posix() for path in package.rglob('*')
+              if path.is_symlink() and not path.exists()]
+    if broken:
+        raise RuntimeError(f'Broken package symlinks: {broken[:10]}')
     names = [path.relative_to(package).as_posix() for path in package.rglob('*') if path.is_file()]
     prohibited = re.compile(r'(?i)(?:/fixtures/|/qml/|(?:^|/)(?:\.codex|settings\.json)(?:/|$)|Qt6(?:Graphs|Charts|DataVisualization|Quick3D|QuickTimeline|VirtualKeyboard)|portaudio[^/]*asio)')
     wrong = [name for name in names if prohibited.search(name)]
@@ -71,7 +75,26 @@ def verify_macos_bundle(package, version, architecture):
                             capture_output=True, text=True)  # nosec B603
     if result.stdout.split() != [architecture]:
         raise RuntimeError(f'Expected native {architecture} executable, got {result.stdout.strip()}')
-    run(['/usr/bin/codesign', '--verify', '--deep', '--strict', '--verbose=2', str(package)])
+    try:
+        run(['/usr/bin/codesign', '--verify', '--deep', '--strict', '--verbose=2', str(package)])
+    except subprocess.CalledProcessError:
+        # Preserve useful native evidence; never continue with an invalid signature.
+        diagnostics = {'bundle': str(package), 'info_plist': info, 'links': [], 'components': []}
+        for path in package.rglob('*'):
+            if path.is_symlink():
+                diagnostics['links'].append({'path': str(path.relative_to(package)),
+                                             'target': os.readlink(path), 'exists': path.exists()})
+            if path.is_dir() and path.suffix in ('.framework', '.app'):
+                result = subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '--verbose=4',
+                                         str(path)], capture_output=True, text=True, check=False)  # nosec B603
+                diagnostics['components'].append({'path': str(path.relative_to(package)),
+                                                   'returncode': result.returncode,
+                                                   'stderr': result.stderr})
+        reports = ROOT / 'build/reports'
+        reports.mkdir(parents=True, exist_ok=True)
+        (reports / 'macos-signature-diagnostics.json').write_text(
+            json.dumps(diagnostics, indent=2) + '\n', encoding='utf-8')
+        raise
 
 
 def frozen_checks(package, reports, windows, *, archive=None, version=None, architecture=None):

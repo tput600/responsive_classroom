@@ -65,6 +65,11 @@ class MacOSPackageTests(unittest.TestCase):
                         value = data
                 output.writestr(info, value)
 
+    def test_public_package_rejects_dangling_native_alias_before_signing(self):
+        (self.bundle / 'Contents/Frameworks/QtQuick3D').symlink_to('removed-framework')
+        with self.assertRaisesRegex(RuntimeError, 'Broken package symlinks'):
+            build_release.assert_public_package(self.bundle)
+
     def test_staging_never_adds_extras_to_sealed_bundle(self):
         before = tree_records(self.bundle)
         staged_bundle = self.stage()
@@ -264,6 +269,12 @@ class QtPackageFilterTests(unittest.TestCase):
         namespace = {'re': re}
         exec(compile(ast.Module(body=selected, type_ignores=[]), str(spec), 'exec'), namespace)
         needed = namespace['needed']
+        self.assertFalse(needed(('QtQuick3D',
+            'PySide6/Qt/lib/QtQuick3D.framework/Versions/A/QtQuick3D', 'SYMLINK')))
+        self.assertFalse(needed(('libqmlplugin.dylib',
+            'PySide6/Qt/qml/QtQml/libqmlplugin.dylib', 'SYMLINK')))
+        self.assertTrue(needed(('QtCore',
+            'PySide6/Qt/lib/QtCore.framework/Versions/A/QtCore', 'SYMLINK')))
         for name in ('PySide6/qml/QtQml/qmldir', 'PySide6/Qt/qml/QtQml/qmldir',
                      'PySide6/Qt/qml/QtWebSockets/libqmlwebsocketsplugin.dylib',
                      'PySide6/Qt/lib/QtCharts.framework/Versions/A/QtCharts'):

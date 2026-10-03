@@ -97,10 +97,17 @@ analysis = Analysis(
 # Removing unused QML plug-ins also avoids collecting their native dependencies.
 gpl_addons = re.compile(r"charts|datavisualization|graphs|quick3d|quicktimeline|virtualkeyboard", re.I)
 def needed(entry):
-    path = entry[0].replace("\\", "/")
-    return not (path.startswith(("PySide6/qml/", "PySide6/Qt/qml/"))
-                or (path.startswith("PySide6/") and gpl_addons.search(path))
-                or "-asio." in path.lower())
+    # Analysis also creates top-level aliases to bundled native libraries.
+    # Removing a framework but retaining its SYMLINK alias breaks codesign.
+    paths = [entry[0]] + ([entry[1]] if entry[2] == "SYMLINK" else [])
+    for name in paths:
+        path = name.replace("\\", "/")
+        if (path.startswith(("PySide6/qml/", "PySide6/Qt/qml/"))
+                or ("PySide6/" in path and gpl_addons.search(path))
+                or "-asio." in path.lower()):
+            return False
+    return True
+
 analysis.datas = [entry for entry in analysis.datas if needed(entry)]
 analysis.binaries = [entry for entry in analysis.binaries if needed(entry)]
 pyz = PYZ(analysis.pure)
