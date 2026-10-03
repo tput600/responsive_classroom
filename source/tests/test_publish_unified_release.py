@@ -241,7 +241,22 @@ class UnifiedPublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'HTTP 403'):
             self.verify_run()
 
+    def build_assets(self):
+        """Portable byte fixtures for remote digest and publication-order guards."""
+        self.directory = self.root / 'artifacts'
+        self.directory.mkdir()
+        archive = self.directory / release.ARCHIVE
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            zipped.writestr('README.txt', 'Synthetic upload fixture; no native payload')
+        checksum = self.directory / (release.ARCHIVE + '.sha256')
+        checksum.write_text(f'{desktop.sha256(archive)}  {archive.name}\n', encoding='ascii')
+        return [archive, checksum]
+
     def build_files(self):
+        # The real assembler deliberately requires POSIX modes and symlinks.
+        # Windows still runs the independent run/provenance/publication guards.
+        if os.name != 'posix':
+            self.skipTest('Payload assembly requires a POSIX filesystem; safety guards run independently')
         windows = self.root / 'windows'
         windows.mkdir()
         (windows / '_internal').mkdir()
@@ -385,7 +400,7 @@ class UnifiedPublicationTests(unittest.TestCase):
                             'digest': 'sha256:' + desktop.sha256(path)} for path in assets]}
 
     def test_remote_verification_uses_numeric_draft_id_and_exact_two_assets(self):
-        assets = self.build_files()
+        assets = self.build_assets()
         payload = self.remote(assets)
         with mock.patch.object(release, 'api', return_value=payload) as api, \
                 mock.patch.object(release, 'verify_remote_tag'):
@@ -428,7 +443,7 @@ class UnifiedPublicationTests(unittest.TestCase):
         self.api.assert_not_called()
 
     def test_publish_order_creates_draft_then_promotes_and_never_clobbers(self):
-        assets = self.build_files()
+        assets = self.build_assets()
         operations = []
         with mock.patch.object(release, 'verify_run', side_effect=lambda *a, **kw:
                                operations.append('run') or self.artifact), \
@@ -449,7 +464,7 @@ class UnifiedPublicationTests(unittest.TestCase):
         self.assertEqual(operations[-2:], ['find-id', 'promote'])
 
     def test_verify_and_resume_never_create_or_upload(self):
-        assets = self.build_files()
+        assets = self.build_assets()
         with mock.patch.object(release, 'verify_run', return_value=self.artifact), \
                 mock.patch.object(release, 'download_artifact'), \
                 mock.patch.object(release, 'verify_artifacts', return_value=assets), \

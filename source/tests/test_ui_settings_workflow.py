@@ -3,6 +3,7 @@
 No hardware or network I/O: the page uses the real Qt WebChannel service, with
 one delayed bridge stub only for the in-flight editing race.
 """
+import json
 import os
 import tempfile
 import unittest
@@ -42,31 +43,68 @@ class SettingsWorkflowTests(unittest.TestCase):
 
                 # Overload is explicitly distinct from a recognition result and
                 # clears as soon as fresh capture recovers.
-                js("(()=>{const status=structuredClone(window.classroom.state);status.noise.capture_overloaded=true;renderState(status)})()")
-                self.assertFalse(js("document.getElementById('capture-warning').hidden"))
-                self.assertIn('Voice commands pause', js("document.getElementById('command-result').textContent"))
-                js("(()=>{const status=structuredClone(window.classroom.state);status.noise.capture_overloaded=false;renderState(status)})()")
-                self.assertTrue(js("document.getElementById('capture-warning').hidden"))
+                # Inspect transient renderer-only overload fixtures in the same
+                # JavaScript turn, before a real periodic snapshot can replace them.
+                overload_checks = json.loads(js("""JSON.stringify((()=>{
+                    const original=structuredClone(window.classroom.state),status=structuredClone(original);
+                    status.noise.capture_overloaded=true;renderState(status);
+                    const shown=!document.getElementById('capture-warning').hidden;
+                    const message=document.getElementById('command-result').textContent;
+                    status.noise.capture_overloaded=false;renderState(status);
+                    const cleared=document.getElementById('capture-warning').hidden;
+                    renderState(original);return {shown,message,cleared};
+                })())"""))
+                self.assertTrue(overload_checks['shown'])
+                self.assertIn('Voice commands pause', overload_checks['message'])
+                self.assertTrue(overload_checks['cleared'])
 
-                # One subnet searches directly; several subnets require an
-                # explicit choice and never fan out to all networks silently.
-                js("""(()=>{window.originalNetworkBackend=backend;window.scans=[];
-                    backend={command:(a,p,done)=>{window.scans.push(JSON.parse(p));done('{"ok":true}')}};
-                    const s=structuredClone(window.classroom.state);s.networks=[{name:'Wi-Fi',cidr:'192.0.2.0/24'}];renderState(s);
-                    document.getElementById('scan-button').click();})()""")
-                self.assertEqual(js('window.scans.length'), 1)
-                self.assertEqual(js('window.scans[0].cidr'), '192.0.2.0/24')
-                self.assertTrue(js("document.getElementById('network-details').hidden"))
-                js("""(()=>{const s=structuredClone(window.classroom.state);s.networks.push({name:'Ethernet',cidr:'198.51.100.0/24'});renderState(s);document.getElementById('scan-button').click()})()""")
-                self.assertEqual(js('window.scans.length'), 1)
-                self.assertFalse(js("document.getElementById('network-details').hidden"))
-                js("document.getElementById('network').value='198.51.100.0/24';document.getElementById('scan-network').click()")
-                self.assertEqual(js('window.scans.length'), 2)
-                self.assertEqual(js('window.scans[1].cidr'), '198.51.100.0/24')
-                js("""(()=>{const s=structuredClone(window.classroom.state);s.networks=[];renderState(s);backend=window.originalNetworkBackend})()""")
-                self.assertTrue(js("document.getElementById('scan-button').disabled"))
-                self.assertFalse(js("document.getElementById('network-help').hidden"))
-                self.assertFalse(js("document.getElementById('connect-button').disabled"))
+                # Drive network fixtures through the real WebChannel. Renderer-only
+                # fixtures can be overwritten by a queued periodic service snapshot.
+                # Wait for the exact fixture and completion of each command before
+                # advancing; never rely on renderer/host scheduling speed.
+                def publish_networks(networks):
+                    window.service._networks = networks
+                    window.service._publish()
+                    expected = json.dumps(networks, separators=(',', ':'))
+                    _spin(app, lambda: js('JSON.stringify(window.classroom.state.networks)') == expected)
+
+                _spin(app, lambda: js('pending.size') == 0)
+                js("""window.originalNetworkBackend=backend;window.scans=[];
+                    backend={command:(action,payload,done)=>{
+                        if(action==='scan')window.scans.push(JSON.parse(payload));
+                        done('{"ok":true}');
+                    }};""")
+                try:
+                    # Zero networks: search cannot run; manual IP remains available.
+                    publish_networks([])
+                    self.assertTrue(js("document.getElementById('scan-button').disabled"))
+                    self.assertFalse(js("document.getElementById('network-help').hidden"))
+                    self.assertFalse(js("document.getElementById('connect-button').disabled"))
+                    js("document.getElementById('scan-button').click()")
+                    self.assertEqual(js('window.scans.length'), 0)
+
+                    # One network: one click dispatches that exact subnet.
+                    publish_networks([{'name':'Wi-Fi','cidr':'192.0.2.0/24'}])
+                    js("document.getElementById('scan-button').click()")
+                    _spin(app, lambda: js('pending.size') == 0)
+                    self.assertEqual(js('window.scans.length'), 1)
+                    self.assertEqual(js('window.scans[0].cidr'), '192.0.2.0/24')
+                    self.assertTrue(js("document.getElementById('network-details').hidden"))
+
+                    # Multiple networks: opening the chooser dispatches nothing.
+                    publish_networks([{'name':'Wi-Fi','cidr':'192.0.2.0/24'},
+                                      {'name':'Ethernet','cidr':'198.51.100.0/24'}])
+                    js("document.getElementById('scan-button').click()")
+                    self.assertEqual(js('window.scans.length'), 1)
+                    self.assertFalse(js("document.getElementById('network-details').hidden"))
+                    js("document.getElementById('network').value='198.51.100.0/24';document.getElementById('scan-network').click()")
+                    _spin(app, lambda: js('pending.size') == 0)
+                    self.assertEqual(js('window.scans.length'), 2)
+                    self.assertEqual(js('window.scans[1].cidr'), '198.51.100.0/24')
+                finally:
+                    _spin(app, lambda: js('pending.size') == 0)
+                    js('backend=window.originalNetworkBackend')
+                    publish_networks([])
 
                 # Invalid hidden controls are disclosed, focused, and never saved.
                 js("""window.classroom.navigate('connection');
@@ -100,28 +138,33 @@ class SettingsWorkflowTests(unittest.TestCase):
                 _spin(app, lambda: js("document.querySelectorAll('#board-list tr').length") == 1)
                 js("""window.rowMutations=0;window.rowObserver=new MutationObserver(v=>window.rowMutations+=v.length);
                     window.rowObserver.observe(document.getElementById('board-list'),{subtree:true,childList:true,attributes:true,characterData:true});""")
-                for _ in range(5):
+                for index in range(5):
+                    # An unrelated transcript marker is a delivery barrier. It
+                    # proves each snapshot reached the renderer before measuring.
+                    marker = f'row-mutation-barrier-{index}'
+                    window.service._transcript['status'] = marker
                     window.service._publish()
-                    app.processEvents()
+                    _spin(app, lambda: js('window.classroom.state.transcript.status') == marker)
                 self.assertEqual(js('window.rowMutations'), 0)
                 js('window.rowObserver.disconnect()')
 
                 # A delayed save cannot erase edits made after submission. Duplicate
                 # submissions are suppressed without blocking the navigation thread.
                 js("""window.classroom.navigate('timers');window.realBackend=backend;window.saveCalls=0;
-                    backend={command:(a,p,done)=>{window.saveCalls++;setTimeout(()=>done('{"ok":true}'),150)}};
+                    backend={command:(a,p,done)=>{window.saveCalls++;window.completeTimerSave=()=>done('{"ok":true}')}};
                     const input=document.getElementById('question_seconds');input.value='41';input.dispatchEvent(new Event('input',{bubbles:true}));
                     document.getElementById('timers-form').dispatchEvent(new Event('submit',{cancelable:true}));
                     document.getElementById('timers-form').dispatchEvent(new Event('submit',{cancelable:true}));
                     input.value='42';input.dispatchEvent(new Event('input',{bubbles:true}));""")
                 self.assertTrue(js("document.getElementById('save-timers').disabled"))
+                js('window.completeTimerSave()')
                 _spin(app, lambda: not js("document.getElementById('save-timers').disabled"))
                 self.assertEqual(js('window.saveCalls'), 1)
                 self.assertEqual(js("document.getElementById('question_seconds').value"), '42')
                 self.assertTrue(js("!document.querySelector('[data-draft-status=timers-form]').hidden"))
                 js('backend=window.realBackend')
                 js("document.getElementById('save-timers').click()")
-                _spin(app, lambda: repository.load().question_seconds == 42)
+                _spin(app, lambda: repository.load().question_seconds == 42 and js("!document.getElementById('save-timers').disabled && document.querySelector('[data-draft-status=timers-form]').hidden"))
                 self.assertTrue(js("document.querySelector('[data-draft-status=timers-form]').hidden"))
                 # A delayed orientation save must not delete a newer draft stored
                 # for that board when the teacher moves to a different panel.
@@ -133,12 +176,13 @@ class SettingsWorkflowTests(unittest.TestCase):
                 _spin(app, lambda: js("document.querySelectorAll('#orientation-board option').length") == 2)
                 js("""window.classroom.navigate('connection');
                     document.getElementById('orientation-details').open=true;
-                    backend={command:(a,p,done)=>setTimeout(()=>done('{"ok":true}'),150)};
+                    backend={command:(a,p,done)=>{window.completeOrientationSave=()=>done('{"ok":true}')}};
                     const board=document.getElementById('orientation-board'),rotation=document.getElementById('rotation');
                     board.focus();rotation.value='90';rotation.dispatchEvent(new Event('change',{bubbles:true}));
                     document.getElementById('orientation-form').dispatchEvent(new Event('submit',{cancelable:true}));
                     rotation.value='180';rotation.dispatchEvent(new Event('change',{bubbles:true}));
                     board.focus();board.value='B';board.dispatchEvent(new Event('change',{bubbles:true}));""")
+                js('window.completeOrientationSave()')
                 _spin(app, lambda: not js("document.querySelector('#orientation-form button[type=submit]').disabled"))
                 js("(()=>{const board=document.getElementById('orientation-board');board.focus();board.value='A';board.dispatchEvent(new Event('change',{bubbles:true}));backend=window.realBackend})()")
                 self.assertEqual(js("document.getElementById('rotation').value"), '180')
