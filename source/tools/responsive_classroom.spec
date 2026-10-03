@@ -47,9 +47,16 @@ for package in ("sherpa_onnx", "sounddevice", "soxr"):
     binaries.extend(package_binaries)
     hiddenimports.extend(package_hidden)
 
+optional_distributions = {"PyYAML", "charset-normalizer", "typing_extensions"}
 for distribution_name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6",
-                          "numpy", "sounddevice", "soxr", "sherpa-onnx", "sherpa-onnx-core", "cffi"):
-    distribution = metadata.distribution(distribution_name)
+                          "numpy", "sounddevice", "soxr", "sherpa-onnx", "sherpa-onnx-core", "cffi",
+                          *sorted(optional_distributions)):
+    try:
+        distribution = metadata.distribution(distribution_name)
+    except metadata.PackageNotFoundError:
+        if distribution_name in optional_distributions:
+            continue
+        raise
     package_name = distribution.metadata["Name"].replace("/", "_")
     for entry in distribution.files or ():
         relative = str(entry).replace("\\", "/")
