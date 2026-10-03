@@ -1,4 +1,4 @@
-# Responsive Classroom 3.0.2
+# Responsive Classroom 3.0.3
 
 English · [繁體中文](README.md)
 
@@ -12,7 +12,9 @@ Source: [tput600/responsive_classroom](https://github.com/tput600/responsive_cla
 
 Flash and configure WLED first, connect the panel to Wi-Fi, and configure an 8×8 matrix with 64 LEDs. The computer and panels must be on a network that allows them to communicate. This application does not flash firmware or perform the initial Wi-Fi setup. Campus or public Wi-Fi may isolate devices; use a network that permits communication between them.
 
-On Windows x64, open `ResponsiveClassroom.exe`. Keep the accompanying `_internal` folder: it contains the Web UI, offline speech models, fonts, and playback components. To share the application, send the complete `ResponsiveClassroom-Portable-windows-x64-v3.0.2.zip`. Recipients must extract the entire ZIP before starting the EXE. Sending the EXE alone is insufficient. Speech recognition runs locally without an internet connection. The Release includes a SHA-256 checksum for download integrity; it is not a code signature.
+On Windows x64, open `ResponsiveClassroom.exe`. Keep the accompanying `_internal` folder: it contains the Web UI, offline speech models, fonts, and playback components. To share the application, send the complete `ResponsiveClassroom-Portable-windows-x64-v3.0.3.zip`. Recipients must extract the entire ZIP before starting the EXE. Sending the EXE alone is insufficient. Speech recognition runs locally without an internet connection. The Release includes a SHA-256 checksum for download integrity; it is not a code signature.
+
+On macOS 14+, choose the complete `macos-arm64` (Apple Silicon) or `macos-x86_64` (Intel) ZIP. Extract it and keep the `.app` intact. These candidates are not Developer ID signed or notarized and Gatekeeper may block them; read the [Mac guide](MACOS.md) and do not disable system security protections.
 
 ## 2. Connect and orient light panels
 
@@ -154,7 +156,7 @@ On Windows, settings, imported audio, and activity records are stored in `%APPDA
 
 Activity logs can contain state changes, volume readings, and accepted commands. Raw microphone recordings are not saved. To disable activity records, set `session_logging_enabled` to `false` in the settings JSON. Speech runs offline; microphone audio is not uploaded to the cloud.
 
-The delivered application is a Windows x64 portable package. Clean Windows VM acceptance has not been verified. A native macOS release has not been built or tested on a Mac; a Windows EXE cannot run directly on macOS.
+The v3.0.3 release pipeline requires Windows x64 and separate macOS arm64/x86_64 native packages and frozen smoke tests to pass before publication. Mac candidates target macOS 14+ and are not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
 
 For panel connection problems, confirm that WLED is online and the network permits communication between the computer and panel. Try a manual IP or discovery on the local subnet. For orientation problems, check that panel's rotation, mirroring, and serpentine settings.
 
@@ -185,7 +187,7 @@ py -3.12 source/tools/setup_environment.py --dev --models
 
 Initial setup requires internet access to download dependencies and models. Model sources, licenses, and SHA-256 values are pinned in the repository. A download or hash failure stops setup without replacing valid models. Model binaries are excluded from Git; complete Releases bundle them for offline use.
 
-On macOS or in a cloud container, use `python3.12` and `.venv/bin/python`. macOS requires native build validation. Official automated validation and portable releases use Windows.
+On macOS or in a cloud container, use `python3.12` and `.venv/bin/python`. The macOS adaptation and native build/acceptance instructions are in [MACOS.md](MACOS.md). Download the matching Mac architecture; automated packaging checks do not replace Finder, microphone, and physical-panel acceptance.
 
 ## 12. Edit locally and in the cloud
 
@@ -210,6 +212,8 @@ Open a Pull Request and merge after Windows checks pass. Locally, return to `mai
 Select **Code → Codespaces → Create codespace** on GitHub. The container prepares the fixed dependencies and offline models. Edit the UI, core, or algorithms, then commit and push; Windows automation validates the change. Codespaces cannot directly access your computer's microphone or classroom LAN panels. Test physical capture, playback, and panel output locally. Pull cloud changes locally to synchronize them.
 
 ## 13. Publish a new version
+
+Use **Build and release desktop packages** for a cross-platform release. Windows, Apple Silicon, and Intel native builds and integrity checks must all succeed before a new latest Release is created. The initial v3.0.3 integration on main can start it automatically; later versions require updated release notes and an explicit manual workflow run. Existing versions are never overwritten.
 
 Update `VERSION` in `source/classroom_resources.py` and both manuals. After testing, run in the Windows development environment:
 

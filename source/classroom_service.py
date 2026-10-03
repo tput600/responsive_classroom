@@ -5,12 +5,13 @@ from __future__ import annotations
 import base64
 import ipaddress
 import json
+import sys
 import threading
 import time
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal, Slot
+from PySide6.QtCore import QCoreApplication, QMicrophonePermission, QObject, QThread, QTimer, Qt, Signal, Slot
 
 from classroom_audio import AudioRuntime, CommandParser
 from classroom_core import (
@@ -88,6 +89,7 @@ class ClassroomService(QObject):
         self.logger = SessionLogger(self.repository.path.parent / "sessions",
                                     enabled=self.start_io and self.settings.session_logging_enabled)
         self.audio = None
+        self._microphone_permission_pending = False
         self._listening_enabled = None
         self.worker = None
         self.playback = AudioPlayback(self.repository.path.parent, self.settings,
@@ -367,6 +369,8 @@ class ClassroomService(QObject):
 
     def _do_refresh_microphones(self, _p):
         self.refresh_microphones()
+        if self.audio is None:
+            self._start_audio()
 
     def _do_refresh_networks(self, _p):
         self.refresh_networks()
@@ -683,8 +687,39 @@ class ClassroomService(QObject):
             self._start_output()
         self._publish()
 
+    def _microphone_access(self):
+        # Qt's permission API requires a real application bundle on macOS.
+        # Source runs rely on the launching Python/Terminal application's TCC
+        # permission; never request it from PortAudio's background worker.
+        if sys.platform != "darwin" or not getattr(sys, "frozen", False):
+            return True
+        app = QCoreApplication.instance()
+        permission = QMicrophonePermission()
+        status = app.checkPermission(permission)
+        if status == Qt.PermissionStatus.Granted:
+            return True
+        if status == Qt.PermissionStatus.Undetermined:
+            message = "請允許麥克風權限，才能偵測音量與語音指令"
+            if not self._microphone_permission_pending:
+                self._microphone_permission_pending = True
+                app.requestPermission(permission, self, self._microphone_permission_finished)
+        else:
+            message = "麥克風權限已拒絕；請在系統設定 → 隱私權與安全性 → 麥克風允許本程式，然後重新啟動"
+        self._microphone = {"ok": False, "message": message}
+        self.controller.set_microphone_status(False, message)
+        self._publish()
+        return False
+
+    def _microphone_permission_finished(self, _permission):
+        self._microphone_permission_pending = False
+        if not self._closing:
+            self._start_audio()
+
     def _start_audio(self):
-        if self._closing or not self.start_io or self._audio_stopping:
+        if (self._closing or not self.start_io or self._audio_stopping or
+                self.audio is not None or self._microphone_permission_pending):
+            return
+        if not self._microphone_access():
             return
         self._audio_generation += 1
         generation = self._audio_generation
