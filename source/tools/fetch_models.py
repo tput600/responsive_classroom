@@ -23,7 +23,8 @@ def download(url, destination):
     if urlsplit(url).scheme != 'https' or urlsplit(url).hostname != 'github.com':
         raise ValueError('Only the pinned HTTPS upstream URLs are accepted')
     request = urllib.request.Request(url, headers={'User-Agent': 'Responsive-Classroom-Model-Setup'})
-    with urllib.request.urlopen(request, timeout=60) as response, destination.open('wb') as stream:  # nosec B310: fixed HTTPS GitHub URLs checked above
+    # Both accepted upstream URLs are fixed HTTPS GitHub assets.
+    with urllib.request.urlopen(request, timeout=60) as response, destination.open('wb') as stream:  # nosec B310
         if not response.url.startswith('https://'):
             raise RuntimeError('Model download redirected away from HTTPS')
         count = 0

@@ -1,13 +1,18 @@
 """Fail before pushing private runtime files, secrets, or machine-specific paths."""
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 
 
 def main():
     root = Path(__file__).resolve().parents[2]
-    result = subprocess.run(['git', 'ls-files', '-z'], cwd=root, check=True, capture_output=True)
+    executable = shutil.which('git')
+    if not executable:
+        raise RuntimeError('Git is required to inspect public files')
+    # The resolved Git executable receives fixed commands; no shell is used.
+    result = subprocess.run([executable, 'ls-files', '-z'], cwd=root, check=True, capture_output=True)  # nosec B603
     names = result.stdout.decode('utf-8').split('\0')
     forbidden_roots = {'.codex', '.venv', '_internal', 'dist', 'build', 'artifacts', 'sessions'}
     patterns = (

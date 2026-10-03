@@ -19,7 +19,7 @@ SOURCE = ROOT / 'source'
 
 def run(arguments, **options):
     # Build invocations use argument lists and never a shell.
-    subprocess.run(arguments, check=True, **options)  # nosec B603: fixed build-time commands
+    subprocess.run(arguments, check=True, **options)  # nosec B603
 
 
 def sha256(path):

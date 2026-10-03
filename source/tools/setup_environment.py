@@ -20,9 +20,10 @@ def main():
     if not python.is_file():
         venv.EnvBuilder(with_pip=True).create(environment)
     requirements = root / 'source' / ('requirements-dev.txt' if args.dev else 'requirements.txt')
-    subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(requirements)], check=True)
+    # Fixed interpreter/module arguments; paths come from this repository, never a shell.
+    subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(requirements)], check=True)  # nosec B603
     if args.models:
-        subprocess.run([str(python), str(root / 'source/tools/fetch_models.py')], check=True)
+        subprocess.run([str(python), str(root / 'source/tools/fetch_models.py')], check=True)  # nosec B603
     print('responsive_classroom environment ready in .venv')
 
 
