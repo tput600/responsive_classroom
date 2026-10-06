@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import shutil
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -47,6 +48,10 @@ class AudioPlayback(QObject):
         self._music_level = 0.0
         self._last_audio_buffer = 0.0
         self._looping = False
+        self._reference_lock = threading.Lock()
+        self._reference_mode: str | None = None
+        self._reference_power = 0.0
+        self._reference_at = 0.0
         self._closed = False
         self._level_timer = QTimer(self)
         self._level_timer.setInterval(100)
@@ -86,6 +91,14 @@ class AudioPlayback(QObject):
     @property
     def music_level(self) -> float:
         return self._music_level if self.has_music_signal else 0.0
+
+    @property
+    def noise_reference_power(self) -> float:
+        with self._reference_lock:
+            if (self._reference_mode in ("notice", "discussion") and self._reference_at and
+                    time.monotonic() - self._reference_at <= 0.6):
+                return self._reference_power
+            return 0.0
 
     @property
     def playing_mode(self) -> str | None:
@@ -256,6 +269,10 @@ class AudioPlayback(QObject):
         self._output.setVolume(0.0 if self.settings.audio_fade_ms else target_volume)
         self._player.setSource(QUrl.fromLocalFile(str(source)))
         self._playing_mode = mode
+        with self._reference_lock:
+            self._reference_mode = mode if loop and mode in ("notice", "discussion") else None
+            self._reference_power = 0.0
+            self._reference_at = 0.0
         self._player.play()
         if self.settings.audio_fade_ms:
             self._fade(0.0, target_volume)
@@ -379,6 +396,9 @@ class AudioPlayback(QObject):
         alpha = 1.0 - math.exp(-duration / tau)
         self._music_level += alpha * (target - self._music_level)
         self._last_audio_buffer = time.monotonic()
+        with self._reference_lock:
+            self._reference_power = rms * rms * output_volume * output_volume
+            self._reference_at = self._last_audio_buffer
 
     def _on_playback_state(self, state) -> None:
         if state == QMediaPlayer.PlaybackState.StoppedState:
@@ -393,6 +413,10 @@ class AudioPlayback(QObject):
         self._music_level = 0.0
         self._last_audio_buffer = 0.0
         self._playing_mode = None
+        with self._reference_lock:
+            self._reference_mode = None
+            self._reference_power = 0.0
+            self._reference_at = 0.0
 
     def _status(self, message: str) -> None:
         if self.on_status:

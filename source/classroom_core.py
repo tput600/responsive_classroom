@@ -777,8 +777,6 @@ class ClassroomController:
     def set_noise_state(self, noise: NoiseState) -> None:
         if self.state.base_mode not in (BaseMode.NOTICE, BaseMode.DISCUSSION) or not self.state.noise_enabled:
             return
-        if self.state.overlay is Overlay.QUESTION:
-            return
         if not self._microphone_ok:
             noise = NoiseState.UNKNOWN
         if noise is not self.state.noise_state:

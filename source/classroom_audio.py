@@ -42,6 +42,8 @@ class NoiseAnalyzer:
         self.spl_offset_db = spl_offset_db
         self.state = NoiseState.QUIET if baseline_dbfs is not None else NoiseState.UNKNOWN
         self._smooth: deque[tuple[float, float]] = deque()
+        self._playback_samples: deque[tuple[float, float, float]] = deque()
+        self._playback_gain = 0.0
         self._calibration_started: float | None = None
         self._calibration_values: list[float] = []
         self._calibration_last_feed: float | None = None
@@ -97,9 +99,35 @@ class NoiseAnalyzer:
         return dbfs, clipped, rms, health
 
     def feed(self, samples, now: float | None = None, classify: bool = True,
-             mode: BaseMode = BaseMode.NOTICE, context_revision: int = 0) -> NoiseReading:
+             mode: BaseMode = BaseMode.NOTICE, context_revision: int = 0,
+             playback_power: float = 0.0) -> NoiseReading:
         now = time.monotonic() if now is None else now
         dbfs, clipped, raw_rms, health = self._dbfs(samples)
+        measurable = health in (AudioHealth.OK, AudioHealth.CLIPPING)
+        mic_power = raw_rms * raw_rms
+        playback_power = (playback_power if math.isfinite(playback_power) and playback_power > 0
+                          else 0.0)
+        if playback_power and measurable:
+            self._playback_samples.append((now, mic_power, playback_power))
+            while self._playback_samples and self._playback_samples[0][0] < now - 2.0:
+                self._playback_samples.popleft()
+            if len(self._playback_samples) >= 12:
+                # ponytail: level correlation handles room feedback; use time-aligned AEC if echo remains.
+                count = len(self._playback_samples)
+                ref_mean = sum(item[2] for item in self._playback_samples) / count
+                mic_mean = sum(item[1] for item in self._playback_samples) / count
+                ref_var = sum((item[2] - ref_mean) ** 2 for item in self._playback_samples) / count
+                mic_var = sum((item[1] - mic_mean) ** 2 for item in self._playback_samples) / count
+                covariance = sum((item[2] - ref_mean) * (item[1] - mic_mean)
+                                 for item in self._playback_samples) / count
+                if ref_var > 1e-12 and mic_var > 1e-12:
+                    correlation = covariance * covariance / (ref_var * mic_var)
+                    gain = covariance / ref_var
+                    if gain > 0 and correlation >= .55:
+                        self._playback_gain = gain if not self._playback_gain else (
+                            .25 * gain + .75 * self._playback_gain)
+        detected_power = max(1e-12, mic_power - self._playback_gain * playback_power)
+        detected_dbfs = max(-120.0, 10.0 * math.log10(detected_power))
         profile = self.settings.noise_profile(mode)
         if (mode is not self._mode or profile != self._profile or
                 context_revision != self._context_revision):
@@ -111,10 +139,9 @@ class NoiseAnalyzer:
             self._candidate = None
         self._last_feed = now
         window_seconds = self.settings.noise_smoothing_ms / 1000.0
-        measurable = health in (AudioHealth.OK, AudioHealth.CLIPPING)
         if not measurable:
             self._smooth.clear()
-        self._smooth.append((now, dbfs if measurable else -120.0))
+        self._smooth.append((now, detected_dbfs if measurable else -120.0))
         while self._smooth and self._smooth[0][0] < now - window_seconds:
             self._smooth.popleft()
         # Average linear power before converting back to dB to avoid averaging log values.
@@ -130,7 +157,7 @@ class NoiseAnalyzer:
             if self._calibration_started is not None:
                 elapsed = now - self._calibration_started
                 if elapsed >= float(self.settings.calibration.get("discard_initial_sec", 2)):
-                    self._calibration_values.append(dbfs if health is AudioHealth.OK else float("nan"))
+                    self._calibration_values.append(detected_dbfs if health is AudioHealth.OK else float("nan"))
                     self._calibration_clipped |= health is AudioHealth.CLIPPING
                     start_valid = self._calibration_started + float(
                         self.settings.calibration.get("discard_initial_sec", 2))
@@ -460,13 +487,15 @@ class AudioRuntime:
                  on_voice: Callable[[bool], None],
                  on_command: Callable[[CommandResult, int], None],
                  on_calibrated: Callable[[float], None] | None = None,
-                 noise_context: Callable[[], tuple[BaseMode, int]] | None = None):
+                 noise_context: Callable[[], tuple[BaseMode, int]] | None = None,
+                 playback_reference: Callable[[], float] | None = None):
         self.device_id, self.model_dir, self.settings = device_id, model_dir, settings
         self.noise_enabled, self.manual_revision = noise_enabled, manual_revision
         self.on_status, self.on_noise = on_status, on_noise
         self.on_voice, self.on_command = on_voice, on_command
         self.on_calibrated = on_calibrated or (lambda _baseline: None)
         self.noise_context = noise_context or (lambda: (BaseMode.NOTICE, 0))
+        self.playback_reference = playback_reference or (lambda: 0.0)
         self.sample_rate = 48000
         self.noise = NoiseAnalyzer(settings, baseline_dbfs)
         self.noise.device_id = device_id
@@ -862,7 +891,8 @@ class AudioRuntime:
                                 rolling = RollingCommandBuffer()
                         try:
                             self.latest = self.noise.feed(raw, now=frame.captured_at, classify=should_classify,
-                                                          mode=mode, context_revision=context_revision)
+                                                          mode=mode, context_revision=context_revision,
+                                                          playback_power=self.playback_reference())
                         except ValueError as exc:
                             self.on_status('calibration', False, str(exc))
                             continue

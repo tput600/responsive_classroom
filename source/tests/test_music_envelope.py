@@ -70,6 +70,7 @@ class MusicEnvelopeTests(unittest.TestCase):
             playback._player = FakePlayer()
             playback._output = FakeOutput()
             playback._playing_mode = "discussion"
+            playback._reference_mode = "discussion"
             pcm = self.buffer(QAudioFormat.SampleFormat.Float,
                               struct.pack("=ff", -0.5, 0.5), rate=1000)
 
@@ -80,6 +81,7 @@ class MusicEnvelopeTests(unittest.TestCase):
             self.assertTrue(playback.has_music_signal)
             self.assertGreater(playback.music_level, 0.0)
             self.assertLessEqual(playback.music_level, 0.5)
+            self.assertAlmostEqual(playback.noise_reference_power, 0.0625)
             self.assertEqual(playback.playing_mode, "discussion")
 
             playback._last_audio_buffer -= 1.0
@@ -91,6 +93,7 @@ class MusicEnvelopeTests(unittest.TestCase):
             playback._clear_music_signal()
             self.assertIsNone(playback.playing_mode)
             self.assertEqual(playback.music_level, 0.0)
+            self.assertEqual(playback.noise_reference_power, 0.0)
             playback.close()
 
     def test_quiet_and_loud_passages_have_strong_smooth_brightness_contrast(self):

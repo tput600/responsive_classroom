@@ -233,15 +233,15 @@ class ClassroomControllerTests(unittest.TestCase):
         self.assertEqual(self.controller.state.base_mode, BaseMode.REST)
         self.assertEqual(self.controller.state.rest_stage, RestStage.REMINDER)
 
-    def test_question_overlay_pauses_noise_classification_but_feedback_does_not(self):
+    def test_question_and_feedback_overlays_keep_noise_classification_live(self):
         self.controller.set_base_mode(BaseMode.NOTICE)
         self.controller.set_noise_state(NoiseState.RISING)
         self.controller.show_overlay(Overlay.QUESTION)
         self.controller.set_noise_state(NoiseState.LOUD)
-        self.assertEqual(self.controller.state.noise_state, NoiseState.RISING)
-        self.controller.show_overlay(Overlay.CORRECT)
-        self.controller.set_noise_state(NoiseState.LOUD)
         self.assertEqual(self.controller.state.noise_state, NoiseState.LOUD)
+        self.controller.show_overlay(Overlay.CORRECT)
+        self.controller.set_noise_state(NoiseState.QUIET)
+        self.assertEqual(self.controller.state.noise_state, NoiseState.QUIET)
 
     def test_disabling_voice_cancels_idle_but_language_change_preserves_it(self):
         self.controller.update_settings(replace(self.controller.settings, voice_enabled=True))

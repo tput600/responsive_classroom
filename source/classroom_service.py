@@ -760,7 +760,8 @@ class ClassroomService(QObject):
             lambda active: self._events.voice.emit(generation, active),
             lambda result, revision: self._events.command.emit(generation, result, revision),
             lambda baseline: self._events.calibrated.emit(generation, baseline),
-            noise_context=lambda: self._noise_context)
+            noise_context=lambda: self._noise_context,
+            playback_reference=lambda: self.playback.noise_reference_power)
         self._listening_enabled = None
         self._sync_voice_capture()
         self.audio.start()

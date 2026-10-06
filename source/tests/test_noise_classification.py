@@ -1,5 +1,6 @@
 import unittest
 import json
+import math
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
@@ -73,6 +74,29 @@ class NoiseClassificationTests(unittest.TestCase):
         switched = analyzer.feed(loud, now=.35, mode=BaseMode.DISCUSSION, context_revision=1)
         self.assertEqual(switched.state, NoiseState.LOUD)
         self.assertAlmostEqual(switched.smoothed_dbfs, before, delta=.5)
+
+    def test_looped_music_echo_returns_to_quiet_but_external_noise_still_triggers(self):
+        settings = Settings(noise_smoothing_ms=200, noise_rising_enter_seconds=.2,
+                            noise_loud_enter_seconds=.2, noise_exit_seconds=.2)
+        ambient_power = 10 ** (-60 / 10)
+        analyzer = NoiseAnalyzer(settings, baseline_dbfs=-60)
+        reading = None
+        for step in range(160):
+            now = step / 40
+            playback_power = 10 ** ((-24 if step % 16 < 8 else -36) / 10)
+            mic_power = ambient_power + .35 * playback_power
+            dbfs = 10 * math.log10(mic_power)
+            reading = analyzer.feed(tone(dbfs), now=now, playback_power=playback_power)
+        self.assertEqual(reading.state, NoiseState.QUIET)
+        self.assertLess(reading.relative_db, 1)
+
+        for step in range(160, 240):
+            now = step / 40
+            playback_power = 10 ** ((-24 if step % 16 < 8 else -36) / 10)
+            mic_power = 10 ** (-60 / 10) + .35 * playback_power + 10 ** (-30 / 10)
+            reading = analyzer.feed(tone(10 * math.log10(mic_power)), now=now,
+                                    playback_power=playback_power)
+        self.assertEqual(reading.state, NoiseState.LOUD)
 
 
 if __name__ == "__main__":
