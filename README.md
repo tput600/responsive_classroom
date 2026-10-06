@@ -1,4 +1,4 @@
-# 課堂小幫手 Responsive Classroom 3.1.0
+# 課堂小幫手 Responsive Classroom 3.1.1
 
 [English](README.en.md) · 繁體中文
 
@@ -12,7 +12,7 @@
 
 先在 WLED 完成控制板燒錄、Wi-Fi 連線與 8×8（64 顆 LED）設定，並確認電腦和燈板位於可互通的區域網路。程式不負責初次燒錄或 Wi-Fi 配網。校園或公共 Wi-Fi 若隔離裝置，請改用允許彼此連線的網路。
 
-下載同一份 `ResponsiveClassroom-AllPlatforms-v3.1.0.zip` 並完整解壓縮；不需要安裝 Python。
+下載同一份 `ResponsiveClassroom-AllPlatforms-v3.1.1.zip` 並完整解壓縮；不需要安裝 Python。
 
 - Windows x64：開啟 `Windows/ResponsiveClassroom.exe`。保留旁邊完整的 `_internal` 與其他檔案，不能只傳 EXE。
 - macOS 14+：開啟 `macOS/ResponsiveClassroom.app`。這是同時包含 Intel 與 Apple Silicon 執行碼的單一 universal2 App，不需另外選處理器版本。請使用 Mac 的「封存工具程式」解壓，保留整個 `.app` 與內部連結。
@@ -123,7 +123,7 @@
 
 Windows 的設定、匯入音源與活動紀錄位於 `%APPDATA%\Responsive Classroom`。設定使用 UTF-8、原子儲存，升級遷移前先備份；自訂計時、音源、觸發詞、安靜基線與板子方向會保留。本版只調整仍完整等於前版預設、且不與自訂注意門檻衝突的討論門檻。活動紀錄可包含狀態、音量和已接受指令，不保存原始錄音；若不需要紀錄，可在設定 JSON 將 `session_logging_enabled` 設為 `false`。語音模型離線執行，錄音不傳送到雲端。
 
-v3.1.0 發佈流程要求 Windows x64、macOS arm64／x86_64 原生封裝及 frozen smoke tests 全部成功才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
+v3.1.1 發佈流程要求 Windows x64 套件、單一 universal2 Mac App、在 arm64 與 x86_64 上驗證同一份 Mac 封裝，以及整合 ZIP 檢查全部通過才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
 
 ## 11. 開發環境與專案結構
 

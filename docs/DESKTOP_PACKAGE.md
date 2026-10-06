@@ -8,7 +8,7 @@ package, not a publication command or a claim of completed manual acceptance.
 ## Recipient layout
 
 ```text
-ResponsiveClassroom-Desktop-v3.1.0.zip
+ResponsiveClassroom-Desktop-v3.1.1.zip
 ├── README.txt
 ├── desktop_manifest.json
 ├── Windows/
@@ -56,10 +56,10 @@ ZIP. The assembler does not execute either application or publish anything.
 
 ```sh
 python source/tools/assemble_desktop_archive.py \
-  --windows artifacts/ResponsiveClassroom-Portable-windows-x64-v3.1.0.zip \
-  --macos artifacts/ResponsiveClassroom-Portable-macos-universal2-v3.1.0.zip \
-  --output artifacts/ResponsiveClassroom-Desktop-v3.1.0.zip \
-  --version 3.1.0 \
+  --windows artifacts/ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip \
+  --macos artifacts/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip \
+  --output artifacts/ResponsiveClassroom-Desktop-v3.1.1.zip \
+  --version 3.1.1 \
   --validation-evidence build/reports/native-validation.json \
   --report build/reports/desktop-integrity.json
 ```

@@ -1,4 +1,4 @@
-# Responsive Classroom 3.1.0
+# Responsive Classroom 3.1.1
 
 English · [繁體中文](README.md)
 
@@ -12,7 +12,7 @@ Source: [tput600/responsive_classroom](https://github.com/tput600/responsive_cla
 
 Flash and configure WLED first, connect the panel to Wi-Fi, and configure an 8×8 matrix with 64 LEDs. The computer and panels must be on a network that allows them to communicate. This application does not flash firmware or perform the initial Wi-Fi setup. Campus or public Wi-Fi may isolate devices; use a network that permits communication between them.
 
-Download and fully extract one `ResponsiveClassroom-AllPlatforms-v3.1.0.zip`. Python is not required.
+Download and fully extract one `ResponsiveClassroom-AllPlatforms-v3.1.1.zip`. Python is not required.
 
 - Windows x64: open `Windows/ResponsiveClassroom.exe`. Keep the entire adjacent `_internal` directory and all other files; the EXE alone is insufficient.
 - macOS 14+: open `macOS/ResponsiveClassroom.app`. This single universal2 app contains both Intel and Apple Silicon executable code. Use macOS Archive Utility and keep the app and its internal links intact.
@@ -159,7 +159,7 @@ On Windows, settings, imported audio, and activity records are stored in `%APPDA
 
 Activity logs can contain state changes, volume readings, and accepted commands. Raw microphone recordings are not saved. To disable activity records, set `session_logging_enabled` to `false` in the settings JSON. Speech runs offline; microphone audio is not uploaded to the cloud.
 
-The v3.1.0 release pipeline requires Windows x64 and separate macOS arm64/x86_64 native packages and frozen smoke tests to pass before publication. Mac candidates target macOS 14+ and are not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
+The v3.1.1 release requires a Windows x64 package, one universal2 macOS app, native checks of that same app on arm64 and x86_64, and a verified combined archive before publication. The Mac app targets macOS 14+ and is not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
 
 For panel connection problems, confirm that WLED is online and the network permits communication between the computer and panel. Try a manual IP or discovery on the local subnet. For orientation problems, check that panel's rotation, mirroring, and serpentine settings.
 

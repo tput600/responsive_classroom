@@ -138,8 +138,8 @@ jobs:
       - name: Verify every binary, sealed bundle, offline model, and WebEngine UI
         run: |
           python source/tools/verify_universal_macos.py \
-            --archive artifacts/ResponsiveClassroom-Portable-macos-universal2-v3.1.0.zip \
-            --version 3.1.0 --machine '${{ matrix.machine }}' --reports build/reports
+            --archive artifacts/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip \
+            --version 3.1.1 --machine '${{ matrix.machine }}' --reports build/reports
       - name: Save native evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -178,7 +178,7 @@ jobs:
           python - <<'PYCODE'
           import hashlib, json, os
           from pathlib import Path
-          archive = Path('inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.0.zip')
+          archive = Path('inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip')
           with archive.open('rb') as stream:
               digest = hashlib.file_digest(stream, 'sha256').hexdigest()
           reports = [json.loads(path.read_text()) for path in Path('evidence').rglob('native-verification.json')]
@@ -190,16 +190,16 @@ jobs:
           PYCODE
       - run: |
           python source/tools/assemble_desktop_archive.py \
-            --windows inputs/ResponsiveClassroom-Portable-windows-x64-v3.1.0.zip \
-            --macos inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.0.zip \
-            --version 3.1.0 --output artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip \
+            --windows inputs/ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip \
+            --macos inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip \
+            --version 3.1.1 --output artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip \
             --report build/reports/unified-integrity.json --validation-evidence validation-evidence.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ResponsiveClassroom-AllPlatforms-v3.1.0
+          name: ResponsiveClassroom-AllPlatforms-v3.1.1
           path: |
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.0.zip.sha256
+            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip
+            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip.sha256
             build/reports/unified-integrity.json
           if-no-files-found: error
           compression-level: 0

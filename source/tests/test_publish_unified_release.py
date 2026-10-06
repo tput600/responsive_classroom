@@ -25,9 +25,9 @@ class UnifiedPublicationTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         (self.root / 'source').mkdir()
-        (self.root / 'source/classroom_resources.py').write_text('VERSION = "3.1.0"\n')
+        (self.root / 'source/classroom_resources.py').write_text('VERSION = "3.1.1"\n')
         (self.root / 'docs/releases').mkdir(parents=True)
-        (self.root / 'docs/releases/v3.1.0.md').write_text('# Release 3.1.0\n')
+        (self.root / 'docs/releases/v3.1.1.md').write_text('# Release 3.1.1\n')
         self.commit = 'a' * 40
         self.run_id = 123
         self.artifact = {
@@ -117,7 +117,7 @@ class UnifiedPublicationTests(unittest.TestCase):
                 self.verify_run()
 
     def test_bootstrap_rejects_main_push_or_other_branch_push(self):
-        for branch in ('main', 'codex/unified-desktop-package', 'unrelated', 'refs/tags/v3.1.0'):
+        for branch in ('main', 'codex/unified-desktop-package', 'unrelated', 'refs/tags/v3.1.1'):
             env = dict(self.bootstrap_env(), GITHUB_REF=f'refs/heads/{branch}')
             with (
                 self.subTest(branch=branch),
@@ -186,7 +186,7 @@ class UnifiedPublicationTests(unittest.TestCase):
             self.verify_run()
         self.git.return_value.stdout = self.commit
         (self.root / 'source/classroom_resources.py').write_text('VERSION = "3.0.3"\n')
-        with self.assertRaisesRegex(ValueError, 'version must be 3.1.0'):
+        with self.assertRaisesRegex(ValueError, 'version must be 3.1.1'):
             self.verify_run()
         self.api.assert_not_called()
 
@@ -265,7 +265,7 @@ class UnifiedPublicationTests(unittest.TestCase):
         records = [{'path': path.relative_to(windows).as_posix(), 'bytes': path.stat().st_size,
                     'sha256': desktop.sha256(path)} for path in sorted(windows.rglob('*')) if path.is_file()]
         (windows / 'resource_manifest.json').write_bytes(desktop.json_bytes(
-            {'version': '3.1.0', 'platform': 'windows-x64', 'files': records}))
+            {'version': '3.1.1', 'platform': 'windows-x64', 'files': records}))
         winzip = self.root / 'windows.zip'
         with zipfile.ZipFile(winzip, 'w') as zipped:
             for path in windows.rglob('*'):
@@ -277,15 +277,15 @@ class UnifiedPublicationTests(unittest.TestCase):
         executable.write_bytes(b'fake Mac executable')
         executable.chmod(0o755)
         (executable.parent.parent / 'Info.plist').write_bytes(plistlib.dumps({
-            'CFBundleVersion': '3.1.0', 'CFBundleShortVersionString': '3.1.0',
+            'CFBundleVersion': '3.1.1', 'CFBundleShortVersionString': '3.1.1',
             'LSMinimumSystemVersion': '14.0'}))
         (macos / 'resource_manifest.json').write_bytes(desktop.json_bytes(
-            {'version': '3.1.0', 'platform': 'macos-universal2', 'files': tree_records(macos)}))
+            {'version': '3.1.1', 'platform': 'macos-universal2', 'files': tree_records(macos)}))
         maczip = self.root / 'macos.zip'
         write_archive(macos, maczip)
         self.evidence = {'commit': self.commit, 'run': 'https://github.com/example/classroom/actions/runs/123',
                          'windows_job': 'passed', 'macos_native': [
-                             {'machine': machine, 'version': '3.1.0', 'archive_sha256': desktop.sha256(maczip),
+                             {'machine': machine, 'version': '3.1.1', 'archive_sha256': desktop.sha256(maczip),
                               'frozen_model': 'passed', 'frozen_ui': 'passed', 'signature': 'ad-hoc-verified',
                               'universal_binaries': 8} for machine in ('arm64', 'x86_64')]}
         evidence = self.root / 'evidence.json'
@@ -294,7 +294,7 @@ class UnifiedPublicationTests(unittest.TestCase):
         evidence.write_text(json.dumps(self.evidence, indent=2) + '\n', encoding='utf-8')
         self.directory = self.root / 'artifacts'
         report = desktop.assemble(winzip, maczip, self.directory / release.ARCHIVE,
-                                  version='3.1.0', validation_evidence=evidence)
+                                  version='3.1.1', validation_evidence=evidence)
         (self.directory / release.REPORT).write_bytes(desktop.json_bytes(report))
         return [self.directory / release.ARCHIVE, self.directory / (release.ARCHIVE + '.sha256')]
 
@@ -308,7 +308,7 @@ class UnifiedPublicationTests(unittest.TestCase):
         evidence = {'commit': self.commit,
                     'run': 'https://github.com/example/classroom/actions/runs/123',
                     'windows_job': 'passed', 'note': '雙架構原生驗證',
-                    'macos_native': [{'machine': machine, 'version': '3.1.0',
+                    'macos_native': [{'machine': machine, 'version': '3.1.1',
                         'archive_sha256': 'f' * 64, 'frozen_model': 'passed',
                         'frozen_ui': 'passed', 'signature': 'ad-hoc-verified',
                         'universal_binaries': 8} for machine in ('arm64', 'x86_64')]}
@@ -414,9 +414,9 @@ class UnifiedPublicationTests(unittest.TestCase):
         self.assertFalse((self.root / 'escape.py').exists())
 
     def remote(self, assets, draft=True):
-        return {'id': 888, 'tag_name': 'v3.1.0', 'target_commitish': self.commit,
+        return {'id': 888, 'tag_name': 'v3.1.1', 'target_commitish': self.commit,
                 'draft': draft, 'prerelease': False,
-                'html_url': 'https://github.com/example/classroom/releases/tag/v3.1.0',
+                'html_url': 'https://github.com/example/classroom/releases/tag/v3.1.1',
                 'assets': [{'name': path.name, 'state': 'uploaded', 'size': path.stat().st_size,
                             'digest': 'sha256:' + desktop.sha256(path)} for path in assets]}
 
@@ -442,8 +442,8 @@ class UnifiedPublicationTests(unittest.TestCase):
                     release.verify_uploaded(888, self.commit, assets, draft=True)
 
     def test_existing_tag_or_draft_never_gets_overwritten(self):
-        for tags, releases in [([{'ref': 'refs/tags/v3.1.0'}], []),
-                               ([], [{'tag_name': 'v3.1.0', 'draft': True}])]:
+        for tags, releases in [([{'ref': 'refs/tags/v3.1.1'}], []),
+                               ([], [{'tag_name': 'v3.1.1', 'draft': True}])]:
             with (
                 mock.patch.object(release, 'matching_refs', return_value=tags),
                 mock.patch.object(release, 'release_list', return_value=releases),
@@ -477,7 +477,7 @@ class UnifiedPublicationTests(unittest.TestCase):
             release.execute('publish', 123, self.commit, self.directory, root=self.root)
         self.assertEqual(operations[:6], ['run', 'absent', 'download', 'verify', 'run', 'absent'])
         command = gh.call_args.args
-        self.assertEqual(command[:3], ('release', 'create', 'v3.1.0'))
+        self.assertEqual(command[:3], ('release', 'create', 'v3.1.1'))
         self.assertEqual(command[3:5], tuple(str(path) for path in assets))
         self.assertIn('--draft', command)
         self.assertNotIn('--clobber', command)
@@ -509,7 +509,7 @@ class UnifiedPublicationTests(unittest.TestCase):
     def test_promote_rechecks_then_patches_only_exact_id_before_latest_check(self):
         with mock.patch.object(release, 'verify_uploaded', return_value={'html_url': 'verified release'}) as verify, \
                 mock.patch.object(release, 'verify_run', return_value=self.artifact), \
-                mock.patch.object(release, 'api', side_effect=[{}, {'id': 888, 'tag_name': 'v3.1.0'}]) as api:
+                mock.patch.object(release, 'api', side_effect=[{}, {'id': 888, 'tag_name': 'v3.1.1'}]) as api:
             release.promote(888, 123, self.commit, self.artifact, [])
             self.assertEqual(verify.call_args_list[0].kwargs, {'draft': True})
             self.assertEqual(verify.call_args_list[1].kwargs, {'draft': False})
@@ -537,7 +537,7 @@ class UnifiedPublicationTests(unittest.TestCase):
 
     def test_numeric_draft_lookup_does_not_use_tag_endpoint(self):
         with mock.patch.object(release, 'release_list', return_value=[
-                {'id': 111, 'tag_name': 'v3.0.3'}, {'id': 888, 'tag_name': 'v3.1.0', 'draft': True}]):
+                {'id': 111, 'tag_name': 'v3.0.3'}, {'id': 888, 'tag_name': 'v3.1.1', 'draft': True}]):
             self.assertEqual(release.find_release_id(), 888)
 
     def test_workflow_is_manual_main_only_and_actions_are_immutable(self):

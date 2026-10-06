@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       draft_release_id:
-        description: 'Optional existing v3.1.0 draft ID to verify and promote; never replaces assets'
+        description: 'Optional existing v3.1.1 draft ID to verify and promote; never replaces assets'
         required: false
         default: ''
         type: string
@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-unified-v3.1.0
+  group: publish-unified-v3.1.1
   cancel-in-progress: false
 
 jobs:

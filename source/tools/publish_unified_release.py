@@ -1,4 +1,4 @@
-"""Publish only the final v3.1.0 archive from an exact, successful build of approved main.
+"""Publish only the final v3.1.1 archive from an exact, successful build of approved main.
 
 No build output is executed, renamed, patched, or recompressed. GitHub's artifact
 transport SHA-256, the inner ZIP checksum, payload manifests, native evidence,
@@ -27,15 +27,15 @@ else:
     from publish_release import current_repository, release_notes, source_tag
 
 ROOT = Path(__file__).resolve().parents[2]
-TAG = 'v3.1.0'
-VERSION = '3.1.0'
+TAG = 'v3.1.1'
+VERSION = '3.1.1'
 WORKFLOW = '.github/workflows/unified-desktop.yml'
 ARTIFACT = f'ResponsiveClassroom-AllPlatforms-{TAG}'
 ARCHIVE = ARTIFACT + '.zip'
 REPORT = 'unified-integrity.json'
 API_VERSION = '2022-11-28'
 BUILD_BRANCHES = frozenset(('main', 'codex/unified-desktop-package'))
-BOOTSTRAP_BRANCH = 'codex/publish-v3.1.0'
+BOOTSTRAP_BRANCH = 'codex/publish-v3.1.1'
 PUBLICATION_WORKFLOW = '.github/workflows/publish-unified.yml'
 JOBS = frozenset((
     'Build genuine universal2 macOS app',
@@ -116,7 +116,7 @@ def require_context(commit, run_id, *, root=ROOT):
     if actual != commit:
         raise ValueError('Checked-out source must match the approved commit')
     if source_tag(root) != TAG:
-        raise ValueError('Checked-out source version must be 3.1.0')
+        raise ValueError('Checked-out source version must be 3.1.1')
     release_notes(TAG, root)
     main = api(f'repos/{current_repository()}/git/ref/heads/main')
     if main.get('object', {}).get('type') != 'commit' or main['object'].get('sha') != commit:
@@ -305,13 +305,13 @@ def matching_refs():
 
 def require_absent():
     if matching_refs() or any(item.get('tag_name') == TAG for item in release_list()):
-        raise ValueError('v3.1.0 already has a tag or release; refusing to replace it')
+        raise ValueError('v3.1.1 already has a tag or release; refusing to replace it')
 
 
 def find_release_id():
     matches = [item for item in release_list() if item.get('tag_name') == TAG]
     if len(matches) != 1:
-        raise ValueError('Expected exactly one v3.1.0 release, including drafts')
+        raise ValueError('Expected exactly one v3.1.1 release, including drafts')
     return positive_id(matches[0].get('id'), 'Release ID')
 
 
@@ -363,7 +363,7 @@ def promote(release_id, run_id, commit, artifact, assets, *, root=ROOT):
     details = verify_uploaded(release_id, commit, assets, draft=False)
     latest = api(f'repos/{current_repository()}/releases/latest')
     if latest.get('id') != release_id or latest.get('tag_name') != TAG:
-        raise ValueError('Published v3.1.0 was not confirmed as latest')
+        raise ValueError('Published v3.1.1 was not confirmed as latest')
     print(details['html_url'])
 
 
@@ -376,7 +376,7 @@ def execute(command, run_id, commit, directory, *, release_id=None, root=ROOT):
     if command == 'publish':
         require_absent()
     if command == 'resume' and find_release_id() != release_id:
-        raise ValueError('Explicit draft ID does not match the existing v3.1.0 release')
+        raise ValueError('Explicit draft ID does not match the existing v3.1.1 release')
     download_artifact(artifact, directory)
     assets = verify_artifacts(directory, run_id, commit)
     if command == 'verify':
