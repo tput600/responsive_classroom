@@ -136,7 +136,7 @@ This recording is **not covered by the project's MIT license**. Rights remain wi
 
 Enable **Music-responsive light** separately for each mode. Actual decoded audio amplitude smoothly changes overall brightness while preserving the mode's pattern, color, and animation. Stopping playback, disabling the checkbox, or having no valid audio restores the normal mode frame. Brightness remains below 30%. This is not a spectrum display and does not open another microphone stream.
 
-Voice recognition and noise detection pause during audio playback to avoid classifying the music as speech or environmental noise. Manual controls remain available. Select **Stop audio** before using voice commands. Use **Save audio settings** for playback settings.
+Microphone capture and noise detection continue during looping Attention or Discussion music and Question, Correct, or Wrong cue sounds. Only the Rest countdown pauses noise detection by design. Playback-aware compensation removes the application's own looping music feedback from noise classification while external noise remains detectable. Speech commands continue to use utterance segmentation. Use **Save audio settings** for playback settings.
 
 This version strengthens the brightness variation: quiet passages visibly dim, louder passages brighten smoothly, with a short attack and slower release. In a comparison using the same fixed *Blue Danube* PCM segment at 50% playback volume, brightness variation spanned approximately 3.56 times the previous version's range. This is an algorithm comparison, not a physical-panel perception study. Track dynamics and playback volume affect the result. Silence does not generate artificial music variation.
 
