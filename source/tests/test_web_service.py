@@ -4,6 +4,10 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.error
+import urllib.request
+from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -248,6 +252,50 @@ class WebServiceTests(unittest.TestCase):
         self.assertEqual(subject.snapshot()["current"]["base_mode"], "DISCUSSION")
         self.assertEqual(subject.snapshot()["transcript"]["status"], "已忽略（已手動切換）")
         finish(subject)
+
+    def test_optional_phone_buttons_take_over_only_base_voice_commands(self):
+        subject = service(self.directory)
+        subject.resource_root = Path(__file__).parents[1] / "resources"
+        with patch("classroom_service.local_networks", return_value=[("LAN", "127.0.0.1", "127.0.0.0/8")]):
+            self.assertEqual(call(subject, "remote", {"enabled": True}), {"ok": True})
+        try:
+            url = subject.snapshot()["remote"]["urls"][0].split("#")[0]
+            token = subject.remote.token
+            with urllib.request.urlopen(url, timeout=2) as response:
+                self.assertIn("課堂模式遙控", response.read().decode("utf-8"))
+            with self.assertRaises(urllib.error.HTTPError):
+                urllib.request.urlopen(url + "state", timeout=2)
+            request = urllib.request.Request(url + "state", headers={"X-Remote-Token": token})
+            with urllib.request.urlopen(request, timeout=2) as response:
+                self.assertEqual(json.load(response)["mode"], "STANDBY")
+            self.assertTrue(subject.remote.connected)
+            subject._tick()
+            subject._apply_command(CommandResult("notice", "NOTICE", "accepted", "notice"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "STANDBY")
+            subject._apply_command(CommandResult("question", "QUESTION", "accepted", "question"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["overlay"], "QUESTION")
+            self.assertIsNone(subject.controller.remaining_seconds("voice"))
+            request = urllib.request.Request(url + "mode", data=b'{"mode":"NOTICE"}',
+                                             headers={"X-Remote-Token": token, "Content-Type": "application/json"})
+            with urllib.request.urlopen(request, timeout=2) as response:
+                self.assertTrue(json.load(response)["ok"])
+            deadline = time.monotonic() + 2
+            while subject.snapshot()["current"]["base_mode"] != "NOTICE" and time.monotonic() < deadline:
+                APP.processEvents()
+                time.sleep(0.005)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
+            with subject.remote._lock:
+                subject.remote._last_seen = time.monotonic() - 7
+            subject._tick()
+            self.assertFalse(subject.snapshot()["remote"]["connected"])
+            subject._apply_command(CommandResult("discussion", "DISCUSSION", "accepted", "discussion"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "DISCUSSION")
+        finally:
+            call(subject, "remote", {"enabled": False})
+            finish(subject)
 
     def test_board_enable_is_saved_independently_and_stop_runs_off_gui_thread(self):
         subject = service(self.directory)

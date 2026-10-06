@@ -31,6 +31,7 @@ from classroom_hardware import (
 from classroom_i18n import translate
 from classroom_logging import SessionLogger
 from classroom_playback import AudioPlayback
+from classroom_remote import MobileRemote
 from classroom_resources import VERSION, default_rest_source
 from pattern_renderer import FrameBlender, music_wave
 from PySide6.QtCore import (
@@ -80,6 +81,7 @@ class _AudioEvents(QObject):
     calibrated = Signal(int, float)
     playback_status = Signal(str)
     hardware = Signal(str, str)
+    remote_mode = Signal(str)
 
 
 class ClassroomService(QObject):
@@ -120,6 +122,10 @@ class ClassroomService(QObject):
         self._events.calibrated.connect(self._calibrated)
         self._events.playback_status.connect(self._set_audio_message)
         self._events.hardware.connect(self._on_hardware)
+        self._events.remote_mode.connect(self._remote_mode_received)
+        self.remote = None
+        self._remote_urls = []
+        self._remote_was_connected = False
         self._audio_generation = 0
         self._noise_context = (BaseMode.STANDBY, 0)
         self._last_reading = None
@@ -189,6 +195,9 @@ class ClassroomService(QObject):
             "statuses": {"microphone": dict(self._microphone), "speech": dict(self._speech),
                          "output": {"enabled": self._output_enabled, "stopping": self._output_stopping},
                          "audio": {"playing": self.playback.is_playing}},
+            "remote": {"enabled": self.remote is not None,
+                       "connected": bool(self.remote and self.remote.connected),
+                       "urls": list(self._remote_urls)},
             "noise": {"dbfs": getattr(noise, "dbfs", None), "smoothed_dbfs": getattr(noise, "smoothed_dbfs", None),
                       "relative_db": getattr(noise, "relative_db", None),
                       "age_ms": max(0.0, (time.monotonic() - captured_at) * 1000) if captured_at > 0 else None,
@@ -223,6 +232,8 @@ class ClassroomService(QObject):
     def _publish(self):
         self._last_periodic_publish = time.monotonic()
         data = self._localized_snapshot(self.snapshot())
+        if self.remote:
+            self.remote.update_state(data["current"])
         self.stateChanged.emit(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
     def _state_changed(self, state):
@@ -292,6 +303,31 @@ class ClassroomService(QObject):
             raise ValueError("unknown classroom mode")
         if not self.controller.submit_intent(mode):
             raise ValueError("classroom mode was rejected")
+
+    def _do_remote(self, p):
+        enabled = self._bool(p, "enabled")
+        if enabled == (self.remote is not None):
+            return
+        if enabled:
+            addresses = list(dict.fromkeys(address for _name, address, _cidr in local_networks()))
+            if not addresses:
+                raise RuntimeError("找不到可供手機連線的區域網路位址")
+            remote = MobileRemote(self.resource_root / "web/mobile.html", self._events.remote_mode.emit)
+            self.remote = remote
+            self._remote_urls = [f"http://{address}:{remote.port}/#{remote.token}" for address in addresses]
+            remote.update_state(self.snapshot()["current"])
+        else:
+            self.remote.close()
+            self.remote = None
+            self._remote_urls = []
+            self._remote_was_connected = False
+            self.controller.cancel_pending_voice()
+        self._publish()
+
+    @Slot(str)
+    def _remote_mode_received(self, mode):
+        if self.remote and self.remote.connected:
+            self._do_mode({"mode": mode})
 
     def _do_voice(self, p):
         enabled = self._bool(p, "enabled")
@@ -845,8 +881,11 @@ class ClassroomService(QObject):
     def _apply_command(self, result, revision):
         raw = getattr(result, "raw_text", getattr(result, "text", ""))
         corrected = getattr(result, "corrected_text", raw)
-        applied = bool(result.intent and self.controller.submit_intent(result.intent, "voice", revision))
-        status = "已套用" if applied else "已忽略（已手動切換）" if revision != self.controller.manual_revision else getattr(result, "reason", "指令未套用")
+        blocked = bool(self.remote and self.remote.connected and result.intent in ("STANDBY", "NOTICE", "DISCUSSION", "REST"))
+        applied = bool(not blocked and result.intent and self.controller.submit_intent(result.intent, "voice", revision))
+        if applied and self.remote and self.remote.connected:
+            self.controller.cancel_pending_voice()
+        status = "手機控制中" if blocked else "已套用" if applied else "已忽略（已手動切換）" if revision != self.controller.manual_revision else getattr(result, "reason", "指令未套用")
         self._transcript = {"raw": raw, "corrected": corrected, "status": status, "active": self._transcript["active"]}
         self._publish()
 
@@ -876,6 +915,11 @@ class ClassroomService(QObject):
 
     def _tick(self):
         now = time.monotonic()
+        connected = bool(self.remote and self.remote.connected)
+        if connected != self._remote_was_connected:
+            self._remote_was_connected = connected
+            self.controller.cancel_pending_voice()
+            self._publish()
         self._sync_voice_capture()
         state = self.controller.state
         pattern = self.mapper.map(state)
@@ -903,6 +947,9 @@ class ClassroomService(QObject):
             return
         self._closing = True
         self._timer.stop()
+        if self.remote:
+            self.remote.close()
+            self.remote = None
         self.playback.close()
         jobs = tuple(self._jobs)
         for job in jobs:

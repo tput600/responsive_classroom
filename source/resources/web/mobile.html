@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>課堂模式遙控</title>
+<style>
+  :root{font-family:system-ui,"Microsoft JhengHei",sans-serif;color:#182f38;background:#f3f6f7}
+  body{max-width:480px;margin:auto;padding:20px 16px 40px}
+  h1{font-size:25px;margin:4px 0 8px}p{color:#536872;line-height:1.6;margin:0 0 22px}
+  h2{font-size:16px;margin:24px 0 12px}section{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  button{min-height:84px;border:1px solid #b7cbd0;border-radius:12px;background:white;color:inherit;font-family:inherit;font-size:21px;font-weight:600;box-shadow:0 2px 8px #16323d12}
+  button[aria-pressed=true]{background:#147b82;color:white;border-color:#147b82}
+  button:active{transform:scale(.98)}button:focus-visible{outline:3px solid #e9a720;outline-offset:2px}
+  #status{font-size:14px}#status.error{color:#b13427}#responses{grid-template-columns:repeat(3,minmax(0,1fr))}#responses button{font-size:17px}
+</style>
+<h1>課堂模式遙控</h1>
+<p id="status" role="status">正在連線…</p>
+<h2>情境</h2>
+<section id="scenarios">
+  <button data-mode="STANDBY" type="button">待機</button><button data-mode="NOTICE" type="button">請注意</button>
+  <button data-mode="DISCUSSION" type="button">討論</button><button data-mode="REST" type="button">休息</button>
+</section>
+<h2>互動</h2>
+<section id="responses">
+  <button data-mode="QUESTION" type="button">提問</button><button data-mode="CORRECT" type="button">答對</button><button data-mode="WRONG" type="button">答錯</button>
+</section>
+<script>
+  'use strict';
+  const token=location.hash.slice(1),status=document.getElementById('status');
+  async function sync(){
+    try{
+      const response=await fetch('/state',{headers:{'X-Remote-Token':token},cache:'no-store'});
+      if(!response.ok)throw Error('無法驗證連線');
+      const state=await response.json();
+      document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===state.mode)));
+      status.textContent='已連線 · 目前模式：'+(document.querySelector(`[data-mode="${state.mode}"]`)?.textContent||state.mode);
+      status.classList.remove('error');
+    }catch(error){status.textContent='連線中斷，請確認電腦與手機在同一網段且電腦已啟用遙控。';status.classList.add('error');}
+  }
+  document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',async()=>{
+    try{
+      const response=await fetch('/mode',{method:'POST',headers:{'Content-Type':'application/json','X-Remote-Token':token},body:JSON.stringify({mode:button.dataset.mode})});
+      if(!response.ok)throw Error('切換失敗');
+      await sync();
+    }catch(error){status.textContent='切換失敗，請檢查連線。';status.classList.add('error');}
+  }));
+  sync();setInterval(sync,2000);
+</script>
+</html>

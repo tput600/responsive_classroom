@@ -10,6 +10,11 @@ const WORDS = {
   settingsTitle: ['連線與收音設定', 'Connection and audio settings'],
   settingsHelp: ['先連接燈板與麥克風，再依需要調整偵測及音源。', 'Connect panels and a microphone, then adjust detection and audio as needed.'],
   settingsSections: ['設定區段', 'Settings sections'],
+  remoteTitle: ['手機遙控', 'Phone remote'], remoteHelp: ['手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。', 'Connect phone and computer to the same Wi-Fi, then open a URL below in your phone browser. The phone only has mode buttons; the computer handles audio and noise detection.'],
+  remoteOn: ['啟用手機按鈕', 'Enable phone buttons'], remoteOff: ['關閉手機按鈕', 'Disable phone buttons'],
+  remoteDisabled: ['未啟用', 'Disabled'], remoteWaiting: ['等待手機連線；四情境仍可用電腦語音切換', 'Waiting for phone; desktop voice can still switch scenarios'],
+  remoteConnected: ['手機已連線；四情境由按鈕控制，三個互動仍可用電腦語音', 'Phone connected; scenario buttons take over, while desktop voice still handles interactions'],
+  remoteCopy: ['複製網址', 'Copy URL'], remoteCopied: ['已複製', 'Copied'],
   boardImmediate: ['加入、同步與移除立即生效；燈板方向需儲存。', 'Adding, syncing and removing panels apply immediately. Save orientation separately.'],
   inputImmediate: ['切換麥克風與校準立即生效。下方偵測及語音指令修改需儲存。', 'Microphone selection and calibration apply immediately. Save detection and voice-command edits below.'],
   audioImmediate: ['音量與淡入淡出需儲存。選擇、清除音檔與隨音樂波動立即生效。', 'Save volume and fade changes. Files and music-responsive switches apply immediately.'],
@@ -164,6 +169,7 @@ function translatePage() {
   hydratedRevision = -1;
   $('language').textContent = language === 'en_US' ? '中文' : 'EN';
   $('language').setAttribute('aria-label', language === 'en_US' ? '切換繁體中文介面' : 'Switch to English');
+  $('remote-urls').dataset.urls='';
   renderState(state); renderDrafts();
 }
 
@@ -364,6 +370,21 @@ function renderState(value) {
   const noiseMode = ['NOTICE','DISCUSSION'].includes(current.base_mode);
   $('noise-toggle').disabled = !noiseMode || !statuses.microphone.available;
   $('noise-toggle').title = $('noise-toggle').disabled ? text('noiseUnavailable') : '';
+  const remote = state.remote || {enabled:false,connected:false,urls:[]};
+  $('remote-toggle').setAttribute('aria-pressed',String(remote.enabled));
+  $('remote-toggle').querySelector('span').textContent=text(remote.enabled ? 'remoteOff' : 'remoteOn');
+  setText('remote-status',text(remote.connected ? 'remoteConnected' : remote.enabled ? 'remoteWaiting' : 'remoteDisabled'));
+  $('remote-urls').hidden=!remote.enabled;
+  const remoteUrls=JSON.stringify(remote.urls);
+  if($('remote-urls').dataset.urls!==remoteUrls){
+    $('remote-urls').dataset.urls=remoteUrls;$('remote-urls').replaceChildren();
+    remote.urls.forEach(url=>{
+      const row=document.createElement('div'),address=document.createElement('code'),copy=document.createElement('button');
+      address.textContent=url;copy.type='button';copy.className='button small';copy.textContent=text('remoteCopy');
+      copy.onclick=async()=>{try{await navigator.clipboard.writeText(url);copy.textContent=text('remoteCopied');}catch(_){message('remote-message',url);}};
+      row.append(address,copy);$('remote-urls').append(row);
+    });
+  }
   $('stop-audio').disabled = !statuses.audio?.playing;
   $('stop-audio-live').hidden = !statuses.audio?.playing;
   const active = state.boards.filter(b => b.enabled !== false), online = active.filter(b => b.status === 'connected');
@@ -456,6 +477,7 @@ function wireEvents() {
   $('language').onclick=()=>command('language',{language:language==='en_US'?'zh_TW':'en_US'});
   $('voice-toggle').onclick=requireState(()=>command('voice',{enabled:!state.settings.voice_enabled}));
   $('noise-toggle').onclick=requireState(()=>command('detection',{enabled:!state.current.noise_enabled}));
+  $('remote-toggle').onclick=requireState(()=>command('remote',{enabled:!state.remote.enabled},'remote-message'));
   $('save-noise').addEventListener('click', event => event.stopPropagation());
   $('save-audio').addEventListener('click', event => event.stopPropagation());
   $('connect-form').onsubmit=e=>{e.preventDefault();command('connect',{ip:$('board-ip').value.trim()},'board-message');};

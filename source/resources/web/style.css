@@ -131,6 +131,7 @@ html,body{overflow:hidden}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
 .form-message:empty,#found-boards:empty{display:none}.board-region .empty-state{padding:12px}.settings-region .region-content>.section-help{margin-bottom:12px}
 .draft-actions{display:flex;gap:8px;flex:none}.draft-status .button.primary{background:var(--teal);border-color:var(--teal);color:white}
+.remote-controls,.remote-urls>div{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.remote-controls>span{font-size:13px;color:var(--muted)}.remote-urls{margin-top:14px}.remote-urls>div{margin:8px 0}.remote-urls code{font-size:13px;overflow-wrap:anywhere;min-width:0}
 
 
 /* One panel-add flow; choose a subnet only when more than one is available. */
