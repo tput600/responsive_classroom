@@ -1,4 +1,4 @@
-name: Build unified desktop candidate
+name: Build Windows desktop candidate
 
 # Candidate only: never merges, tags, publishes, or changes existing releases.
 on:
@@ -9,80 +9,13 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    shell: bash
-
 concurrency:
-  group: unified-desktop-${{ github.ref }}
+  group: windows-desktop-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  macos:
-    name: Build genuine universal2 macOS app
-    runs-on: macos-15
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12'
-          architecture: arm64
-      - name: Restore verified source runtime cache
-        id: python-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ${{ runner.temp }}/universal-python
-          key: macos15-arm64-universal-python-${{ hashFiles('source/tools/build_universal_python.sh') }}
-      - name: Build patched universal2 CPython and dependencies
-        if: steps.python-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p build/reports
-          bash source/tools/build_universal_python.sh "$RUNNER_TEMP/universal-python" 2>&1 | tee build/reports/universal-python.log
-      - name: Cache successfully built runtime
-        if: steps.python-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ${{ runner.temp }}/universal-python
-          key: macos15-arm64-universal-python-${{ hashFiles('source/tools/build_universal_python.sh') }}
-      - name: Install and universalize pinned dependencies
-        run: |
-          "$RUNNER_TEMP/universal-python/bin/python3.12" source/tools/setup_environment.py --models
-          .venv/bin/python source/tools/prepare_universal_macos.py
-          .venv/bin/python -m pip check
-      - name: Source and security checks in separate native tools environment
-        run: |
-          python -m venv .audit-venv
-          .audit-venv/bin/python -m pip install bandit==1.9.4 pip-audit==2.10.1 ruff==0.16.10
-          .audit-venv/bin/python source/tools/check_public_tree.py
-          .audit-venv/bin/python -m ruff check source --select E9,F63,F7,F82
-          .audit-venv/bin/python -m bandit -r source -x source/tests -ll
-          .audit-venv/bin/python -m pip_audit -r source/requirements.txt --progress-spinner off
-      - name: Build sealed universal app and test extracted archive
-        env:
-          RESPONSIVE_CLASSROOM_MAC_ARCH: universal2
-        run: .venv/bin/python -X utf8 source/tools/build_release.py
-      - name: Save universal candidate
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: universal-macos-candidate
-          path: artifacts/*macos-universal2*.zip*
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 14
-      - name: Save build reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: universal-build-reports
-          path: build/reports/
-          if-no-files-found: warn
-          retention-days: 14
-
   windows:
-    name: Build complete Windows x64 package
+    name: Build and verify Windows x64 package
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -97,110 +30,11 @@ jobs:
       - run: .venv/Scripts/python.exe -X utf8 source/tools/build_release.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: unified-windows-candidate
-          path: artifacts/*windows-x64*.zip*
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 14
-      - name: Save Windows reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: unified-windows-reports
-          path: build/reports/
-          if-no-files-found: warn
-          retention-days: 14
-
-  native-test:
-    name: Test identical app natively on ${{ matrix.machine }}
-    needs: macos
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15
-            machine: arm64
-          - runner: macos-15-intel
-            machine: x86_64
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12'
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: universal-macos-candidate
-          path: artifacts
-      - name: Verify every binary, sealed bundle, offline model, and WebEngine UI
-        run: |
-          python source/tools/verify_universal_macos.py \
-            --archive artifacts/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip \
-            --version 3.1.1 --machine '${{ matrix.machine }}' --reports build/reports
-      - name: Save native evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: universal-native-${{ matrix.machine }}-reports
-          path: build/reports/
-          if-no-files-found: error
-          retention-days: 14
-
-  assemble:
-    name: Assemble and verify one all-platform ZIP
-    needs: [native-test, windows]
-    runs-on: macos-15
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12'
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: universal-macos-candidate
-          path: inputs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: unified-windows-candidate
-          path: inputs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: universal-native-*-reports
-          path: evidence
-      - name: Bind both native results to the exact Mac archive
-        run: |
-          python - <<'PYCODE'
-          import hashlib, json, os
-          from pathlib import Path
-          archive = Path('inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip')
-          with archive.open('rb') as stream:
-              digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-          reports = [json.loads(path.read_text()) for path in Path('evidence').rglob('native-verification.json')]
-          assert {item['machine'] for item in reports} == {'arm64', 'x86_64'}
-          assert len(reports) == 2
-          assert all(item['archive_sha256'] == digest and item['frozen_model'] == 'passed' and item['frozen_ui'] == 'passed' for item in reports)
-          evidence = {'commit': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_SERVER_URL'] + '/' + os.environ['GITHUB_REPOSITORY'] + '/actions/runs/' + os.environ['GITHUB_RUN_ID'], 'macos_native': reports, 'windows_job': 'passed'}
-          Path('validation-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
-          PYCODE
-      - run: |
-          python source/tools/assemble_desktop_archive.py \
-            --windows inputs/ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip \
-            --macos inputs/ResponsiveClassroom-Portable-macos-universal2-v3.1.1.zip \
-            --version 3.1.1 --output artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip \
-            --report build/reports/unified-integrity.json --validation-evidence validation-evidence.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ResponsiveClassroom-AllPlatforms-v3.1.1
+          name: ResponsiveClassroom-Windows-v3.1.1
           path: |
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip
-            artifacts/ResponsiveClassroom-AllPlatforms-v3.1.1.zip.sha256
-            build/reports/unified-integrity.json
-          if-no-files-found: error
+            artifacts/ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip
+            artifacts/ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip.sha256
+            build/reports/integrity.json
           compression-level: 0
+          if-no-files-found: error
           retention-days: 14

@@ -1,4 +1,8 @@
-# One Windows + macOS desktop package
+# Legacy Windows + macOS archive assembly
+
+This guide describes the retired combined-package workflow kept for historical
+releases. The current v3.1.1 release is Windows-only; Mac builds and releases
+are no longer maintained.
 
 The combined archive contains the complete Windows x64 portable application and
 one universal2 macOS application. Intel and Apple Silicon Macs use the same app.

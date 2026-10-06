@@ -1,14 +1,13 @@
-"""Publish only the final v3.1.1 archive from an exact, successful build of approved main.
+"""Publish the Windows-only v3.1.1 package from an exact build of approved main.
 
 No build output is executed, renamed, patched, or recompressed. GitHub's artifact
-transport SHA-256, the inner ZIP checksum, payload manifests, native evidence,
-and both uploaded release assets are checked independently. Failures leave a
-draft for explicit review; recovery only promotes a fully verified draft by ID.
+transport SHA-256, package ZIP checksum, Windows manifest and both release assets
+are checked independently. Failures leave a draft for explicit review; recovery
+only promotes a fully verified draft by ID.
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -30,20 +29,14 @@ ROOT = Path(__file__).resolve().parents[2]
 TAG = 'v3.1.1'
 VERSION = '3.1.1'
 WORKFLOW = '.github/workflows/unified-desktop.yml'
-ARTIFACT = f'ResponsiveClassroom-AllPlatforms-{TAG}'
-ARCHIVE = ARTIFACT + '.zip'
-REPORT = 'unified-integrity.json'
+ARTIFACT = f'ResponsiveClassroom-Windows-{TAG}'
+ARCHIVE = f'ResponsiveClassroom-Portable-windows-x64-{TAG}.zip'
+REPORT = 'integrity.json'
 API_VERSION = '2022-11-28'
 BUILD_BRANCHES = frozenset(('main', 'codex/unified-desktop-package'))
 BOOTSTRAP_BRANCH = 'codex/publish-v3.1.1'
 PUBLICATION_WORKFLOW = '.github/workflows/publish-unified.yml'
-JOBS = frozenset((
-    'Build genuine universal2 macOS app',
-    'Build complete Windows x64 package',
-    'Test identical app natively on arm64',
-    'Test identical app natively on x86_64',
-    'Assemble and verify one all-platform ZIP',
-))
+JOBS = frozenset(('Build and verify Windows x64 package',))
 
 
 def github(*arguments, output=None, timeout=120):
@@ -149,18 +142,18 @@ def verify_run(run_id, commit, *, root=ROOT):
             or run.get('path', '').split('@', 1)[0] != WORKFLOW
             or repository.get('full_name') != repo or type(repository.get('id')) is not int
             or run.get('head_repository', {}).get('id') != repository['id']):
-        raise ValueError('Candidate must be a successful same-repository approved-branch unified build of the approved commit')
+        raise ValueError('Candidate must be a successful same-repository Windows build of the approved commit')
     jobs = collect_pages(f'repos/{repo}/actions/runs/{run_id}/jobs?filter=latest&per_page=100', 'jobs')
     required = [job for job in jobs if job.get('name') in JOBS]
     if (len(required) != len(JOBS) or {job.get('name') for job in required} != JOBS
             or any(job.get('run_id') != run_id or job.get('head_sha') != commit
                    or job.get('status') != 'completed' or job.get('conclusion') != 'success'
                    for job in required)):
-        raise ValueError('Same-run Mac build, both native architectures, Windows and assembly must all pass')
+        raise ValueError('The same-run Windows build and package verification must pass')
     artifacts = collect_pages(f'repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100', 'artifacts')
     matches = [artifact for artifact in artifacts if artifact.get('name') == ARTIFACT]
     if len(matches) != 1:
-        raise ValueError('Expected exactly one final all-platform artifact from the selected run')
+        raise ValueError('Expected exactly one verified Windows package artifact from the selected run')
     artifact = matches[0]
     positive_id(artifact.get('id'), 'Artifact ID')
     origin = artifact.get('workflow_run', {})
@@ -224,67 +217,32 @@ def download_artifact(artifact, destination):
                     raise ValueError('Artifact transport entry size mismatch')
 
 
-def verify_evidence(manifest, run_id, commit):
-    evidence = manifest.get('validation_evidence', {}).get('report', {})
-    expected_url = f'https://github.com/{current_repository()}/actions/runs/{run_id}'
-    proof = manifest.get('validation_evidence', {})
-    serialized = desktop.json_bytes(evidence)
-    if proof.get('sha256') != hashlib.sha256(serialized).hexdigest():
-        raise ValueError('Native evidence report hash mismatch')
-    native = evidence.get('macos_native', [])
-    inputs = manifest.get('inputs', {})
-    for platform in ('macos', 'windows'):
-        item = inputs.get(platform, {})
-        if (not re.fullmatch(r'[0-9a-f]{64}', str(item.get('sha256', '')))
-                or type(item.get('bytes')) is not int or item['bytes'] <= 0):
-            raise ValueError('Both platform input hashes and sizes are required')
-    if (evidence.get('commit') != commit or evidence.get('run') != expected_url
-            or evidence.get('windows_job') != 'passed' or not isinstance(native, list)
-            or len(native) != 2 or any(not isinstance(item, dict) for item in native)
-            or {item.get('machine') for item in native} != {'arm64', 'x86_64'}
-            or any(item.get('archive_sha256') != inputs['macos']['sha256']
-                   or item.get('version') != VERSION or item.get('frozen_model') != 'passed'
-                   or item.get('frozen_ui') != 'passed' or item.get('signature') != 'ad-hoc-verified'
-                   or type(item.get('universal_binaries')) is not int or item['universal_binaries'] <= 0
-                   for item in native)):
-        raise ValueError('Native evidence must bind both architectures to the same Mac ZIP and approved run/commit')
-
-
 def verify_artifacts(directory, run_id, commit):
     directory = Path(directory)
     paths = list(directory.iterdir())
     if ({path.name for path in paths} != {ARCHIVE, ARCHIVE + '.sha256', REPORT}
             or any(path.is_symlink() or not path.is_file() for path in paths)):
-        raise ValueError('Expected exactly the final ZIP, its checksum and the integrity report')
+        raise ValueError('Expected exactly the Windows ZIP, its checksum and the integrity report')
     archive, checksum = directory / ARCHIVE, directory / (ARCHIVE + '.sha256')
     digest = desktop.sha256(archive)
     if not re.fullmatch(digest + r'  ' + re.escape(ARCHIVE) + r'\n?', checksum.read_text(encoding='ascii')):
         raise ValueError('Final ZIP checksum mismatch')
     report = json.loads((directory / REPORT).read_text(encoding='utf-8'))
+    archive_path = str(report.get('archive', '')).replace('\\', '/')
     if (report.get('status') != 'ok' or report.get('version') != VERSION
-            or report.get('candidate') is not False or report.get('published') is not False
-            or report.get('archive') != ARCHIVE or report.get('archive_sha256') != digest
+            or Path(archive_path).name != ARCHIVE or report.get('archive_sha256') != digest
             or report.get('archive_bytes') != archive.stat().st_size
-            or report.get('validation_scope') != 'archive-integrity'):
-        raise ValueError('Final assembly integrity report does not match the exact ZIP')
+            or report.get('manifest_mismatches') != 0 or report.get('zip_crc_failures') != 0
+            or report.get('zip_path_mismatches') != 0
+            or type(report.get('manifest_files')) is not int or report['manifest_files'] <= 0
+            or report.get('zip_entries') != report['manifest_files'] + 1):
+        raise ValueError('Windows integrity report does not match the exact ZIP')
     with tempfile.TemporaryDirectory(prefix='unified-verify-') as temp:
         root = Path(temp) / 'payload'
-        desktop.extract_checked(archive, root, windows=False, max_bytes=desktop.MAX_EXPANDED_BYTES)
-        manifest_path = root / desktop.MANIFEST
-        if (manifest_path.is_symlink() or not manifest_path.is_file()
-                or manifest_path.stat().st_size > 64 * 1024**2
-                or {path.name for path in root.iterdir()} != {'Windows', 'macOS', 'README.txt', desktop.MANIFEST}):
-            raise ValueError('Unexpected release root or invalid desktop manifest')
-        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-        if (manifest.get('schema_version') != 1 or manifest.get('version') != VERSION
-                or manifest.get('kind') != 'combined-desktop-release'
-                or manifest.get('platforms') != ['windows-x64', 'macos-universal2']
-                or manifest.get('files') != desktop.desktop_records(root)
-                or report.get('manifest_entries') != len(manifest.get('files', []))):
-            raise ValueError('Final desktop payload must match its release manifest')
-        desktop.verify_windows(root / 'Windows', VERSION)
-        desktop.verify_macos(root / 'macOS', VERSION)
-        verify_evidence(manifest, run_id, commit)
+        desktop.extract_checked(archive, root, windows=True, max_bytes=desktop.MAX_EXPANDED_BYTES)
+        manifest = desktop.verify_windows(root, VERSION)
+        if len(manifest['files']) != report['manifest_files']:
+            raise ValueError('Windows integrity report has the wrong manifest entry count')
     return [archive, checksum]
 
 

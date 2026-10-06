@@ -12,12 +12,9 @@
 
 先在 WLED 完成控制板燒錄、Wi-Fi 連線與 8×8（64 顆 LED）設定，並確認電腦和燈板位於可互通的區域網路。程式不負責初次燒錄或 Wi-Fi 配網。校園或公共 Wi-Fi 若隔離裝置，請改用允許彼此連線的網路。
 
-下載同一份 `ResponsiveClassroom-AllPlatforms-v3.1.1.zip` 並完整解壓縮；不需要安裝 Python。
+下載 `ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip` 並完整解壓縮；不需要安裝 Python。開啟 `ResponsiveClassroom.exe`，保留旁邊完整的 `_internal` 與其他檔案，不能只複製 EXE。v3.1.1 起只維護 Windows x64 可攜版；舊 Mac 封裝不再隨本版更新。
 
-- Windows x64：開啟 `Windows/ResponsiveClassroom.exe`。保留旁邊完整的 `_internal` 與其他檔案，不能只傳 EXE。
-- macOS 14+：開啟 `macOS/ResponsiveClassroom.app`。這是同時包含 Intel 與 Apple Silicon 執行碼的單一 universal2 App，不需另外選處理器版本。請使用 Mac 的「封存工具程式」解壓，保留整個 `.app` 與內部連結。
-
-離線模型、Web UI、字型及播放元件已包含在完整套件中；語音辨識在本機執行。Release 的 SHA-256 檢查檔用於核對下載完整性，不是程式碼簽章。Mac App 未經 Apple Developer ID 簽署／公證，Gatekeeper 可能阻擋；請閱讀 [Mac 指南](MACOS.md)，不要停用系統安全保護。
+離線模型、Web UI、字型、播放元件與收音依賴已包含在完整套件中；語音辨識在本機執行。Release 的 SHA-256 檢查檔用於核對下載完整性，不是程式碼簽章。
 
 ## 2. 連線與校正燈板
 
@@ -27,7 +24,7 @@
 
 ## 3. 選擇麥克風與安靜校準
 
-在「連線與收音」頁選擇正在使用的麥克風，確認即時音量會變化。固定麥克風位置與系統輸入增益，在教室安靜時按「安靜校準 12 秒」；前 2 秒不計入。說話、削波、收音中斷或環境波動過大都可能使校準失敗。失敗時原本有效的基線會保留。
+在新電腦上，先到 Windows「設定 → 隱私權與安全性 → 麥克風」，開啟麥克風存取及「讓桌面應用程式存取您的麥克風」。程式會在舊電腦儲存的裝置不存在時改用這台電腦的系統預設輸入；也可在「連線與收音」頁重新整理並選擇裝置。確認即時音量會變化，再固定麥克風位置與系統輸入增益，在教室安靜時按「安靜校準 12 秒」；前 2 秒不計入。說話、削波、收音中斷或環境波動過大都可能使校準失敗。失敗時原本有效的基線會保留。
 
 顯示值是麥克風輸入的 dBFS，不是校準過的環境 dBA。音量分類依目前讀值相對於安靜基線的差值判斷；基線固定，不會隨持續吵鬧自動上移。更換麥克風、改變輸入增益或移到另一間教室後，重新校準。
 
@@ -123,7 +120,7 @@
 
 Windows 的設定、匯入音源與活動紀錄位於 `%APPDATA%\Responsive Classroom`。設定使用 UTF-8、原子儲存，升級遷移前先備份；自訂計時、音源、觸發詞、安靜基線與板子方向會保留。本版只調整仍完整等於前版預設、且不與自訂注意門檻衝突的討論門檻。活動紀錄可包含狀態、音量和已接受指令，不保存原始錄音；若不需要紀錄，可在設定 JSON 將 `session_logging_enabled` 設為 `false`。語音模型離線執行，錄音不傳送到雲端。
 
-v3.1.1 發佈流程要求 Windows x64 套件、單一 universal2 Mac App、在 arm64 與 x86_64 上驗證同一份 Mac 封裝，以及整合 ZIP 檢查全部通過才建立 Release。Mac 候選包以 macOS 14+ 為目標，未使用 Developer ID 簽署或公證；Finder 權限、真實收音及燈板仍需實機驗收。乾淨 Windows VM 也尚未驗證，Windows EXE 不能直接在 Mac 執行。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
+v3.1.1 發佈流程只建置及驗證 Windows x64 ZIP，Mac 版本不再維護。乾淨 Windows VM、其他電腦的實體麥克風、教室喇叭及燈板仍需實機驗收。若沒有輸入音量，檢查 Windows 麥克風隱私權、系統靜音與所選輸入裝置；確認即時音量後重新校準。遇到燈板連線問題，確認 WLED 已上網、電腦與燈板位於可互通網段，再嘗試手動 IP 或本機網段搜尋。遇到視覺方向問題，核對單一燈板的方向與蛇形排列設定。
 
 ## 11. 開發環境與專案結構
 
@@ -176,7 +173,7 @@ git push -u origin feature/my-change
 
 ## 13. 發佈新版本與檢查
 
-先用 **Build unified desktop candidate** 建置同一版本的 Windows 與單一 universal2 Mac App，通過兩種 Mac 處理器的實際模型／UI 測試後組成一份整合 ZIP。正式發布使用獨立的手動 **Publish unified desktop release** 流程；它要求 main 與已通過的建置 commit 完全一致，驗證同一 run 的平台測試、成品與遠端雜湊後才發布。main 推送不會自動發布，既有版本不覆蓋。
+用 **Build Windows desktop candidate** 建置及驗證 Windows x64 ZIP，再從 `main` 手動執行 **Publish Windows desktop release**。發布流程要求 main 與成功建置的 commit 完全一致，並再次檢查 ZIP、校驗碼、Windows 資源清單及遠端資產雜湊。推送 main 不會自動發布，也不會覆蓋既有版本。
 
 更新 `source/classroom_resources.py` 的 `VERSION` 及中英文手冊版本，完成測試後，在 Windows 開發環境執行：
 

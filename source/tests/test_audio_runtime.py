@@ -318,6 +318,62 @@ class SenseVoiceRuntimeTests(unittest.TestCase):
             self.assertEqual(runtime._device(FakeSoundDevice), 0)
             self.assertEqual(runtime._failed_devices, set())
 
+    def test_saved_microphone_missing_on_another_computer_uses_current_default(self):
+        from classroom_audio import AudioRuntime
+
+        runtime = AudioRuntime("7|Old laptop mic", ROOT / "models" / "sensevoice",
+                               Settings(voice_enabled=False), None, lambda: False, lambda: 0,
+                               lambda *_: None, lambda *_: None, lambda *_: None, lambda *_: None)
+
+        class FakeSoundDevice:
+            default = SimpleNamespace(device=(1, -1))
+
+            @staticmethod
+            def query_devices():
+                return [{"name": "Laptop Array", "max_input_channels": 2},
+                        {"name": "USB Mic", "max_input_channels": 1}]
+
+        with patch.object(AudioRuntime, "microphones", return_value=[("1|USB Mic", "USB Mic")]):
+            self.assertEqual(runtime._device(FakeSoundDevice), 1)
+        self.assertTrue(runtime._device_fallback)
+
+    def test_saved_microphone_that_cannot_open_falls_back_to_another_input(self):
+        from classroom_audio import AudioRuntime
+
+        runtime = AudioRuntime("0|USB Mic", ROOT / "models" / "sensevoice",
+                               Settings(voice_enabled=False), None, lambda: False, lambda: 0,
+                               lambda *_: None, lambda *_: None, lambda *_: None, lambda *_: None)
+        runtime._failed_devices.add(0)
+
+        class FakeSoundDevice:
+            default = SimpleNamespace(device=(1, -1))
+
+            @staticmethod
+            def query_devices():
+                return [{"name": "USB Mic", "max_input_channels": 1},
+                        {"name": "Laptop Array", "max_input_channels": 2}]
+
+        with patch.object(AudioRuntime, "microphones", return_value=[
+                ("0|USB Mic", "USB Mic"), ("1|Laptop Array", "Laptop Array")]):
+            self.assertEqual(runtime._device(FakeSoundDevice), 1)
+        self.assertTrue(runtime._device_fallback)
+
+    def test_stereo_capture_uses_the_active_channel_if_the_first_is_silent(self):
+        from classroom_audio import AudioRuntime
+
+        samples = np.column_stack((np.zeros(8, np.float32), np.full(8, .05, np.float32)))
+        runtime = AudioRuntime("", ROOT / "models" / "sensevoice", Settings(), None,
+                               lambda: False, lambda: 0, lambda *_: None, lambda *_: None,
+                               lambda *_: None, lambda *_: None)
+        np.testing.assert_array_equal(runtime._mono_capture_samples(samples), samples[:, 1])
+        np.testing.assert_array_equal(runtime._mono_capture_samples(samples[:, :1]), samples[:, 0])
+
+        runtime._capture_channel = None
+        first = np.column_stack((np.full(8, .03), np.full(8, .02))).astype(np.float32)
+        louder_other = np.column_stack((np.full(8, .015), np.full(8, .025))).astype(np.float32)
+        np.testing.assert_array_equal(runtime._mono_capture_samples(first), first[:, 0])
+        np.testing.assert_array_equal(runtime._mono_capture_samples(louder_other), louder_other[:, 0])
+
     def test_custom_cjk_prefix_and_embedded_complete_triggers(self):
         parser = CommandParser(Settings(command_prefix="小燈"))
         self.assertEqual(parser.parse("小燈提問", now=1).intent, "QUESTION")

@@ -12,12 +12,9 @@ Source: [tput600/responsive_classroom](https://github.com/tput600/responsive_cla
 
 Flash and configure WLED first, connect the panel to Wi-Fi, and configure an 8×8 matrix with 64 LEDs. The computer and panels must be on a network that allows them to communicate. This application does not flash firmware or perform the initial Wi-Fi setup. Campus or public Wi-Fi may isolate devices; use a network that permits communication between them.
 
-Download and fully extract one `ResponsiveClassroom-AllPlatforms-v3.1.1.zip`. Python is not required.
+Download and fully extract `ResponsiveClassroom-Portable-windows-x64-v3.1.1.zip`; Python is not required. Open `ResponsiveClassroom.exe` and keep the complete `_internal` directory and other files beside it; do not copy only the EXE. Starting with v3.1.1, only the Windows x64 portable package is maintained; the older Mac package is not updated.
 
-- Windows x64: open `Windows/ResponsiveClassroom.exe`. Keep the entire adjacent `_internal` directory and all other files; the EXE alone is insufficient.
-- macOS 14+: open `macOS/ResponsiveClassroom.app`. This single universal2 app contains both Intel and Apple Silicon executable code. Use macOS Archive Utility and keep the app and its internal links intact.
-
-Offline speech models, the Web UI, fonts, and playback components are included. Speech recognition runs locally. The SHA-256 sidecar verifies download integrity and is not a code signature. The Mac app is not Apple Developer ID signed or notarized; Gatekeeper may block it. Read the [Mac guide](MACOS.md) and do not disable system security protections.
+Offline speech models, the Web UI, fonts, playback components, and microphone capture dependencies are included. Speech recognition runs locally. The SHA-256 sidecar verifies download integrity and is not a code signature.
 
 ## 2. Connect and orient light panels
 
@@ -29,7 +26,7 @@ Connection status initially shows that confirmation is pending. **Receiving conf
 
 ## 3. Choose a microphone and calibrate
 
-On **Connection**, choose the microphone you are using and confirm that **Live input level** changes. Keep the microphone position and Windows input gain fixed. While the room is quiet, select **Calibrate · 12 s**. The first two seconds are excluded from the sample.
+On a new computer, open **Windows Settings → Privacy & security → Microphone** and allow microphone access for desktop apps. If a device saved on another computer is unavailable, the app falls back to this computer's system default input. You can also refresh and select a device on **Connection**. Confirm that **Live input level** changes, keep the microphone position and Windows input gain fixed, then select **Calibrate · 12 s** in a quiet room. The first two seconds are excluded from the sample.
 
 Speech, clipping, interrupted input, or excessive background variation can cause calibration to fail. A failed calibration preserves the previous valid baseline.
 
@@ -159,7 +156,7 @@ On Windows, settings, imported audio, and activity records are stored in `%APPDA
 
 Activity logs can contain state changes, volume readings, and accepted commands. Raw microphone recordings are not saved. To disable activity records, set `session_logging_enabled` to `false` in the settings JSON. Speech runs offline; microphone audio is not uploaded to the cloud.
 
-The v3.1.1 release requires a Windows x64 package, one universal2 macOS app, native checks of that same app on arm64 and x86_64, and a verified combined archive before publication. The Mac app targets macOS 14+ and is not Developer ID signed or notarized. Finder permissions, real microphone capture, physical panels, and clean Windows VM acceptance remain manual validation gaps. A Windows EXE cannot run directly on macOS.
+The v3.1.1 release builds and verifies a Windows x64 ZIP only; the Mac version is no longer maintained. Clean Windows VM acceptance, microphones on other computers, classroom speakers, and physical panels still require hardware testing. If no input level appears, check Windows microphone privacy, system mute, and the selected input, then calibrate after the live level responds.
 
 For panel connection problems, confirm that WLED is online and the network permits communication between the computer and panel. Try a manual IP or discovery on the local subnet. For orientation problems, check that panel's rotation, mirroring, and serpentine settings.
 
@@ -216,7 +213,7 @@ Select **Code → Codespaces → Create codespace** on GitHub. The container pre
 
 ## 13. Publish a new version
 
-Use **Build unified desktop candidate** to build Windows and one universal2 Mac app, execute the same Mac archive natively on both architectures, and assemble one ZIP. The separate manual **Publish unified desktop release** flow requires the successful build commit to match main exactly. It verifies that run’s native tests, artifacts, and remote asset hashes before publishing. Pushing main never publishes automatically, and existing versions are never overwritten.
+Use **Build Windows desktop candidate** to build and verify the Windows x64 ZIP, then manually run **Publish Windows desktop release** from `main`. Publication requires the successful build commit to match the exact main tip, then checks the ZIP, checksum, Windows resource manifest, and remote asset hashes. Pushing main never publishes automatically, and existing versions are never overwritten.
 
 Update `VERSION` in `source/classroom_resources.py` and both manuals. After testing, run in the Windows development environment:
 

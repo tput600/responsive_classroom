@@ -42,6 +42,9 @@ _TEXT = {
     "收音削波": "Input clipping",
     "收音中斷": "Input interrupted",
     "麥克風格式已變更，請重新校準": "Input format changed. Please calibrate again.",
+    "所選麥克風無法使用，已改用系統預設麥克風":
+        "The selected microphone is unavailable. Using the system default input.",
+    "找不到可用的麥克風輸入裝置": "No usable microphone input device was found.",
     "沒有完整觸發詞": "No complete trigger word",
     "校準中，請保持安靜": "Calibrating. Please keep quiet.",
     "校準未通過，請保持安靜後重試": "Calibration rejected. Keep quiet and retry.",

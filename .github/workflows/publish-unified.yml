@@ -1,15 +1,15 @@
-name: Publish unified desktop release
+name: Publish Windows desktop release
 
 # Explicit, main-only publication. No push/release/workflow_run triggers.
 on:
   workflow_dispatch:
     inputs:
       candidate_run_id:
-        description: 'Exact successful approved-branch unified-desktop.yml run ID matching current main'
+        description: 'Exact successful Windows build run ID matching current main'
         required: true
         type: string
       draft_release_id:
-        description: 'Optional existing v3.1.1 draft ID to verify and promote; never replaces assets'
+        description: 'Optional existing v3.1.1 Windows draft ID to verify and promote; never replaces assets'
         required: false
         default: ''
         type: string
@@ -18,13 +18,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-unified-v3.1.1
+  group: publish-windows-v3.1.1
   cancel-in-progress: false
 
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     environment: responsive_classroom
     timeout-minutes: 40
     permissions:
@@ -42,7 +42,7 @@ jobs:
           python-version: '3.12'
       - name: Test offline publication safety checks
         run: PYTHONPATH=source python -m unittest discover -s source/tests -p 'test_publish_unified_release.py' -v
-      - name: Verify exact run, bytes, native evidence and upload before latest
+      - name: Verify Windows artifact and upload before latest
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid candidate run ID'; exit 1; }
-          args=(--candidate-run-id "$CANDIDATE_RUN_ID" --commit "$GITHUB_SHA" --artifacts "$RUNNER_TEMP/unified-publication-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")
+          args=(--candidate-run-id "$CANDIDATE_RUN_ID" --commit "$GITHUB_SHA" --artifacts "$RUNNER_TEMP/windows-publication-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")
           if [[ -n "$DRAFT_RELEASE_ID" ]]; then
             [[ "$DRAFT_RELEASE_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid draft release ID'; exit 1; }
             python source/tools/publish_unified_release.py resume "${args[@]}" --release-id "$DRAFT_RELEASE_ID"

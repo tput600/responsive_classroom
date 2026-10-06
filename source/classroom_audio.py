@@ -471,6 +471,7 @@ class AudioRuntime:
         self.noise = NoiseAnalyzer(settings, baseline_dbfs)
         self.noise.device_id = device_id
         self.noise.sample_rate = self.sample_rate
+        self._device_fallback = False
         self.latest: NoiseReading | None = None
         self._queue: queue.Queue = queue.Queue(maxsize=12)
         self._jobs: queue.Queue = SpeechJobQueue()
@@ -479,6 +480,7 @@ class AudioRuntime:
         self._listen = threading.Event()
         self._epoch = 0
         self._failed_devices: set[int] = set()
+        self._capture_channel = None
         self._thread = self._decoder = None
         self._stream = self._vad = None
         self.capture_dropped = 0
@@ -499,13 +501,18 @@ class AudioRuntime:
         devices = sd.query_devices()
         preferred = self.microphones()
         index, _, name = self.device_id.partition('|') if self.device_id else ('', '', '')
+        self._device_fallback = False
+        default_value = sd.default.device[0]
+        default = default_value if isinstance(default_value, int) else None
+        if default is not None and not 0 <= default < len(devices):
+            default = None
         if not self.device_id:
-            default = int(sd.default.device[0])
-            if 0 <= default < len(devices):
+            if default is not None and devices[default]['max_input_channels'] > 0:
                 name = str(devices[default]['name'])
             else:
                 default = next((int(token.split('|', 1)[0]) for token, _ in preferred), None)
                 name = str(devices[default]['name']) if default is not None else ''
+                self._device_fallback = True
         if name:
             matches = [i for i, item in enumerate(devices)
                        if item['max_input_channels'] > 0 and
@@ -517,18 +524,56 @@ class AudioRuntime:
                          if i in matches]
                 available = [i for i in order if i not in self._failed_devices]
                 if not available:
+                    fallback = self._fallback_input_device(devices, preferred, default, exclude=matches)
+                    if fallback is not None:
+                        self._device_fallback = True
+                        return fallback
                     self._failed_devices.difference_update(matches)
                     available = order
                 if available:
                     return available[0]
                 raise RuntimeError('選定的麥克風無法開啟，請重新選擇輸入裝置')
         if not self.device_id:
-            return default if default is not None and devices[default]['max_input_channels'] > 0 else None
-        index = int(index)
-        if index < 0 or index >= len(devices) or devices[index]['max_input_channels'] <= 0 or (
-                name and devices[index]['name'] != name):
-            raise RuntimeError('選定的麥克風已移除，請重新選擇輸入裝置')
+            return self._fallback_input_device(devices, preferred, default)
+        try:
+            index = int(index)
+        except ValueError:
+            index = -1
+        if (index < 0 or index >= len(devices) or devices[index]['max_input_channels'] <= 0 or
+                (name and devices[index]['name'] != name)):
+            self._device_fallback = True
+            fallback = self._fallback_input_device(devices, preferred, default)
+            if fallback is not None:
+                return fallback
+            raise RuntimeError('找不到可用的麥克風輸入裝置')
         return index
+
+    def _fallback_input_device(self, devices, preferred, default, *, exclude=()):
+        excluded = set(exclude)
+        candidates = ([default] if default is not None and devices[default]['max_input_channels'] > 0
+                      and default not in excluded else [])
+        candidates.extend(int(token.split('|', 1)[0]) for token, _ in preferred)
+        candidates.extend(i for i, device in enumerate(devices) if device['max_input_channels'] > 0)
+        candidates = [device for device in dict.fromkeys(candidates) if device not in excluded]
+        available = [device for device in candidates if device not in self._failed_devices]
+        if not available and candidates:
+            self._failed_devices.difference_update(candidates)
+            available = candidates
+        return available[0] if available else None
+
+    def _mono_capture_samples(self, indata):
+        import numpy as np
+
+        samples = np.asarray(indata, dtype=np.float32)
+        if samples.ndim < 2 or samples.shape[1] <= 1:
+            self._capture_channel = 0
+            return samples.reshape(-1).copy()
+        channel_levels = np.sqrt(np.mean(samples * samples, axis=0))
+        strongest = int(np.argmax(channel_levels))
+        if (self._capture_channel is None or
+                (channel_levels[strongest] > 1e-5 and channel_levels[self._capture_channel] <= 1e-5)):
+            self._capture_channel = strongest
+        return samples[:, self._capture_channel].copy()
 
     def start_calibration(self, seconds: float | None = None):
         self._commands.put_nowait(('calibrate', seconds))
@@ -703,7 +748,7 @@ class AudioRuntime:
                     self._commands.put_nowait(('overflow', 0))
                 except queue.Full:
                     pass
-            frame = CaptureFrame(indata[:, 0].copy(), time.monotonic())
+            frame = CaptureFrame(self._mono_capture_samples(indata), time.monotonic())
             try:
                 self._queue.put_nowait(frame)
             except queue.Full:
@@ -726,6 +771,7 @@ class AudioRuntime:
                     raise RuntimeError('此麥克風無法使用支援的輸入格式，請選擇其他麥克風')
                 self.sample_rate = supported[0]
                 self.noise.sample_rate = self.sample_rate
+                self._capture_channel = None
                 with sd.InputStream(device=device, samplerate=self.sample_rate, channels=channels,
                                     blocksize=self.sample_rate // 100, dtype='float32', callback=callback) as stream:
                     stream_opened = True
@@ -733,7 +779,8 @@ class AudioRuntime:
                     if self._vad is not None:
                         self._vad.reset()
                     self._invalidate_calibration_for_rate(self.sample_rate)
-                    status(True, '麥克風正在收音')
+                    status(True, '所選麥克風無法使用，已改用系統預設麥克風'
+                           if self._device_fallback else '麥克風正在收音')
                     resampler = soxr.ResampleStream(self.sample_rate, 16000, 1, dtype='float32')
                     last_block = last_meter = time.monotonic()
                     last_stale = last_block
