@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import ipaddress
 import json
+import segno
 import sys
 import threading
 import time
@@ -53,6 +54,7 @@ NOISE_KEYS = ("noise_rising_db", "noise_loud_db", "noise_rising_enter_seconds",
               "noise_exit_seconds", "noise_smoothing_ms", "discussion_noise")
 MODES = {name.lower(): name for name in ("STANDBY", "NOTICE", "DISCUSSION", "REST",
                                           "QUESTION", "CORRECT", "WRONG")}
+SCENARIOS = ("standby", "notice", "discussion", "rest")
 
 
 class _Job(QThread):
@@ -83,6 +85,7 @@ class _AudioEvents(QObject):
     playback_status = Signal(str)
     hardware = Signal(str, str)
     remote_mode = Signal(str)
+    remote_switch = Signal(str, str, bool)
 
 
 class ClassroomService(QObject):
@@ -124,8 +127,12 @@ class ClassroomService(QObject):
         self._events.playback_status.connect(self._set_audio_message)
         self._events.hardware.connect(self._on_hardware)
         self._events.remote_mode.connect(self._remote_mode_received)
+        self._events.remote_switch.connect(self._remote_switch_received)
         self.remote = None
         self._remote_urls = []
+        self._remote_qrs = []
+        self._remote_allow_voice = False
+        self._remote_voice_modes = {mode: False for mode in SCENARIOS}
         self._remote_was_active = False
         self._audio_generation = 0
         self._noise_context = (BaseMode.STANDBY, 0)
@@ -201,7 +208,9 @@ class ClassroomService(QObject):
                        "connected": bool(self.remote and self.remote.connected),
                        "armed": bool(self.remote and self.remote.armed),
                        "active": bool(self.remote and self.remote.active),
-                       "urls": list(self._remote_urls)},
+                       "allow_voice": self._remote_allow_voice,
+                       "voice_modes": dict(self._remote_voice_modes),
+                       "urls": list(self._remote_urls), "qrs": list(self._remote_qrs)},
             "noise": {"dbfs": getattr(noise, "dbfs", None), "smoothed_dbfs": getattr(noise, "smoothed_dbfs", None),
                       "relative_db": getattr(noise, "relative_db", None),
                       "age_ms": max(0.0, (time.monotonic() - captured_at) * 1000) if captured_at > 0 else None,
@@ -237,7 +246,8 @@ class ClassroomService(QObject):
         self._last_periodic_publish = time.monotonic()
         data = self._localized_snapshot(self.snapshot())
         if self.remote:
-            self.remote.update_state(data["current"], self.settings)
+            self.remote.update_state(data["current"], self.settings,
+                                     self._remote_voice_modes, self._remote_allow_voice)
         self.stateChanged.emit(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
     def _state_changed(self, state):
@@ -261,12 +271,15 @@ class ClassroomService(QObject):
         try:
             self.repository.save(settings)
             old_devices = self.settings.wled_devices
+            noise_changed = any(getattr(settings, key) != getattr(self.settings, key)
+                                for key in (*NOISE_KEYS, "microphone_device_id", "noise_baseline_dbfs", "calibration"))
             self.settings = settings
             self.light_settings = replace(self.light_settings,
                                           rest_reminder_seconds=settings.rest_reminder_seconds)
             self._settings_revision += 1
-            self._noise_context = (self._noise_context[0], self._noise_context[1] + 1)
-            self._reading = None
+            if noise_changed:
+                self._noise_context = (self._noise_context[0], self._noise_context[1] + 1)
+                self._reading = None
             self.controller.update_settings(settings)
             self.controller.cancel_pending_voice()
             self.playback.apply_settings(settings)
@@ -316,14 +329,21 @@ class ClassroomService(QObject):
             addresses = list(dict.fromkeys(address for _name, address, _cidr in local_networks()))
             if not addresses:
                 raise RuntimeError("找不到可供手機連線的區域網路位址")
-            remote = MobileRemote(self.resource_root / "web/mobile.html", self._events.remote_mode.emit)
+            remote = MobileRemote(self.resource_root / "web/mobile.html", self._events.remote_mode.emit,
+                                  self._events.remote_switch.emit)
             self.remote = remote
             self._remote_urls = [f"http://{address}:{remote.port}/#{remote.token}" for address in addresses]
-            remote.update_state(self.snapshot()["current"], self.settings)
+            self._remote_qrs = [segno.make_qr(url, error="m").png_data_uri(scale=5)
+                                for url in self._remote_urls]
+            remote.update_state(self.snapshot()["current"], self.settings,
+                                self._remote_voice_modes, self._remote_allow_voice)
         else:
             self.remote.close()
             self.remote = None
             self._remote_urls = []
+            self._remote_qrs = []
+            self._remote_allow_voice = False
+            self._remote_voice_modes = {mode: False for mode in SCENARIOS}
             self._remote_was_active = False
             self.controller.cancel_pending_voice()
         self._publish()
@@ -333,8 +353,21 @@ class ClassroomService(QObject):
             raise ValueError("手機連線尚未開啟")
         enabled = self._bool(p, "enabled")
         if enabled != self.remote.armed:
+            self._remote_allow_voice = False
+            self._remote_voice_modes = {mode: False for mode in SCENARIOS}
             self.remote.set_armed(enabled)
             self._remote_was_active = self.remote.active
+            self.controller.cancel_pending_voice()
+            self._publish()
+
+    def _do_remote_voice_permission(self, p):
+        if not self.remote or not self.remote.active:
+            raise ValueError("請先連接並啟動手機控制")
+        enabled = self._bool(p, "enabled")
+        if enabled != self._remote_allow_voice:
+            self._remote_allow_voice = enabled
+            if not enabled:
+                self._remote_voice_modes = {mode: False for mode in SCENARIOS}
             self.controller.cancel_pending_voice()
             self._publish()
 
@@ -348,6 +381,15 @@ class ClassroomService(QObject):
     def _remote_mode_received(self, mode):
         if self.remote and self.remote.active:
             self._do_mode({"mode": mode})
+
+    @Slot(str, str, bool)
+    def _remote_switch_received(self, kind, mode, enabled):
+        if not self.remote or not self.remote.active:
+            return
+        if kind == "audio":
+            self._do_scenario_audio({"mode": mode, "enabled": enabled})
+        elif kind == "voice" and self._remote_allow_voice:
+            self._do_scenario_voice({"mode": mode, "enabled": enabled})
 
     def _do_voice(self, p):
         enabled = self._bool(p, "enabled")
@@ -577,6 +619,13 @@ class ClassroomService(QObject):
 
     def _do_scenario_voice(self, p):
         mode = self._scenario_mode(p)
+        if self.remote and self.remote.active:
+            if not self._remote_allow_voice:
+                raise ValueError("請先勾選可啟動情境語音偵測")
+            self._remote_voice_modes[mode] = self._bool(p, "enabled")
+            self.controller.cancel_pending_voice()
+            self._publish()
+            return
         self._save(replace(self.settings, voice_mode_enabled={
             **self.settings.voice_mode_enabled, mode: self._bool(p, "enabled"),
         }))
@@ -930,7 +979,9 @@ class ClassroomService(QObject):
         control = intent in ("VOICE_ON", "VOICE_OFF")
         blocked = bool(not control and intent and (self._voice_commands_paused or
                        (intent in ("STANDBY", "NOTICE", "DISCUSSION", "REST") and
-                        ((self.remote and self.remote.active) or
+                        (not (self._remote_allow_voice and
+                              self._remote_voice_modes.get(intent.lower(), False))
+                         if self.remote and self.remote.active else
                          not self.settings.voice_mode_enabled.get(intent.lower(), True)))))
         if control and revision == self.controller.manual_revision:
             self._voice_commands_paused = intent == "VOICE_OFF"
@@ -981,6 +1032,9 @@ class ClassroomService(QObject):
         active = bool(self.remote and self.remote.active)
         if active != self._remote_was_active:
             self._remote_was_active = active
+            if not active:
+                self._remote_allow_voice = False
+                self._remote_voice_modes = {mode: False for mode in SCENARIOS}
             self.controller.cancel_pending_voice()
             self._publish()
         self._sync_voice_capture()

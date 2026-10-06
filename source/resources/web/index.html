@@ -125,8 +125,9 @@
     <section id="page-timers" class="page scroll-page" aria-label="計時" data-aria="timers" hidden><div class="settings-content timer-content"><div class="page-heading"><h2><svg class="icon"><use href="#i-timer"/></svg><span data-t="classTimers">課堂計時</span></h2><p data-t="timerHelp">設定下一次啟動模式時使用的時長。</p></div><form id="timers-form" class="timer-grid"></form><p class="section-help" data-t="idleHelp">閒置回待機設為 0 可停用；請注意與討論不受閒置計時影響。</p><p id="timers-message" class="form-message" role="status"></p></div></section>
     <section id="page-remote" class="page scroll-page" aria-label="手機控制" data-aria="remoteTitle" hidden>
       <div class="settings-content remote-content">
-        <div class="page-heading"><h2 data-t="remoteTitle">手機控制</h2><p data-t="remoteHelp">手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。</p></div>
-        <div class="remote-controls"><button id="remote-toggle" class="button" type="button" aria-pressed="false"><span data-t="remoteOn">顯示手機網址</span></button><label class="remote-activation"><input id="remote-active" type="checkbox" disabled><span data-t="remoteActivate">啟動手機控制</span></label><span id="remote-status" role="status">未啟用</span></div>
+        <div class="page-heading"><h2 data-t="remoteTitle">手機控制</h2><p data-t="remoteHelp">手機與電腦連上同一個 Wi‑Fi 後，掃描 QR 碼開啟手機按鈕。收音與噪音偵測仍由電腦負責。</p></div>
+        <div class="remote-controls"><button id="remote-toggle" class="button" type="button" aria-pressed="false"><span data-t="remoteOn">顯示連線 QR 碼</span></button><label class="remote-activation"><input id="remote-active" type="checkbox" disabled><span data-t="remoteActivate">啟動手機控制</span></label><label class="remote-activation"><input id="remote-voice-permission" type="checkbox" disabled><span data-t="remoteVoicePermission">可啟動情境語音偵測</span></label><span id="remote-status" role="status">未啟用</span></div>
+        <p class="section-help" data-t="remoteVoiceHelp">情境語音由電腦麥克風偵測，需先開啟總語音開關；噪音偵測不受影響。</p>
         <div id="remote-urls" class="remote-urls" hidden></div>
         <p id="remote-message" class="form-message" role="status"></p>
       </div>

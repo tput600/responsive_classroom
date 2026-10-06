@@ -11,11 +11,14 @@ const WORDS = {
   settingsTitle: ['連線與收音設定', 'Connection and audio settings'],
   settingsHelp: ['先連接燈板與麥克風，再依需要調整偵測及音源。', 'Connect panels and a microphone, then adjust detection and audio as needed.'],
   settingsSections: ['設定區段', 'Settings sections'],
-  remoteTitle: ['手機控制', 'Phone control'], remoteHelp: ['手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。', 'Connect phone and computer to the same Wi-Fi, then open a URL below in your phone browser. The phone only has mode buttons; the computer handles audio and noise detection.'],
-  remoteOn: ['顯示手機網址', 'Show phone URL'], remoteOff: ['關閉手機連線', 'Close phone connection'],
+  remoteTitle: ['手機控制', 'Phone control'], remoteHelp: ['手機與電腦連上同一個 Wi‑Fi 後，掃描 QR 碼開啟手機按鈕。收音與噪音偵測仍由電腦負責。', 'Connect phone and computer to the same Wi-Fi, then scan a QR code to open the phone buttons. The computer still handles audio and noise detection.'],
+  remoteOn: ['顯示連線 QR 碼', 'Show connection QR code'], remoteOff: ['關閉手機連線', 'Close phone connection'],
   remoteActivate: ['啟動手機控制', 'Activate phone control'], remotePaused: ['手機已連線；控制已暫停', 'Phone connected; control paused'],
+  remoteVoicePermission: ['可啟動情境語音偵測', 'Allow scenario voice detection'],
+  remoteVoiceHelp: ['情境語音由電腦麥克風偵測，需先開啟總語音開關；噪音偵測不受影響。', 'The computer microphone detects scenario voice commands. Enable the main voice switch first; noise detection stays on.'],
+  remoteQr: ['掃描以連線手機', 'Scan to connect phone'],
   remoteDisabled: ['未啟用', 'Disabled'], remoteWaiting: ['等待手機連線；四情境仍可用電腦語音切換', 'Waiting for phone; desktop voice can still switch scenarios'],
-  remoteConnected: ['手機已連線；四情境由按鈕控制，三個互動仍可用電腦語音', 'Phone connected; scenario buttons take over, while desktop voice still handles interactions'],
+  remoteConnected: ['手機已連線；可用按鈕切換情境，三個互動仍可用電腦語音', 'Phone connected; buttons can switch scenarios, while desktop voice still handles interactions'],
   remoteCopy: ['複製網址', 'Copy URL'], remoteCopied: ['已複製', 'Copied'],
   boardImmediate: ['加入、同步與移除立即生效；燈板方向需儲存。', 'Adding, syncing and removing panels apply immediately. Save orientation separately.'],
   inputImmediate: ['切換麥克風與校準立即生效。下方偵測及語音指令修改需儲存。', 'Microphone selection and calibration apply immediately. Save detection and voice-command edits below.'],
@@ -30,7 +33,7 @@ const WORDS = {
   STANDBY: ['待機', 'Standby'], NOTICE: ['請注意', 'Attention'], DISCUSSION: ['討論', 'Discussion'], REST: ['休息', 'Rest'],
   QUESTION: ['提問', 'Question'], CORRECT: ['答對', 'Correct'], WRONG: ['答錯', 'Wrong'],
   REST_END: ['休息收尾', 'Rest reminder'], scenarioAudio: ['音樂', 'MP3'], scenarioVoice: ['語音', 'Mic'],
-  scenarioOn: ['開', 'On'], scenarioOff: ['關', 'Off'], remoteVoiceManaged: ['手機已接管四情境切換', 'Phone controls scenario switching'],
+  scenarioOn: ['開', 'On'], scenarioOff: ['關', 'Off'], remoteVoiceManaged: ['請先在手機控制頁勾選可啟動情境語音偵測', 'Allow scenario voice detection on the Phone control page first'],
   voiceMasterOff: ['請先開啟左側語音總開關', 'Enable the main voice switch first'],
   currentMode: ['目前模式', 'Current mode'], manual: ['手動控制', 'Manual control'],
   manualHelp: ['點選模式，立即調整課堂信號。', 'Choose a mode to change the classroom signal.'],
@@ -384,26 +387,29 @@ function renderState(value) {
   document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]').forEach(button=>{
     const mode=(button.dataset.scenarioAudio||button.dataset.scenarioVoice).toLowerCase();
     const audio=Boolean(button.dataset.scenarioAudio);
-    const enabled=Boolean((audio ? settings.audio_enabled_modes : settings.voice_mode_enabled)?.[mode]);
+    const enabled=Boolean((audio ? settings.audio_enabled_modes : remote.active ? remote.voice_modes : settings.voice_mode_enabled)?.[mode]);
     button.setAttribute('aria-pressed',String(enabled));
     button.setAttribute('aria-label',`${text(mode.toUpperCase())} ${text(audio ? 'scenarioAudio' : 'scenarioVoice')} ${text(enabled ? 'scenarioOn' : 'scenarioOff')}`);
-    button.disabled=!audio && remote.active;
-    button.title=!audio && remote.active ? text('remoteVoiceManaged') : !audio && !settings.voice_enabled ? text('voiceMasterOff') : button.getAttribute('aria-label');
+    button.disabled=!audio && remote.active && !remote.allow_voice;
+    button.title=!audio && remote.active && !remote.allow_voice ? text('remoteVoiceManaged') : !audio && !settings.voice_enabled ? text('voiceMasterOff') : button.getAttribute('aria-label');
   });
   $('remote-toggle').setAttribute('aria-pressed',String(remote.enabled));
   $('remote-toggle').querySelector('span').textContent=text(remote.enabled ? 'remoteOff' : 'remoteOn');
   $('remote-active').disabled=!remote.enabled;
   $('remote-active').checked=Boolean(remote.armed);
+  $('remote-voice-permission').disabled=!remote.active;
+  $('remote-voice-permission').checked=Boolean(remote.allow_voice);
   setText('remote-status',text(remote.active ? 'remoteConnected' : remote.connected ? 'remotePaused' : remote.enabled ? 'remoteWaiting' : 'remoteDisabled'));
   $('remote-urls').hidden=!remote.enabled;
   const remoteUrls=JSON.stringify(remote.urls);
   if($('remote-urls').dataset.urls!==remoteUrls){
     $('remote-urls').dataset.urls=remoteUrls;$('remote-urls').replaceChildren();
-    remote.urls.forEach(url=>{
-      const row=document.createElement('div'),address=document.createElement('code'),copy=document.createElement('button');
+    remote.urls.forEach((url,index)=>{
+      const row=document.createElement('div'),address=document.createElement('code'),copy=document.createElement('button'),qr=document.createElement('img');
+      qr.src=remote.qrs?.[index] || '';qr.alt=text('remoteQr');qr.className='remote-qr';
       address.textContent=url;copy.type='button';copy.className='button small';copy.textContent=text('remoteCopy');
       copy.onclick=async()=>{if(await command('copy_remote',{url},'remote-message'))copy.textContent=text('remoteCopied');};
-      row.append(address,copy);$('remote-urls').append(row);
+      row.append(qr,address,copy);$('remote-urls').append(row);
     });
   }
   $('stop-audio').disabled = !statuses.audio?.playing;
@@ -502,6 +508,7 @@ function wireEvents() {
   $('noise-toggle').onclick=requireState(()=>command('detection',{enabled:!state.current.noise_enabled}));
   $('remote-toggle').onclick=requireState(()=>command('remote',{enabled:!state.remote.enabled},'remote-message'));
   $('remote-active').onchange=async event=>{if(!await command('remote_active',{enabled:event.target.checked},'remote-message'))event.target.checked=!event.target.checked;};
+  $('remote-voice-permission').onchange=async event=>{if(!await command('remote_voice_permission',{enabled:event.target.checked},'remote-message'))event.target.checked=!event.target.checked;};
   $('save-noise').addEventListener('click', event => event.stopPropagation());
   $('save-audio').addEventListener('click', event => event.stopPropagation());
   $('connect-form').onsubmit=e=>{e.preventDefault();command('connect',{ip:$('board-ip').value.trim()},'board-message');};

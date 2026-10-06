@@ -11,12 +11,14 @@ from pathlib import Path
 
 
 MODES = frozenset(("STANDBY", "NOTICE", "DISCUSSION", "REST", "QUESTION", "CORRECT", "WRONG"))
+SCENARIOS = frozenset(("STANDBY", "NOTICE", "DISCUSSION", "REST"))
 
 
 class MobileRemote:
-    def __init__(self, page: Path, on_mode):
+    def __init__(self, page: Path, on_mode, on_switch=None):
         self.page = Path(page)
         self.on_mode = on_mode
+        self.on_switch = on_switch
         self.token = secrets.token_urlsafe(18)
         self._lock = threading.Lock()
         self._last_seen = 0.0
@@ -54,26 +56,38 @@ class MobileRemote:
                     self.reply(404, b"{}")
 
             def do_POST(self):
-                if self.path != "/mode" or not self.authorized():
+                if self.path not in ("/mode", "/switch") or not self.authorized():
                     self.reply(404, b"{}")
                     return
                 try:
                     length = int(self.headers.get("Content-Length", "0"))
                     if not 0 < length <= 128:
                         raise ValueError("invalid size")
-                    mode = json.loads(self.rfile.read(length))["mode"]
-                    if mode not in MODES:
+                    payload = json.loads(self.rfile.read(length))
+                    mode = payload["mode"]
+                    if mode not in (MODES if self.path == "/mode" else SCENARIOS):
                         raise ValueError("invalid mode")
+                    if self.path == "/switch":
+                        kind, enabled = payload["kind"], payload["enabled"]
+                        if kind not in ("audio", "voice") or not isinstance(enabled, bool):
+                            raise ValueError("invalid switch")
                 except (ValueError, KeyError, TypeError, UnicodeDecodeError):
                     self.reply(400, b"{}")
                     return
                 with owner._lock:
                     owner._last_seen = time.monotonic()
                     armed = owner._armed
-                if not armed:
+                    voice_allowed = owner._state.get("allow_voice", False)
+                if not armed or (self.path == "/switch" and kind == "voice" and not voice_allowed):
                     self.reply(409, b'{"ok":false}')
                     return
-                owner.on_mode(mode)
+                if self.path == "/mode":
+                    owner.on_mode(mode)
+                elif owner.on_switch:
+                    owner.on_switch(kind, mode, enabled)
+                else:
+                    self.reply(501, b'{"ok":false}')
+                    return
                 self.reply(200, b'{"ok":true}')
 
         self.server = ThreadingHTTPServer(("0.0.0.0", 0), Handler)
@@ -104,11 +118,14 @@ class MobileRemote:
         with self._lock:
             self._armed = enabled
 
-    def update_state(self, current, settings):
+    def update_state(self, current, settings, voice_modes=None, allow_voice=False):
         with self._lock:
             self._state = {**{key: current[key] for key in ("mode", "base_mode", "overlay")},
                            "question_seconds": settings.question_seconds,
-                           "feedback_seconds": settings.feedback_seconds}
+                           "feedback_seconds": settings.feedback_seconds,
+                           "audio_enabled_modes": dict(settings.audio_enabled_modes),
+                           "voice_mode_enabled": dict(voice_modes or {}),
+                           "allow_voice": bool(allow_voice)}
 
     def close(self):
         self.server.shutdown()

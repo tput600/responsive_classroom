@@ -14,8 +14,13 @@
   button svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
   button strong{font-size:clamp(22px,6vw,34px);line-height:1.2}button small{font-size:clamp(12px,3.3vw,17px);color:#536577;text-align:center;line-height:1.4}
   button[aria-pressed=true] small{color:#e1f2f3}#responses button{gap:5px}#responses button svg{width:27px;height:27px}#responses button strong{font-size:clamp(16px,4.5vw,25px)}
+  .mode-tile{position:relative;min-width:0;min-height:0}.mode-tile>[data-mode]{width:100%;height:100%;padding-bottom:48px}
+  .mini-controls{position:absolute;left:9px;right:9px;bottom:9px;display:flex;justify-content:space-between;pointer-events:none}
+  .mini-controls button{pointer-events:auto;width:36px;height:36px;min-height:0;padding:6px;border:1px solid #9db7bc;border-radius:8px;background:#f7fafb;color:#317577;position:relative}
+  .mini-controls button svg{width:21px;height:21px}.mini-controls button[aria-pressed=false]{background:#d5dfe3;color:#576774}
+  .mini-controls button[aria-pressed=false]::after{content:'';position:absolute;width:26px;height:2px;left:4px;top:17px;background:currentColor;transform:rotate(-42deg)}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.offline button,.paused button{opacity:.55}
-  @media(max-width:420px){main,section{gap:10px}button{border-radius:12px;gap:6px}button svg{width:34px;height:34px}#responses button{padding:8px 3px}}
+  @media(max-width:420px){main,section{gap:10px}button{border-radius:12px;gap:6px}button svg{width:34px;height:34px}#responses button{padding:8px 3px}.mini-controls button{width:32px;height:32px}.mini-controls button svg{width:18px;height:18px}.mini-controls button[aria-pressed=false]::after{width:23px;top:15px}}
 </style>
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
   <symbol id="glow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
@@ -25,13 +30,15 @@
   <symbol id="question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5M5.1 5.1a10 5.5 45 1 0 13.8 13.8"/><circle cx="19" cy="5" r="1"/></symbol>
   <symbol id="correct" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></symbol>
   <symbol id="wrong" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="sound" viewBox="0 0 24 24"><path d="M4 9v6h4l6 5V4L8 9H4ZM17 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></symbol>
 </defs></svg>
 <main>
   <section id="scenarios" aria-label="情境">
-    <button data-mode="STANDBY" type="button" aria-pressed="true"><svg><use href="#glow"/></svg><strong>待機</strong><small>等待下一個課堂活動</small></button>
-    <button data-mode="NOTICE" type="button" aria-pressed="false"><svg><use href="#notice"/></svg><strong>請注意</strong><small>安靜聽講</small></button>
-    <button data-mode="DISCUSSION" type="button" aria-pressed="false"><svg><use href="#discussion"/></svg><strong>討論</strong><small>允許交談，音量範圍更寬</small></button>
-    <button data-mode="REST" type="button" aria-pressed="false"><svg><use href="#rest"/></svg><strong>休息</strong><small>倒數後提醒回到課堂</small></button>
+    <div class="mode-tile"><button data-mode="STANDBY" type="button" aria-pressed="true"><svg><use href="#glow"/></svg><strong>待機</strong><small>等待下一個課堂活動</small></button><div class="mini-controls"><button data-scenario-audio="STANDBY" type="button" aria-label="待機音樂"><svg><use href="#sound"/></svg></button><button data-scenario-voice="STANDBY" type="button" aria-label="待機語音"><svg><use href="#mic"/></svg></button></div></div>
+    <div class="mode-tile"><button data-mode="NOTICE" type="button" aria-pressed="false"><svg><use href="#notice"/></svg><strong>請注意</strong><small>安靜聽講</small></button><div class="mini-controls"><button data-scenario-audio="NOTICE" type="button" aria-label="請注意音樂"><svg><use href="#sound"/></svg></button><button data-scenario-voice="NOTICE" type="button" aria-label="請注意語音"><svg><use href="#mic"/></svg></button></div></div>
+    <div class="mode-tile"><button data-mode="DISCUSSION" type="button" aria-pressed="false"><svg><use href="#discussion"/></svg><strong>討論</strong><small>允許交談，音量範圍更寬</small></button><div class="mini-controls"><button data-scenario-audio="DISCUSSION" type="button" aria-label="討論音樂"><svg><use href="#sound"/></svg></button><button data-scenario-voice="DISCUSSION" type="button" aria-label="討論語音"><svg><use href="#mic"/></svg></button></div></div>
+    <div class="mode-tile"><button data-mode="REST" type="button" aria-pressed="false"><svg><use href="#rest"/></svg><strong>休息</strong><small>倒數後提醒回到課堂</small></button><div class="mini-controls"><button data-scenario-audio="REST" type="button" aria-label="休息音樂"><svg><use href="#sound"/></svg></button><button data-scenario-voice="REST" type="button" aria-label="休息語音"><svg><use href="#mic"/></svg></button></div></div>
   </section>
   <section id="responses" aria-label="互動">
     <button data-mode="QUESTION" type="button" aria-pressed="false"><svg><use href="#question"/></svg><strong>提問</strong><small id="question-time">10 秒</small></button>
@@ -52,13 +59,27 @@
       document.getElementById('question-time').textContent=`${state.question_seconds} 秒`;
       document.querySelectorAll('.feedback-time').forEach(label=>label.textContent=`${state.feedback_seconds} 秒`);
       document.querySelectorAll('[data-mode]').forEach(button=>button.disabled=!state.active);
+      document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]').forEach(button=>{
+        const audio=Boolean(button.dataset.scenarioAudio),mode=(button.dataset.scenarioAudio||button.dataset.scenarioVoice).toLowerCase();
+        button.setAttribute('aria-pressed',String(Boolean((audio?state.audio_enabled_modes:state.voice_mode_enabled)?.[mode])));
+        button.disabled=!state.active||(!audio&&!state.allow_voice);
+      });
       document.body.classList.remove('offline');document.body.classList.toggle('paused',!state.active);
       status.textContent=state.active?'已連線並啟動':'已連線；請在電腦啟動手機控制';
-    }catch(_){document.querySelectorAll('[data-mode]').forEach(button=>button.disabled=true);document.body.classList.add('offline');status.textContent='連線中斷，請確認同網段與電腦遙控設定';}
+    }catch(_){document.querySelectorAll('[data-mode],[data-scenario-audio],[data-scenario-voice]').forEach(button=>button.disabled=true);document.body.classList.add('offline');status.textContent='連線中斷，請確認同網段與電腦遙控設定';}
   }
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',async()=>{
     try{
       const response=await fetch('/mode',{method:'POST',headers:{'Content-Type':'application/json','X-Remote-Token':token},body:JSON.stringify({mode:button.dataset.mode})});
+      if(!response.ok)throw Error('切換失敗');
+      await sync();
+    }catch(_){await sync();}
+  }));
+  document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]').forEach(button=>button.addEventListener('click',async()=>{
+    const audio=Boolean(button.dataset.scenarioAudio);
+    try{
+      const response=await fetch('/switch',{method:'POST',headers:{'Content-Type':'application/json','X-Remote-Token':token},
+        body:JSON.stringify({kind:audio?'audio':'voice',mode:button.dataset.scenarioAudio||button.dataset.scenarioVoice,enabled:button.getAttribute('aria-pressed')!=='true'})});
       if(!response.ok)throw Error('切換失敗');
       await sync();
     }catch(_){await sync();}

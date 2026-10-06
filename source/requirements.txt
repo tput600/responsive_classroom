@@ -4,3 +4,4 @@ sounddevice==0.5.6
 soxr==1.1.0
 sherpa-onnx==1.13.8
 PyInstaller==6.22.3
+segno==1.6.6

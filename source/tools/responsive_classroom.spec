@@ -62,7 +62,7 @@ for package in ("sherpa_onnx", "sounddevice", "soxr"):
 
 optional_distributions = {"PyYAML", "charset-normalizer", "typing_extensions"}
 for distribution_name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6",
-                          "numpy", "sounddevice", "soxr", "sherpa-onnx", "sherpa-onnx-core", "cffi",
+                          "numpy", "sounddevice", "soxr", "sherpa-onnx", "sherpa-onnx-core", "cffi", "segno",
                           *sorted(optional_distributions)):
     try:
         distribution = metadata.distribution(distribution_name)

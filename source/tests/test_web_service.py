@@ -341,6 +341,58 @@ class WebServiceTests(unittest.TestCase):
             call(subject, "remote", {"enabled": False})
             finish(subject)
 
+    def test_phone_voice_permission_switches_and_noise_continuity(self):
+        subject = service(self.directory)
+        subject.resource_root = Path(__file__).parents[1] / "resources"
+        with patch("classroom_service.local_networks", return_value=[("LAN", "127.0.0.1", "127.0.0.0/8")]):
+            self.assertEqual(call(subject, "remote", {"enabled": True}), {"ok": True})
+        try:
+            remote = subject.snapshot()["remote"]
+            self.assertTrue(remote["qrs"][0].startswith("data:image/png;base64,"))
+            self.assertFalse(remote["allow_voice"])
+            self.assertFalse(any(remote["voice_modes"].values()))
+            url = remote["urls"][0].split("#")[0]
+            headers = {"X-Remote-Token": subject.remote.token, "Content-Type": "application/json"}
+            with urllib.request.urlopen(urllib.request.Request(url + "state", headers=headers), timeout=2):
+                pass
+            self.assertEqual(call(subject, "remote_active", {"enabled": True}), {"ok": True})
+            marker, context = object(), subject._noise_context
+            subject._reading = marker
+            voice = urllib.request.Request(url + "switch", data=b'{"kind":"voice","mode":"NOTICE","enabled":true}', headers=headers)
+            with self.assertRaises(urllib.error.HTTPError) as blocked:
+                urllib.request.urlopen(voice, timeout=2)
+            self.assertEqual(blocked.exception.code, 409)
+            self.assertEqual(call(subject, "remote_voice_permission", {"enabled": True}), {"ok": True})
+            with urllib.request.urlopen(voice, timeout=2) as response:
+                self.assertTrue(json.load(response)["ok"])
+            deadline = time.monotonic() + 2
+            while not subject.snapshot()["remote"]["voice_modes"]["notice"] and time.monotonic() < deadline:
+                APP.processEvents()
+                time.sleep(.005)
+            self.assertTrue(subject.snapshot()["remote"]["voice_modes"]["notice"])
+            self.assertIs(subject._reading, marker)
+            self.assertEqual(subject._noise_context, context)
+            subject._apply_command(CommandResult("notice", "NOTICE", "accepted", "notice"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
+            self.assertEqual(call(subject, "remote_voice_permission", {"enabled": False}), {"ok": True})
+            self.assertFalse(any(subject.snapshot()["remote"]["voice_modes"].values()))
+            marker, context = object(), subject._noise_context
+            subject._reading = marker
+            audio = urllib.request.Request(url + "switch", data=b'{"kind":"audio","mode":"NOTICE","enabled":false}', headers=headers)
+            with urllib.request.urlopen(audio, timeout=2) as response:
+                self.assertTrue(json.load(response)["ok"])
+            deadline = time.monotonic() + 2
+            while subject.settings.audio_enabled_modes["notice"] and time.monotonic() < deadline:
+                APP.processEvents()
+                time.sleep(.005)
+            self.assertFalse(subject.settings.audio_enabled_modes["notice"])
+            self.assertIs(subject._reading, marker)
+            self.assertEqual(subject._noise_context, context)
+        finally:
+            call(subject, "remote", {"enabled": False})
+            finish(subject)
+
     def test_board_enable_is_saved_independently_and_stop_runs_off_gui_thread(self):
         subject = service(self.directory)
         board = {"ip": "192.168.1.20", "name": "board", "mac": "aa:bb:cc:dd:ee:ff",
