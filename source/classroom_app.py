@@ -41,7 +41,7 @@ class _LocalPage(QWebEnginePage):
 class ClassroomWindow(QMainWindow):
     def __init__(self, repository=None, start_io=True):
         super().__init__()
-        self.setWindowTitle(f'Responsive Classroom · {VERSION}')
+        self.setWindowTitle(f'responsive classroom · {VERSION}')
         self.resize(1040,720)
         self.setMinimumSize(700,520)
         self._shutdown_complete = False
@@ -227,6 +227,10 @@ def ui_smoke_report(path,captures=False):
               playback_not_collapsed:!document.querySelector('#audio-details details'),
               header_save_positions:['save-noise','save-audio'].every(id=>document.getElementById(id).parentElement.tagName==='SUMMARY')
             })'''))
+            report['remote_page']=_javascript(app,window,'''Boolean(document.querySelector('#page-remote #remote-toggle') &&
+              document.querySelector('#page-remote #remote-active') &&
+              document.querySelector('[data-page=timers]+[data-page=remote]') &&
+              !document.querySelector('#page-classroom #remote-toggle'))''')
             # Mode QA switches rapidly; let the requested 1.4 s transition settle.
             deadline=time.monotonic()+1.5
             _spin(app,lambda:time.monotonic()>=deadline)
@@ -243,8 +247,19 @@ def ui_smoke_report(path,captures=False):
                     geometry=json.loads(_javascript(app,window,'''JSON.stringify((()=>{
                       const page=document.getElementById('page-classroom'),r=page.getBoundingClientRect();
                       const controls=Array.from(page.querySelectorAll('button,canvas,#current-mode,#transcript')).filter(e=>e.getClientRects().length);
-                      return {width:innerWidth,height:innerHeight,scrollX:page.scrollWidth-page.clientWidth,scrollY:page.scrollHeight-page.clientHeight,
-                        clipped:controls.filter(e=>{const b=e.getBoundingClientRect();return b.left<r.left-.5||b.right>r.right+.5||b.top<r.top-.5||b.bottom>r.bottom+.5||b.width<1||b.height<1}).map(e=>e.id||e.dataset.mode),
+                      const base=Array.from(page.querySelectorAll('.base-modes .mode-button'),e=>e.getBoundingClientRect());
+                      const squareModes=innerWidth<700||base.every(b=>Math.abs(b.width-b.height)<1);
+                      const switchesClear=Array.from(page.querySelectorAll('.mode-tile')).every(tile=>{
+                        const switches=tile.querySelector('.mode-switches').getBoundingClientRect();
+                        const content=Array.from(tile.querySelectorAll('.mode-button>.icon,.mode-button>strong,.mode-button>small')).filter(e=>e.getClientRects().length);
+                        return content.every(e=>e.getBoundingClientRect().bottom<=switches.top+.5);
+                      });
+                      const clipped=controls.filter(e=>{const b=e.getBoundingClientRect();return b.left<r.left-.5||b.right>r.right+.5||b.width<1||b.height<1}).map(e=>e.id||e.dataset.mode);
+                      const scrollX=page.scrollWidth-page.clientWidth,scrollY=page.scrollHeight-page.clientHeight;
+                      page.scrollTop=page.scrollHeight;
+                      const bottomReachable=page.querySelector('.live-strip').getBoundingClientRect().bottom<=r.bottom+.5;
+                      page.scrollTop=0;
+                      return {width:innerWidth,height:innerHeight,scrollX,scrollY,clipped,squareModes,switchesClear,bottomReachable,
                         minimumModeHeight:Math.min(...Array.from(document.querySelectorAll('[data-mode]'),e=>e.getBoundingClientRect().height))};})())'''))
                     geometry.update({'language':language,'requested_width':width,'requested_height':height,
                                      'actual_viewport':{'width':geometry['width'],'height':geometry['height']}})
@@ -271,7 +286,7 @@ def ui_smoke_report(path,captures=False):
                                        'actual_viewport':{'width':header['width'],'height':header['height']}})
                     report['layouts'].extend(headers)
                 window.resize(1040,720)
-                for page in ('connection','timers'):
+                for page in ('connection','timers','remote'):
                     _javascript(app,window,f'window.classroom.navigate("{page}")')
                     app.processEvents()
                     overflow=_javascript(app,window,f'document.getElementById("page-{page}").scrollWidth-document.getElementById("page-{page}").clientWidth')
@@ -307,6 +322,16 @@ def ui_smoke_report(path,captures=False):
             report['live_voice_custom_fields']=_javascript(app,window,'document.querySelectorAll("#alias-fields input").length===7')
             report['audio_fields']=_javascript(app,window,'document.querySelectorAll("#audio-files .audio-file").length')
             report['music_reactive_switches']=_javascript(app,window,'document.querySelectorAll("input[id^=audio-reactive-]").length')
+            report['scenario_switches_inside']=_javascript(app,window,'''Array.from(document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]')).length===8 &&
+              Array.from(document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]')).every(button=>{
+                const outer=button.closest('.mode-tile').querySelector('.mode-button').getBoundingClientRect(),small=button.getBoundingClientRect();
+                return small.left>=outer.left&&small.right<=outer.right&&small.top>=outer.top&&small.bottom<=outer.bottom;
+              })''')
+            original_mode=service.snapshot()['current']['mode']
+            _javascript(app,window,'window.classroom.navigate("classroom");document.querySelector("[data-scenario-audio=STANDBY]").click()')
+            _spin(app,lambda:not service.settings.audio_enabled_modes['standby'])
+            report['scenario_switch_isolated']=(service.snapshot()['current']['mode']==original_mode and
+                not repo.load().audio_enabled_modes['standby'])
             _javascript(app,window,'document.getElementById("audio-reactive-REST").click()')
             _spin(app,lambda:service.settings.audio_reactive_modes['rest'])
             report['music_reactive_persisted']=repo.load().audio_reactive_modes['rest']
@@ -320,13 +345,14 @@ def ui_smoke_report(path,captures=False):
             report['font_loaded']=_javascript(app,window,'document.fonts.check("14px Classroom")')
             report['errors']=window.page.errors
             window.view.grab().save(str(path.with_suffix('.png')))
-            report['passed']=(report['page_count']==3 and len(report['timer_fields'])==5 and
+            report['passed']=(report['page_count']==4 and len(report['timer_fields'])==5 and
                 len(report['modes'])==7 and all(k==v for k,v in report['modes'].items()) and
                 all(report['voice_flow'].values()) and all(report['board_flow'].values()) and
                 all(report['header_saves'].values()) and all(report['settings_structure'].values()) and report['preview_live'] and report['preview_frame_bytes']==192 and
                 report['wheel_guard'] and report['no_numeric_spinners'] and report['live_voice_custom_fields'] and
-                report['audio_fields']==7 and report['music_reactive_switches']==7 and report['music_reactive_persisted'] and all(report['audio_decoders'].values()) and report['rest_music']['loaded'] and report['font_loaded'] and not report['errors'] and report['timer_form_persisted'] and report['custom_alias_persisted'] and
-                all(item.get('scrollX',0)<=0 and item.get('scrollY',0)<=0 and not item.get('clipped') for item in report['layouts']))
+                report['scenario_switches_inside'] and report['scenario_switch_isolated'] and report['remote_page'] and
+                report['audio_fields']==8 and report['music_reactive_switches']==8 and report['music_reactive_persisted'] and all(report['audio_decoders'].values()) and report['rest_music']['loaded'] and report['font_loaded'] and not report['errors'] and report['timer_form_persisted'] and report['custom_alias_persisted'] and
+                all(item.get('scrollX',0)<=0 and item.get('scrollY',0)<=0 and not item.get('clipped') and item.get('squareModes',True) and item.get('switchesClear',True) and item.get('bottomReachable',True) for item in report['layouts']))
         except Exception as exc:
             report['errors'].append(str(exc));report['passed']=False
         finally:

@@ -24,7 +24,7 @@ class WebUiTests(unittest.TestCase):
                             item['actual_viewport']['height'] == item['height'] and
                             item['width'] == item['requested_width'] and item['height'] == item['requested_height']
                             for item in report['layouts'] if 'requested_width' in item))
-        self.assertEqual(report['audio_fields'],7)
+        self.assertEqual(report['audio_fields'],8)
         self.assertEqual(report['audio_decoders'],{'wav':True,'mp3':True})
         self.assertTrue(report['rest_music']['loaded'])
         self.assertGreaterEqual(report['disclosures'],5)

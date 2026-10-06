@@ -20,6 +20,7 @@ class MobileRemote:
         self.token = secrets.token_urlsafe(18)
         self._lock = threading.Lock()
         self._last_seen = 0.0
+        self._armed = False
         self._state = {"mode": "STANDBY", "base_mode": "STANDBY", "overlay": None}
         owner = self
 
@@ -47,7 +48,7 @@ class MobileRemote:
                 elif self.path == "/state" and self.authorized():
                     with owner._lock:
                         owner._last_seen = time.monotonic()
-                        state = dict(owner._state)
+                        state = dict(owner._state, active=owner._armed)
                     self.reply(200, json.dumps(state).encode("utf-8"))
                 else:
                     self.reply(404, b"{}")
@@ -68,6 +69,10 @@ class MobileRemote:
                     return
                 with owner._lock:
                     owner._last_seen = time.monotonic()
+                    armed = owner._armed
+                if not armed:
+                    self.reply(409, b'{"ok":false}')
+                    return
                 owner.on_mode(mode)
                 self.reply(200, b'{"ok":true}')
 
@@ -85,9 +90,25 @@ class MobileRemote:
         with self._lock:
             return time.monotonic() - self._last_seen < 6.0
 
-    def update_state(self, current):
+    @property
+    def armed(self):
         with self._lock:
-            self._state = {key: current[key] for key in ("mode", "base_mode", "overlay")}
+            return self._armed
+
+    @property
+    def active(self):
+        with self._lock:
+            return self._armed and time.monotonic() - self._last_seen < 6.0
+
+    def set_armed(self, enabled):
+        with self._lock:
+            self._armed = enabled
+
+    def update_state(self, current, settings):
+        with self._lock:
+            self._state = {**{key: current[key] for key in ("mode", "base_mode", "overlay")},
+                           "question_seconds": settings.question_seconds,
+                           "feedback_seconds": settings.feedback_seconds}
 
     def close(self):
         self.server.shutdown()

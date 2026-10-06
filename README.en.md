@@ -1,4 +1,4 @@
-# Responsive Classroom 3.1.2
+# responsive classroom 3.2.0
 
 English · [繁體中文](README.md)
 
@@ -12,7 +12,7 @@ Source: [tput600/responsive_classroom](https://github.com/tput600/responsive_cla
 
 Flash and configure WLED first, connect the panel to Wi-Fi, and configure an 8×8 matrix with 64 LEDs. The computer and panels must be on a network that allows them to communicate. This application does not flash firmware or perform the initial Wi-Fi setup. Campus or public Wi-Fi may isolate devices; use a network that permits communication between them.
 
-Download and fully extract `ResponsiveClassroom-Portable-windows-x64-v3.1.2.zip`; Python is not required. Open `ResponsiveClassroom.exe` and keep the complete `_internal` directory and other files beside it; do not copy only the EXE. Starting with v3.1.1, only the Windows x64 portable package is maintained; the older Mac package is not updated.
+Download and fully extract `ResponsiveClassroom-Portable-windows-x64-v3.2.0.zip`; Python is not required. Open `ResponsiveClassroom.exe` and keep the complete `_internal` directory and other files beside it; do not copy only the EXE. Starting with v3.1.1, only the Windows x64 portable package is maintained; the older Mac package is not updated.
 
 Offline speech models, the Web UI, fonts, playback components, and microphone capture dependencies are included. Speech recognition runs locally. The SHA-256 sidecar verifies download integrity and is not a code signature.
 
@@ -39,19 +39,19 @@ The displayed value is the microphone's input level in dBFS, not a calibrated en
 | Threshold relative to the quiet baseline | Attention | Discussion |
 |---|---:|---:|
 | Enter growing activity | +8 dB | +12 dB |
-| Enter active | +18 dB | +22 dB |
+| Enter active | +15 dB | +19 dB |
 | Return from growing activity to steady | Below +5 dB | Below +9 dB |
 | Return from active to growing activity | Below +14 dB | Below +17 dB |
 
-For example, a baseline of −55 dBFS and an input of −35 dBFS produce a +20 dB difference. Attention has reached its active threshold. Discussion has reached growing activity but remains below its +22 dB active threshold. The same volume can therefore produce different classroom rhythms depending on the activity.
+For example, a baseline of −55 dBFS and an input of −37 dBFS produce a +18 dB difference. Attention has reached its active threshold. Discussion has reached growing activity but remains below its +19 dB active threshold. The same volume can therefore produce different classroom rhythms depending on the activity.
 
 Calibrate first, then observe readings during teaching and student discussion. If a level triggers too easily, raise its entry threshold by about 2 dB at a time. If it rarely triggers, lower it by about 2 dB. Change one setting, observe one activity, and then decide whether another change is needed. Discussion thresholds cannot be lower than Attention thresholds.
 
 If the lights repeatedly switch between adjacent levels, maintain a gap between entry and recovery thresholds and consider increasing the hold time. Do not compensate for a misplaced microphone or poor calibration by greatly increasing thresholds.
 
-Default timing is 1.5 seconds to enter growing activity, 2 seconds to enter active, and 3 stable seconds to recover. Level smoothing is 750 ms. A brief impact does not change the state solely because of its instantaneous peak. Expand **Recovery thresholds and timing** with its disclosure arrow to change entry hold times, the shared recovery hold, smoothing, and each mode's recovery thresholds.
+Default timing is 0.45 seconds to enter growing activity, 0.75 seconds to enter active, and 1.2 stable seconds to recover. Level smoothing is 300 ms. A brief impact does not change the state solely because of its instantaneous peak. Expand **Recovery thresholds and timing** with its disclosure arrow to change entry hold times, the shared recovery hold, smoothing, and each mode's recovery thresholds.
 
-Select **Save settings** beside **Input and detection** to save noise thresholds, voice handling, command aliases, and recognition corrections together. All fields must validate before the settings are saved; an invalid alias or threshold cannot produce a partial save. Timers and playback have separate **Save timers** and **Save audio settings** buttons. Enter numeric values with the keyboard. The mouse wheel does not change parameters.
+Select **Save settings** beside **Input and detection** to save noise thresholds, command aliases, and recognition corrections together. All fields must validate before the settings are saved; an invalid alias or threshold cannot produce a partial save. Timers and playback have separate **Save timers** and **Save audio settings** buttons. Enter numeric values with the keyboard. The mouse wheel does not change parameters.
 
 ## 5. Seven modes and twelve light patterns
 
@@ -78,13 +78,9 @@ Attention and Discussion continuously respond to the noise context and do not re
 
 The lights indicate the whole class's activity rhythm. They do not score or label individual students.
 
-## 6. Voice handling and offline commands
+## 6. Noise measurement and offline voice commands
 
-One microphone stream supplies both volume analysis and speech recognition. Silero VAD evaluates unamplified audio separately, so gain applied to quiet commands does not alter noise classification.
-
-**Voice handling** is enabled by default and does not require a prefix or fixed sentence. In Attention, it excludes the full detected speech segment and approximately 350 ms of trailing audio while retaining the last valid environmental-noise state. In Discussion, the start of ordinary conversation is buffered for at most one second; sustained conversation is then classified. Loud conversation bypasses this short buffer.
-
-Non-speech sound must still satisfy the thresholds and hold times before changing state. If VAD is unavailable, the interface reports this and volume measurement continues. Attention excludes all detected speech, not only the teacher. A single microphone cannot separate speech and environmental sound occurring simultaneously or identify the speaker. Disable **Voice handling** if you want to measure all conversation. VAD can make mistakes; complete source separation is not guaranteed.
+The computer microphone supplies both volume analysis and speech recognition. Noise classification uses measured level only; it does not distinguish speech from environmental sound. Silero VAD is used only to segment voice commands. The recognizer can detect short commands within a sentence and also checks the completed segment. Noise still must meet the configured thresholds and hold times. If the speech model is unavailable, level measurement continues.
 
 Select **Enable voice** on Classroom to use local SenseVoiceSmall INT8 and Silero VAD. Wait for the models to finish loading and the interface to report readiness. Speak a short command directly:
 
@@ -99,6 +95,10 @@ Select **Enable voice** on Classroom to use local SenseVoiceSmall INT8 and Siler
 | Wrong | `wrong` | `答錯` |
 
 Complete trigger words can also appear inside a sentence, such as “one two three question” or “you are wrong.” English matching respects whole-word boundaries: `questionnaire` does not trigger `question`. If a recognized segment contains several commands, the last complete trigger wins. At the same position, a longer alias has priority. Repeated commands have an approximately two-second cooldown. Manual operations have priority.
+
+Say `no sensor` or `關閉語音` to pause mode voice commands while noise measurement continues. The recognizer keeps listening for the wake command, so `sensor on` or `啟動語音` resumes them. Each base scenario button contains its own MP3 and voice switches. The voice switch controls whether that scenario can be triggered by speech; the main voice switch must also be enabled. Question, Correct, and Wrong voice commands remain available when scenario voice switches are off.
+
+On the **Phone control** page beside Timers, select **Show phone URL**. Connect phone and computer to the same Wi-Fi, then open the displayed URL in the phone browser. The phone shows only seven mode buttons and does not use its microphone. The computer continues noise and speech detection. The phone takes over the four scenarios only while connected and **Activate phone control** is checked; desktop voice can still trigger the three interactions. Unchecking it or disconnecting restores each scenario's saved voice switch. If the URL cannot be reached, check that Windows Firewall allows this app on the private network and that Wi-Fi client isolation is off.
 
 Under **Voice commands**, separate aliases with commas. Before adding a short word, consider whether it occurs frequently in ordinary teaching. For a consistent recognition error, add one **Corrections** entry per line using `misheard text = trigger word`, such as `questions = question`. Corrections are explicit text replacements rather than fuzzy guesses. Ensure a replacement will not accidentally match another command. Save aliases and corrections with **Save settings** beside the input section.
 
@@ -124,9 +124,9 @@ The voice idle timeout applies only to eligible voice-controlled states. Attenti
 
 ## 8. Custom audio and music-responsive brightness
 
-Under **Connection → Custom audio**, choose, preview, or clear MP3/WAV files independently for all seven modes. Set playback volume and fade duration in **Playback settings**.
+Under **Connection → Custom audio**, choose, preview, or clear MP3/WAV files independently for seven modes plus the Rest reminder. Set playback volume and fade duration in **Playback settings**.
 
-The package includes the supplied *Blue Danube* MP3. On first setup it becomes the default Rest cue, loops during Rest, and fades out during the reminder. An original gentle demo MP3 is included as a fallback. Existing local audio and settings are preserved.
+The package includes the supplied *Blue Danube* MP3 as the default Rest cue. The Rest reminder has a separate optional cue; it remains silent until one is selected. Selected cues repeat until the mode ends or playback is stopped. Each base scenario has an MP3 switch inside its mode button. An original gentle demo MP3 is included as a fallback. Existing local audio and settings are preserved.
 
 Imported files are copied into the user's application data directory, so moving the original does not break playback. Choosing or clearing a file and changing the music-response checkbox save immediately. Save volume and fade settings with **Save audio settings**. Clearing the default track prevents it from being automatically added again at every launch.
 
@@ -187,7 +187,7 @@ py -3.12 source/tools/setup_environment.py --dev --models
 
 Initial setup requires internet access to download dependencies and models. Model sources, licenses, and SHA-256 values are pinned in the repository. A download or hash failure stops setup without replacing valid models. Model binaries are excluded from Git; complete Releases bundle them for offline use.
 
-On macOS or in a cloud container, use `python3.12` and `.venv/bin/python`. The macOS adaptation and native build/acceptance instructions are in [MACOS.md](MACOS.md). Download the matching Mac architecture; automated packaging checks do not replace Finder, microphone, and physical-panel acceptance.
+The macOS version is no longer maintained, and this version has no Mac package.
 
 ## 12. Edit locally and in the cloud
 

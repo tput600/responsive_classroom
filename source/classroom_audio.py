@@ -263,6 +263,10 @@ class CommandParser:
         self._last: dict[str, float] = {}
         self._aliases = {name: {normalize_phrase(alias) for alias in aliases}
                          for name, aliases in settings.command_aliases.items()}
+        self._aliases.update({
+            "VOICE_OFF": {normalize_phrase(alias) for alias in ("no sensor", "關閉語音", "关闭语音", "關閉語音偵測", "关闭语音检测")},
+            "VOICE_ON": {normalize_phrase(alias) for alias in ("sensor on", "啟動語音", "启动语音", "開啟語音", "开启语音", "啟動語音偵測", "启动语音检测")},
+        })
 
     def parse(self, text: str, now: float | None = None, *, commit: bool = True) -> CommandResult:
         now = time.monotonic() if now is None else now

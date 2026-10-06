@@ -8,6 +8,21 @@ from classroom_core import Settings, SettingsRepository, SCHEMA_VERSION
 
 
 class ReactiveMigrationTests(unittest.TestCase):
+    def test_schema_seventeen_adds_rest_reminder_audio_without_replacing_choices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            prior = asdict(Settings())
+            prior["audio_files"].pop("rest_end")
+            prior["audio_files"]["notice"] = "audio/notice/custom.mp3"
+            prior["audio_reactive_modes"].pop("rest_end")
+            path.write_text(json.dumps({"schema_version": 17, **prior}), encoding="utf-8")
+            loaded = SettingsRepository(path).load()
+            self.assertEqual(loaded.audio_files["notice"], "audio/notice/custom.mp3")
+            self.assertEqual(loaded.audio_files["rest_end"], "")
+            self.assertFalse(loaded.audio_reactive_modes["rest_end"])
+            self.assertTrue(loaded.voice_mode_enabled["notice"])
+            self.assertTrue(path.with_suffix(".json.v17.bak").is_file())
+
     def test_old_defaults_retune_but_user_timers_aliases_audio_and_calibration_survive(self):
         data = {'schema_version':12, **asdict(Settings(rest_seconds=147, question_seconds=8))}
         data.pop('audio_reactive_modes')

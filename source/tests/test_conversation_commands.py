@@ -23,6 +23,14 @@ class ConversationCommandTests(unittest.TestCase):
         self.assertEqual(parser.parse("question, then you are wrong", now=1).intent, "WRONG")
         self.assertEqual(parser.parse("我們現在請注意老師，然後討論", now=2).intent, "DISCUSSION")
 
+    def test_voice_pause_and_resume_phrases_are_recognized(self):
+        parser = CommandParser(Settings(), cooldown_seconds=0)
+        self.assertEqual(parser.parse("no sensor", now=1).intent, "VOICE_OFF")
+        self.assertEqual(parser.parse("關閉語音", now=2).intent, "VOICE_OFF")
+        self.assertEqual(parser.parse("sensor on", now=3).intent, "VOICE_ON")
+        self.assertEqual(parser.parse("啟動語音", now=4).intent, "VOICE_ON")
+        self.assertIsNone(parser.parse("sensoring", now=5).intent)
+
     def test_word_boundary_correction_preserves_both_forms(self):
         parser = CommandParser(Settings(), cooldown_seconds=0)
         result = parser.parse("the model said NOT IS today", now=1)

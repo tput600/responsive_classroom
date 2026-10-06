@@ -44,6 +44,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtGui import QGuiApplication
 
 TIMER_KEYS = ("question_seconds", "feedback_seconds", "rest_seconds",
               "rest_reminder_seconds", "voice_idle_seconds")
@@ -125,12 +126,13 @@ class ClassroomService(QObject):
         self._events.remote_mode.connect(self._remote_mode_received)
         self.remote = None
         self._remote_urls = []
-        self._remote_was_connected = False
+        self._remote_was_active = False
         self._audio_generation = 0
         self._noise_context = (BaseMode.STANDBY, 0)
         self._last_reading = None
         self._transcript = {"raw": "", "corrected": "", "status": "", "active": False}
         self._speech_ready = False
+        self._voice_commands_paused = False
         self._voice_suppressed = False
         self._microphone = {"ok": False, "message": "尚未啟動"}
         self._speech = {"ok": False, "message": "語音已關閉"}
@@ -192,11 +194,13 @@ class ClassroomService(QObject):
                 "remaining_seconds": overlay_remaining if overlay_remaining is not None else rest_remaining,
                 "voice_idle_seconds": self.controller.remaining_seconds("voice"),
             },
-            "statuses": {"microphone": dict(self._microphone), "speech": dict(self._speech),
+            "statuses": {"microphone": dict(self._microphone), "speech": dict(self._speech, command_paused=self._voice_commands_paused),
                          "output": {"enabled": self._output_enabled, "stopping": self._output_stopping},
                          "audio": {"playing": self.playback.is_playing}},
             "remote": {"enabled": self.remote is not None,
                        "connected": bool(self.remote and self.remote.connected),
+                       "armed": bool(self.remote and self.remote.armed),
+                       "active": bool(self.remote and self.remote.active),
                        "urls": list(self._remote_urls)},
             "noise": {"dbfs": getattr(noise, "dbfs", None), "smoothed_dbfs": getattr(noise, "smoothed_dbfs", None),
                       "relative_db": getattr(noise, "relative_db", None),
@@ -233,7 +237,7 @@ class ClassroomService(QObject):
         self._last_periodic_publish = time.monotonic()
         data = self._localized_snapshot(self.snapshot())
         if self.remote:
-            self.remote.update_state(data["current"])
+            self.remote.update_state(data["current"], self.settings)
         self.stateChanged.emit(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
     def _state_changed(self, state):
@@ -315,24 +319,46 @@ class ClassroomService(QObject):
             remote = MobileRemote(self.resource_root / "web/mobile.html", self._events.remote_mode.emit)
             self.remote = remote
             self._remote_urls = [f"http://{address}:{remote.port}/#{remote.token}" for address in addresses]
-            remote.update_state(self.snapshot()["current"])
+            remote.update_state(self.snapshot()["current"], self.settings)
         else:
             self.remote.close()
             self.remote = None
             self._remote_urls = []
-            self._remote_was_connected = False
+            self._remote_was_active = False
             self.controller.cancel_pending_voice()
         self._publish()
 
+    def _do_remote_active(self, p):
+        if self.remote is None:
+            raise ValueError("手機連線尚未開啟")
+        enabled = self._bool(p, "enabled")
+        if enabled != self.remote.armed:
+            self.remote.set_armed(enabled)
+            self._remote_was_active = self.remote.active
+            self.controller.cancel_pending_voice()
+            self._publish()
+
+    def _do_copy_remote(self, p):
+        url = str(p.get("url", ""))
+        if url not in self._remote_urls:
+            raise ValueError("unknown remote URL")
+        QGuiApplication.clipboard().setText(url)
+
     @Slot(str)
     def _remote_mode_received(self, mode):
-        if self.remote and self.remote.connected:
+        if self.remote and self.remote.active:
             self._do_mode({"mode": mode})
 
     def _do_voice(self, p):
         enabled = self._bool(p, "enabled")
+        if enabled and self._voice_commands_paused:
+            self._voice_commands_paused = False
+            self.controller.cancel_pending_voice()
+            self._publish()
+            return
         if enabled == self.settings.voice_enabled:
             return
+        self._voice_commands_paused = False
         if self._save(replace(self.settings, voice_enabled=enabled)):
             self._sync_voice_capture()
         self._speech["message"] = "等待語音指令" if enabled else "語音已關閉"
@@ -543,6 +569,18 @@ class ClassroomService(QObject):
             **self.settings.audio_reactive_modes, mode: enabled,
         }))
 
+    def _do_scenario_audio(self, p):
+        mode = self._scenario_mode(p)
+        self._save(replace(self.settings, audio_enabled_modes={
+            **self.settings.audio_enabled_modes, mode: self._bool(p, "enabled"),
+        }))
+
+    def _do_scenario_voice(self, p):
+        mode = self._scenario_mode(p)
+        self._save(replace(self.settings, voice_mode_enabled={
+            **self.settings.voice_mode_enabled, mode: self._bool(p, "enabled"),
+        }))
+
     def _do_preview_audio(self, p):
         self.playback.preview(self._audio_mode(p))
 
@@ -558,8 +596,15 @@ class ClassroomService(QObject):
     @staticmethod
     def _audio_mode(payload):
         mode = str(payload.get("mode", "")).lower()
-        if mode not in ("standby", "question", "correct", "wrong", "notice", "rest", "discussion"):
+        if mode not in ("standby", "question", "correct", "wrong", "notice", "rest", "rest_end", "discussion"):
             raise ValueError("unknown audio cue")
+        return mode
+
+    @staticmethod
+    def _scenario_mode(payload):
+        mode = str(payload.get("mode", "")).lower()
+        if mode not in ("standby", "notice", "discussion", "rest"):
+            raise ValueError("unknown scenario")
         return mode
 
     @staticmethod
@@ -881,11 +926,29 @@ class ClassroomService(QObject):
     def _apply_command(self, result, revision):
         raw = getattr(result, "raw_text", getattr(result, "text", ""))
         corrected = getattr(result, "corrected_text", raw)
-        blocked = bool(self.remote and self.remote.connected and result.intent in ("STANDBY", "NOTICE", "DISCUSSION", "REST"))
-        applied = bool(not blocked and result.intent and self.controller.submit_intent(result.intent, "voice", revision))
-        if applied and self.remote and self.remote.connected:
+        intent = result.intent
+        control = intent in ("VOICE_ON", "VOICE_OFF")
+        blocked = bool(not control and intent and (self._voice_commands_paused or
+                       (intent in ("STANDBY", "NOTICE", "DISCUSSION", "REST") and
+                        ((self.remote and self.remote.active) or
+                         not self.settings.voice_mode_enabled.get(intent.lower(), True)))))
+        if control and revision == self.controller.manual_revision:
+            self._voice_commands_paused = intent == "VOICE_OFF"
             self.controller.cancel_pending_voice()
-        status = "手機控制中" if blocked else "已套用" if applied else "已忽略（已手動切換）" if revision != self.controller.manual_revision else getattr(result, "reason", "指令未套用")
+            applied = True
+        else:
+            applied = bool(not control and not blocked and intent and self.controller.submit_intent(intent, "voice", revision))
+            if applied and self.remote and self.remote.active:
+                self.controller.cancel_pending_voice()
+        if applied and control:
+            status = "語音指令已暫停；仍可說啟動語音" if self._voice_commands_paused else "語音指令已啟動"
+        elif blocked:
+            status = ("語音指令已暫停" if self._voice_commands_paused else
+                      "手機控制中" if self.remote and self.remote.active else "此情境的語音已關閉")
+        elif applied:
+            status = "已套用"
+        else:
+            status = "已忽略（已手動切換）" if revision != self.controller.manual_revision else getattr(result, "reason", "指令未套用")
         self._transcript = {"raw": raw, "corrected": corrected, "status": status, "active": self._transcript["active"]}
         self._publish()
 
@@ -915,9 +978,9 @@ class ClassroomService(QObject):
 
     def _tick(self):
         now = time.monotonic()
-        connected = bool(self.remote and self.remote.connected)
-        if connected != self._remote_was_connected:
-            self._remote_was_connected = connected
+        active = bool(self.remote and self.remote.active)
+        if active != self._remote_was_active:
+            self._remote_was_active = active
             self.controller.cancel_pending_voice()
             self._publish()
         self._sync_voice_capture()

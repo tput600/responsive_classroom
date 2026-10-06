@@ -184,6 +184,7 @@ class SettingsTests(unittest.TestCase):
             settings = Settings(command_prefix="課堂", audio_files={
                 "standby": "待機.wav", "question": "提問.wav", "correct": "答對.wav",
                 "wrong": "答錯.wav", "notice": "注意.wav", "rest": "休息.wav",
+                "rest_end": "休息提醒.wav",
                 "discussion": "討論.wav",
             }, wled_devices=[{"ip": "192.0.2.50", "mac": "000000000050"}])
             repository = SettingsRepository(path)

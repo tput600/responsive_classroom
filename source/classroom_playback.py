@@ -16,7 +16,7 @@ from PySide6.QtMultimedia import QAudioBufferOutput, QAudioOutput, QAudioFormat,
 from classroom_core import (BaseMode, ClassroomState, DEFAULT_REST_AUDIO, NoiseState,
                             Overlay, RestStage, Settings)
 
-AUDIO_MODES = {"standby", "question", "correct", "wrong", "notice", "rest", "discussion"}
+AUDIO_MODES = {"standby", "question", "correct", "wrong", "notice", "rest", "rest_end", "discussion"}
 EXTENSIONS = {".wav", ".mp3"}
 
 
@@ -109,8 +109,10 @@ class AudioPlayback(QObject):
         self.settings = settings
         state = getattr(self, "_last_state", None)
         mode = self._state_mode(state) if state is not None else None
+        scenario = "rest" if mode == "rest_end" else mode
         retarget = (state is not None and mode is not None and
-                    settings.audio_files.get(mode) != previous.audio_files.get(mode))
+                    (settings.audio_files.get(mode) != previous.audio_files.get(mode) or
+                     settings.audio_enabled_modes.get(scenario) != previous.audio_enabled_modes.get(scenario)))
         rest_priority_changed = (state is not None and state.base_mode is BaseMode.REST and
                                  previous.voice_enabled != settings.voice_enabled)
         if rest_priority_changed and settings.voice_enabled:
@@ -135,18 +137,16 @@ class AudioPlayback(QObject):
         if state.overlay is not None:
             mode = {Overlay.QUESTION: "question", Overlay.CORRECT: "correct",
                     Overlay.WRONG: "wrong"}[state.overlay]
-            self._play(mode, loop=False, key=(mode, False))
+            self._play(mode, loop=True, key=(mode, True))
             return
         if state.base_mode is BaseMode.REST:
-            if state.rest_stage is RestStage.RESTING:
-                self._play("rest", loop=True, key=("rest", True))
-            else:
-                self.stop()
+            mode = "rest_end" if state.rest_stage is RestStage.REMINDER else "rest"
+            self._play(mode, loop=True, key=(mode, True))
             return
         mode = {BaseMode.STANDBY: "standby", BaseMode.NOTICE: "notice",
                 BaseMode.DISCUSSION: "discussion"}.get(state.base_mode)
         if mode:
-            self._play(mode, loop=mode in ("notice", "discussion"), key=(mode, mode in ("notice", "discussion")))
+            self._play(mode, loop=True, key=(mode, True))
 
     def _target_volume(self, mode: str | None, state: ClassroomState | None) -> float:
         volume = self.settings.audio_volume_percent / 100
@@ -162,7 +162,7 @@ class AudioPlayback(QObject):
             return {Overlay.QUESTION: "question", Overlay.CORRECT: "correct",
                     Overlay.WRONG: "wrong"}[state.overlay]
         if state.base_mode is BaseMode.REST:
-            return "rest"
+            return "rest_end" if state.rest_stage is RestStage.REMINDER else "rest"
         return {BaseMode.STANDBY: "standby", BaseMode.NOTICE: "notice",
                 BaseMode.DISCUSSION: "discussion"}.get(state.base_mode)
 
@@ -229,6 +229,10 @@ class AudioPlayback(QObject):
             return
         self._playing_key = key
         if not self.enabled or self._closed or self._player is None or self._output is None:
+            return
+        scenario = "rest" if mode == "rest_end" else mode
+        if not key[0].startswith("preview:") and not self.settings.audio_enabled_modes.get(scenario, True):
+            self.stop()
             return
         relative = self.settings.audio_files.get(mode, "")
         if not relative:

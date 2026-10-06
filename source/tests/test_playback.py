@@ -96,6 +96,7 @@ class AudioPlaybackTests(unittest.TestCase):
                     "discussion": playback.import_file("discussion", source),
                     "notice": playback.import_file("notice", source),
                     "rest": playback.import_file("rest", source),
+                    "rest_end": playback.import_file("rest_end", source),
                     "question": playback.import_file("question", source),
                     "correct": playback.import_file("correct", source),
                     "wrong": playback.import_file("wrong", source),
@@ -126,6 +127,7 @@ class AudioPlaybackTests(unittest.TestCase):
                 for overlay in (Overlay.QUESTION, Overlay.CORRECT, Overlay.WRONG):
                     playback.handle_state(ClassroomState(BaseMode.DISCUSSION, overlay=overlay))
                     self.assertTrue(playback.is_playing)
+                    self.assertEqual(playback._player.loops, Player.Loops.Infinite)
                     self.assertFalse(playback.suppress_detection)
                     playback._player.state = Player.PlaybackState.StoppedState
                     playback._on_media_status(Player.MediaStatus.EndOfMedia)
@@ -148,6 +150,12 @@ class AudioPlaybackTests(unittest.TestCase):
                 playback.apply_settings(Settings(voice_enabled=False, audio_fade_ms=0,
                                                  audio_files=settings.audio_files))
                 self.assertEqual(playback._player.loops, Player.Loops.Infinite)
+                playback.handle_state(ClassroomState(BaseMode.REST, rest_stage=RestStage.REMINDER))
+                self.assertEqual(playback.playing_mode, "rest_end")
+                self.assertEqual(playback._player.loops, Player.Loops.Infinite)
+                playback.apply_settings(Settings(audio_fade_ms=0, audio_files=settings.audio_files,
+                                                 audio_enabled_modes={**Settings().audio_enabled_modes, "rest": False}))
+                self.assertFalse(playback.is_playing)
                 playback.close()
 
                 default_player = AudioPlayback(root / "default-data", Settings(voice_enabled=True),

@@ -253,6 +253,28 @@ class WebServiceTests(unittest.TestCase):
         self.assertEqual(subject.snapshot()["transcript"]["status"], "已忽略（已手動切換）")
         finish(subject)
 
+    def test_scenario_switches_and_voice_wake_only_mode(self):
+        from classroom_audio import CommandParser
+        subject = service(self.directory)
+        parser = CommandParser(subject.settings, cooldown_seconds=0)
+        self.assertEqual(call(subject, "voice", {"enabled": True}), {"ok": True})
+        subject._apply_command(parser.parse("no sensor"), subject.controller.manual_revision)
+        self.assertTrue(subject.snapshot()["statuses"]["speech"]["command_paused"])
+        subject._apply_command(parser.parse("notice"), subject.controller.manual_revision)
+        self.assertEqual(subject.snapshot()["current"]["base_mode"], "STANDBY")
+        subject._apply_command(parser.parse("sensor on"), subject.controller.manual_revision)
+        self.assertFalse(subject.snapshot()["statuses"]["speech"]["command_paused"])
+        self.assertEqual(call(subject, "scenario_voice", {"mode": "notice", "enabled": False}), {"ok": True})
+        subject._apply_command(parser.parse("notice"), subject.controller.manual_revision)
+        self.assertEqual(subject.snapshot()["current"]["base_mode"], "STANDBY")
+        subject._apply_command(parser.parse("discussion"), subject.controller.manual_revision)
+        self.assertEqual(subject.snapshot()["current"]["base_mode"], "DISCUSSION")
+        self.assertEqual(call(subject, "scenario_audio", {"mode": "discussion", "enabled": False}), {"ok": True})
+        self.assertFalse(subject.settings.audio_enabled_modes["discussion"])
+        self.assertFalse(subject.repository.load().voice_mode_enabled["notice"])
+        self.assertFalse(subject.repository.load().audio_enabled_modes["discussion"])
+        finish(subject)
+
     def test_optional_phone_buttons_take_over_only_base_voice_commands(self):
         subject = service(self.directory)
         subject.resource_root = Path(__file__).parents[1] / "resources"
@@ -262,17 +284,29 @@ class WebServiceTests(unittest.TestCase):
             url = subject.snapshot()["remote"]["urls"][0].split("#")[0]
             token = subject.remote.token
             with urllib.request.urlopen(url, timeout=2) as response:
-                self.assertIn("課堂模式遙控", response.read().decode("utf-8"))
+                self.assertIn("responsive classroom", response.read().decode("utf-8"))
             with self.assertRaises(urllib.error.HTTPError):
                 urllib.request.urlopen(url + "state", timeout=2)
             request = urllib.request.Request(url + "state", headers={"X-Remote-Token": token})
             with urllib.request.urlopen(request, timeout=2) as response:
-                self.assertEqual(json.load(response)["mode"], "STANDBY")
+                state = json.load(response)
+                self.assertEqual(state["mode"], "STANDBY")
+                self.assertFalse(state["active"])
             self.assertTrue(subject.remote.connected)
             subject._tick()
             subject._apply_command(CommandResult("notice", "NOTICE", "accepted", "notice"),
                                    subject.controller.manual_revision)
-            self.assertEqual(subject.snapshot()["current"]["base_mode"], "STANDBY")
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
+            request = urllib.request.Request(url + "mode", data=b'{"mode":"STANDBY"}',
+                                             headers={"X-Remote-Token": token, "Content-Type": "application/json"})
+            with self.assertRaises(urllib.error.HTTPError) as paused:
+                urllib.request.urlopen(request, timeout=2)
+            self.assertEqual(paused.exception.code, 409)
+            self.assertEqual(call(subject, "remote_active", {"enabled": True}), {"ok": True})
+            self.assertTrue(subject.snapshot()["remote"]["active"])
+            subject._apply_command(CommandResult("standby", "STANDBY", "accepted", "standby"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
             subject._apply_command(CommandResult("question", "QUESTION", "accepted", "question"),
                                    subject.controller.manual_revision)
             self.assertEqual(subject.snapshot()["current"]["overlay"], "QUESTION")
@@ -286,6 +320,16 @@ class WebServiceTests(unittest.TestCase):
                 APP.processEvents()
                 time.sleep(0.005)
             self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
+            self.assertEqual(call(subject, "remote_active", {"enabled": False}), {"ok": True})
+            self.assertTrue(subject.snapshot()["remote"]["connected"])
+            self.assertFalse(subject.snapshot()["remote"]["active"])
+            with self.assertRaises(urllib.error.HTTPError) as paused:
+                urllib.request.urlopen(request, timeout=2)
+            self.assertEqual(paused.exception.code, 409)
+            subject._apply_command(CommandResult("standby", "STANDBY", "accepted", "standby"),
+                                   subject.controller.manual_revision)
+            self.assertEqual(subject.snapshot()["current"]["base_mode"], "STANDBY")
+            self.assertEqual(call(subject, "remote_active", {"enabled": True}), {"ok": True})
             with subject.remote._lock:
                 subject.remote._last_seen = time.monotonic() - 7
             subject._tick()

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Callable
 
 log = logging.getLogger(__name__)
-SCHEMA_VERSION = 17
+SCHEMA_VERSION = 18
 DEFAULT_REST_AUDIO = "audio/rest/default-rest.mp3"
 
 
@@ -99,7 +99,11 @@ def _default_aliases() -> dict[str, list[str]]:
 
 
 def _default_audio_files() -> dict[str, str]:
-    return {"standby": "", "question": "", "correct": "", "wrong": "", "notice": "", "rest": DEFAULT_REST_AUDIO, "discussion": ""}
+    return {"standby": "", "question": "", "correct": "", "wrong": "", "notice": "", "rest": DEFAULT_REST_AUDIO, "rest_end": "", "discussion": ""}
+
+
+def _default_scenario_switches() -> dict[str, bool]:
+    return {mode: True for mode in ("standby", "notice", "discussion", "rest")}
 
 
 @dataclass(frozen=True)
@@ -159,6 +163,8 @@ class Settings:
     audio_volume_percent: int = 70
     audio_fade_ms: int = 1500
     audio_files: dict[str, str] = field(default_factory=_default_audio_files)
+    audio_enabled_modes: dict[str, bool] = field(default_factory=_default_scenario_switches)
+    voice_mode_enabled: dict[str, bool] = field(default_factory=_default_scenario_switches)
     audio_reactive_modes: dict[str, bool] = field(default_factory=lambda: {
         mode: False for mode in _default_audio_files()
     })
@@ -268,7 +274,12 @@ class Settings:
         if (not isinstance(self.audio_reactive_modes, dict) or
                 set(self.audio_reactive_modes) != set(_default_audio_files()) or
                 any(not isinstance(v, bool) for v in self.audio_reactive_modes.values())):
-            raise ValueError("audio_reactive_modes must define seven boolean mode switches")
+            raise ValueError("audio_reactive_modes must define eight boolean mode switches")
+        for name in ("audio_enabled_modes", "voice_mode_enabled"):
+            switches = getattr(self, name)
+            if (not isinstance(switches, dict) or set(switches) != set(_default_scenario_switches()) or
+                    any(not isinstance(enabled, bool) for enabled in switches.values())):
+                raise ValueError(f"{name} must define four boolean scenario switches")
         if not isinstance(self.command_prefix, str) or len(self.command_prefix) > 32:
             raise ValueError("command_prefix must contain at most 32 characters")
         if not isinstance(self.stt_test_phrase, str) or not self.stt_test_phrase.strip() or len(self.stt_test_phrase) > 120:
@@ -375,10 +386,10 @@ class Settings:
             macs.add(mac)
             if "enabled" in board and not isinstance(board["enabled"], bool):
                 raise ValueError("WLED enabled must be a boolean")
-        if not isinstance(self.audio_files, dict) or set(self.audio_files) != {"standby", "question", "correct", "wrong", "notice", "rest", "discussion"} or any(
+        if not isinstance(self.audio_files, dict) or set(self.audio_files) != set(_default_audio_files()) or any(
             not isinstance(path, str) for path in self.audio_files.values()
         ):
-            raise ValueError("audio_files must contain paths for all seven mode cues")
+            raise ValueError("audio_files must contain paths for all eight mode cues")
 
     def noise_profile(self, mode: BaseMode) -> NoiseProfile:
         if mode is BaseMode.DISCUSSION:
@@ -537,10 +548,16 @@ class SettingsRepository:
                     **defaults.pattern_levels,
                     **(data.get("pattern_levels") if isinstance(data.get("pattern_levels"), dict) else {}),
                 }
-            elif version in (11, 12, 13, 14, 15, 16):
+            elif version in (11, 12, 13, 14, 15, 16, 17):
                 self._backup(version)
             elif version != SCHEMA_VERSION:
                 raise ValueError(f"Unsupported settings schema: {version}")
+            if version != SCHEMA_VERSION:
+                defaults = Settings()
+                for name in ("audio_files", "audio_reactive_modes"):
+                    prior = data.get(name)
+                    if isinstance(prior, dict):
+                        data[name] = {**getattr(defaults, name), **prior}
             if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11):
                 audio_files = data.get("audio_files")
                 if isinstance(audio_files, dict) and audio_files.get("rest") == "":
@@ -630,7 +647,7 @@ class SettingsRepository:
                 # Recover unrelated preferences without overwriting the damaged
                 # file. Older schemas still use their established migration path.
                 return self._recover_current(values)
-            if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
+            if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17):
                 self.save(settings)
             return settings
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:

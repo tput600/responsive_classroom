@@ -2,6 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const MODES = ['STANDBY', 'NOTICE', 'DISCUSSION', 'REST', 'QUESTION', 'CORRECT', 'WRONG'];
+const AUDIO_MODES = [...MODES, 'REST_END'];
 const TIMERS = ['question_seconds', 'feedback_seconds', 'rest_seconds', 'rest_reminder_seconds', 'voice_idle_seconds'];
 const WORDS = {
   audioDiagnostics: ['收音診斷', 'Input diagnostics'],
@@ -10,8 +11,9 @@ const WORDS = {
   settingsTitle: ['連線與收音設定', 'Connection and audio settings'],
   settingsHelp: ['先連接燈板與麥克風，再依需要調整偵測及音源。', 'Connect panels and a microphone, then adjust detection and audio as needed.'],
   settingsSections: ['設定區段', 'Settings sections'],
-  remoteTitle: ['手機遙控', 'Phone remote'], remoteHelp: ['手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。', 'Connect phone and computer to the same Wi-Fi, then open a URL below in your phone browser. The phone only has mode buttons; the computer handles audio and noise detection.'],
-  remoteOn: ['啟用手機按鈕', 'Enable phone buttons'], remoteOff: ['關閉手機按鈕', 'Disable phone buttons'],
+  remoteTitle: ['手機控制', 'Phone control'], remoteHelp: ['手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。', 'Connect phone and computer to the same Wi-Fi, then open a URL below in your phone browser. The phone only has mode buttons; the computer handles audio and noise detection.'],
+  remoteOn: ['顯示手機網址', 'Show phone URL'], remoteOff: ['關閉手機連線', 'Close phone connection'],
+  remoteActivate: ['啟動手機控制', 'Activate phone control'], remotePaused: ['手機已連線；控制已暫停', 'Phone connected; control paused'],
   remoteDisabled: ['未啟用', 'Disabled'], remoteWaiting: ['等待手機連線；四情境仍可用電腦語音切換', 'Waiting for phone; desktop voice can still switch scenarios'],
   remoteConnected: ['手機已連線；四情境由按鈕控制，三個互動仍可用電腦語音', 'Phone connected; scenario buttons take over, while desktop voice still handles interactions'],
   remoteCopy: ['複製網址', 'Copy URL'], remoteCopied: ['已複製', 'Copied'],
@@ -23,10 +25,13 @@ const WORDS = {
   noiseUnavailable: ['請先選擇請注意或討論模式，並確認麥克風可用。', 'Choose Attention or Discussion and connect an available microphone.'],
   noNetworks: ['沒有可搜尋的網段；可直接輸入 IP。', 'No subnet available; enter a panel IP instead.'],
   allowedRange: ['範圍', 'Range'],
-  brand: ['課堂小幫手', 'Classroom Helper'], navigation: ['主要導覽', 'Main navigation'],
+  brand: ['responsive classroom', 'responsive classroom'], navigation: ['主要導覽', 'Main navigation'],
   classroom: ['課堂', 'Classroom'], connection: ['連線與收音', 'Connection'], timers: ['計時', 'Timers'],
   STANDBY: ['待機', 'Standby'], NOTICE: ['請注意', 'Attention'], DISCUSSION: ['討論', 'Discussion'], REST: ['休息', 'Rest'],
   QUESTION: ['提問', 'Question'], CORRECT: ['答對', 'Correct'], WRONG: ['答錯', 'Wrong'],
+  REST_END: ['休息收尾', 'Rest reminder'], scenarioAudio: ['音樂', 'MP3'], scenarioVoice: ['語音', 'Mic'],
+  scenarioOn: ['開', 'On'], scenarioOff: ['關', 'Off'], remoteVoiceManaged: ['手機已接管四情境切換', 'Phone controls scenario switching'],
+  voiceMasterOff: ['請先開啟左側語音總開關', 'Enable the main voice switch first'],
   currentMode: ['目前模式', 'Current mode'], manual: ['手動控制', 'Manual control'],
   manualHelp: ['點選模式，立即調整課堂信號。', 'Choose a mode to change the classroom signal.'],
   standbyHelp: ['等待下一個課堂活動', 'Ready for the next activity'], noticeHelp: ['安靜聽講', 'Listen to the teacher'],
@@ -82,6 +87,7 @@ const WORDS = {
   boardStatusConnected: ['燈板已連線', 'Panel connected'], boardStatusConnecting: ['燈板連線中', 'Connecting panel'],
   boardStatusPaused: ['燈板已暫停', 'Panel paused'], boardStatusError: ['燈板連線異常', 'Panel error'],
   voiceReady: ['語音已開啟', 'Voice enabled'], voiceDisabled: ['語音已關閉', 'Voice disabled'], voicePreparing: ['語音準備中', 'Preparing voice'],
+  voicePaused: ['語音指令已暫停', 'Voice commands paused'], voiceWakeOnly: ['仍可說「啟動語音」或「sensor on」', 'Say “sensor on” to resume'],
   unknownNoise: ['等待有效音量', 'Waiting for valid input'], QUIET: ['平穩', 'Steady'], RISING: ['漸活躍', 'Growing activity'], LOUD: ['活躍', 'Active'],
   warm: ['暖金柔光漫遊 · 待機', 'Golden drifting glow · Standby'], green: ['暖綠呼吸 · 平穩', 'Warm green breath · Steady'],
   orange: ['橘色橫流 · 漸活躍', 'Orange ribbon · Growing activity'], red: ['珊瑚直波 · 活躍', 'Coral wave · Active'],
@@ -155,7 +161,9 @@ function localMessage(value) {
   const common = {'尚未啟動':'Not started', '語音已關閉':'Voice disabled', '等待語音指令':'Waiting for a voice command',
     '尚未校準':'Not calibrated', '已儲存':'Saved', '音量設定已儲存。':'Noise settings saved.', '語音設定已儲存。':'Voice settings saved.',
     '已儲存；新計時會使用更新後的時間。':'Saved. New timers use the updated durations.', '麥克風尚未啟動':'Microphone has not started',
-    '已連線，正在送出燈光':'Connected; sending light frames', '已停止':'Stopped', '無指令':'No command', '未找到指令':'No command found'};
+    '已連線，正在送出燈光':'Connected; sending light frames', '已停止':'Stopped', '無指令':'No command', '未找到指令':'No command found',
+    '語音指令已暫停；仍可說啟動語音':'Voice commands paused; say sensor on to resume', '語音指令已啟動':'Voice commands resumed',
+    '語音指令已暫停':'Voice commands paused', '此情境的語音已關閉':'Voice is disabled for this scenario', '手機控制中':'Phone is controlling scenarios'};
   if (common[value]) return common[value];
   // Device and recognizer errors remain verbatim so their details are not lost.
   return value;
@@ -214,6 +222,8 @@ function makeFields() {
     const label = document.createElement('label'); label.className = 'field'; label.append(translated('span', mode));
     const input = document.createElement('input'); input.id = `alias-${mode}`; input.type = 'text'; input.maxLength = 400; input.autocomplete = 'off';
     label.append(input); $('alias-fields').append(label);
+  });
+  AUDIO_MODES.forEach(mode => {
     const row = document.createElement('div'); row.className = 'audio-file'; row.append(translated('strong', mode));
     const name = document.createElement('span'); name.id = `audio-name-${mode}`; name.className = 'file-name'; row.append(name);
     const choose = translated('button', 'chooseAudio', 'button'); choose.type = 'button'; choose.onclick = () => command('choose_audio', {mode: mode.toLowerCase()}, 'audio-message'); row.append(choose);
@@ -288,7 +298,7 @@ function hydrateSettings(settings) {
     setField('corrections', Object.entries(settings.command_corrections || {}).map(([a,b]) => `${a} = ${b}`).join('\n'));
   }
   if (!dirty.has('audio')) { setField('audio-volume', settings.audio_volume_percent); setField('audio-fade', settings.audio_fade_ms); }
-  MODES.forEach(mode => {
+  AUDIO_MODES.forEach(mode => {
     const file = settings.audio_files[mode.toLowerCase()] || '', name = file.split(/[\\/]/).pop();
     setText(`audio-name-${mode}`, name || text('noAudio')); $(`audio-name-${mode}`).title = file;
     $(`audio-preview-${mode}`).disabled = !file; $(`audio-clear-${mode}`).disabled = !file;
@@ -364,16 +374,27 @@ function renderState(value) {
   document.querySelectorAll('[data-mode]').forEach(e => { const selected = e.dataset.mode === current.mode; e.classList.toggle('selected', selected); if(e.getAttribute('aria-pressed')!==String(selected))e.setAttribute('aria-pressed', String(selected)); });
   setText('question-duration', `${settings.question_seconds} ${text('seconds')}`);
   document.querySelectorAll('.feedback-duration').forEach(e => { e.textContent = `${settings.feedback_seconds} ${text('seconds')}`; });
-  [['voice-toggle',settings.voice_enabled,'voiceOff','voiceOn'],['noise-toggle',current.noise_enabled,'noiseOff','noiseOn']].forEach(([id,on,a,b]) => {
+  [['voice-toggle',settings.voice_enabled && !statuses.speech.command_paused,'voiceOff','voiceOn'],['noise-toggle',current.noise_enabled,'noiseOff','noiseOn']].forEach(([id,on,a,b]) => {
     $(id).setAttribute('aria-pressed', String(on)); $(id).querySelector('span').textContent = text(on ? a : b);
   });
   const noiseMode = ['NOTICE','DISCUSSION'].includes(current.base_mode);
   $('noise-toggle').disabled = !noiseMode || !statuses.microphone.available;
   $('noise-toggle').title = $('noise-toggle').disabled ? text('noiseUnavailable') : '';
   const remote = state.remote || {enabled:false,connected:false,urls:[]};
+  document.querySelectorAll('[data-scenario-audio],[data-scenario-voice]').forEach(button=>{
+    const mode=(button.dataset.scenarioAudio||button.dataset.scenarioVoice).toLowerCase();
+    const audio=Boolean(button.dataset.scenarioAudio);
+    const enabled=Boolean((audio ? settings.audio_enabled_modes : settings.voice_mode_enabled)?.[mode]);
+    button.setAttribute('aria-pressed',String(enabled));
+    button.setAttribute('aria-label',`${text(mode.toUpperCase())} ${text(audio ? 'scenarioAudio' : 'scenarioVoice')} ${text(enabled ? 'scenarioOn' : 'scenarioOff')}`);
+    button.disabled=!audio && remote.active;
+    button.title=!audio && remote.active ? text('remoteVoiceManaged') : !audio && !settings.voice_enabled ? text('voiceMasterOff') : button.getAttribute('aria-label');
+  });
   $('remote-toggle').setAttribute('aria-pressed',String(remote.enabled));
   $('remote-toggle').querySelector('span').textContent=text(remote.enabled ? 'remoteOff' : 'remoteOn');
-  setText('remote-status',text(remote.connected ? 'remoteConnected' : remote.enabled ? 'remoteWaiting' : 'remoteDisabled'));
+  $('remote-active').disabled=!remote.enabled;
+  $('remote-active').checked=Boolean(remote.armed);
+  setText('remote-status',text(remote.active ? 'remoteConnected' : remote.connected ? 'remotePaused' : remote.enabled ? 'remoteWaiting' : 'remoteDisabled'));
   $('remote-urls').hidden=!remote.enabled;
   const remoteUrls=JSON.stringify(remote.urls);
   if($('remote-urls').dataset.urls!==remoteUrls){
@@ -381,7 +402,7 @@ function renderState(value) {
     remote.urls.forEach(url=>{
       const row=document.createElement('div'),address=document.createElement('code'),copy=document.createElement('button');
       address.textContent=url;copy.type='button';copy.className='button small';copy.textContent=text('remoteCopy');
-      copy.onclick=async()=>{try{await navigator.clipboard.writeText(url);copy.textContent=text('remoteCopied');}catch(_){message('remote-message',url);}};
+      copy.onclick=async()=>{if(await command('copy_remote',{url},'remote-message'))copy.textContent=text('remoteCopied');};
       row.append(address,copy);$('remote-urls').append(row);
     });
   }
@@ -395,8 +416,8 @@ function renderState(value) {
   const microphone = state.microphones.find(m=>m.id === settings.microphone_device_id);
   setText('microphone-detail', microphone?.id ? microphone.name : text('defaultMic'));
   $('microphone-title').title = localMessage(statuses.microphone.message); $('microphone-dot').className = `status-dot ${statuses.microphone.ok ? 'ok' : 'error'}`;
-  setText('speech-title', text(!settings.voice_enabled ? 'voiceDisabled' : statuses.speech.ok ? 'voiceReady' : 'voicePreparing'));
-  setText('speech-detail', localMessage(statuses.speech.message) || 'SenseVoice · Offline'); $('speech-detail').title = localMessage(statuses.speech.message);
+  setText('speech-title', text(!settings.voice_enabled ? 'voiceDisabled' : statuses.speech.command_paused ? 'voicePaused' : statuses.speech.ok ? 'voiceReady' : 'voicePreparing'));
+  setText('speech-detail', statuses.speech.command_paused ? text('voiceWakeOnly') : localMessage(statuses.speech.message) || 'SenseVoice · Offline'); $('speech-detail').title = $('speech-detail').textContent;
   $('speech-dot').className = `status-dot ${settings.voice_enabled ? statuses.speech.ok ? 'ok' : 'loading' : ''}`;
   const n = state.noise, rawLevel = Number.isFinite(n.dbfs) ? `${n.dbfs.toFixed(1)} dBFS` : '— dBFS';
   const smoothLevel = Number.isFinite(n.smoothed_dbfs) ? `${n.smoothed_dbfs.toFixed(1)} dBFS` : rawLevel;
@@ -474,10 +495,13 @@ function wireEvents() {
   };
   document.querySelectorAll('[data-page],[data-go]').forEach(e=>e.addEventListener('click',()=>navigate(e.dataset.page || e.dataset.go)));
   document.querySelectorAll('[data-mode]').forEach(e=>e.addEventListener('click',()=>command('mode',{mode:e.dataset.mode})));
+  document.querySelectorAll('[data-scenario-audio]').forEach(button=>button.onclick=()=>command('scenario_audio',{mode:button.dataset.scenarioAudio,enabled:button.getAttribute('aria-pressed')!=='true'}));
+  document.querySelectorAll('[data-scenario-voice]').forEach(button=>button.onclick=()=>command('scenario_voice',{mode:button.dataset.scenarioVoice,enabled:button.getAttribute('aria-pressed')!=='true'}));
   $('language').onclick=()=>command('language',{language:language==='en_US'?'zh_TW':'en_US'});
-  $('voice-toggle').onclick=requireState(()=>command('voice',{enabled:!state.settings.voice_enabled}));
+  $('voice-toggle').onclick=requireState(()=>command('voice',{enabled:!state.settings.voice_enabled || state.statuses.speech.command_paused}));
   $('noise-toggle').onclick=requireState(()=>command('detection',{enabled:!state.current.noise_enabled}));
   $('remote-toggle').onclick=requireState(()=>command('remote',{enabled:!state.remote.enabled},'remote-message'));
+  $('remote-active').onchange=async event=>{if(!await command('remote_active',{enabled:event.target.checked},'remote-message'))event.target.checked=!event.target.checked;};
   $('save-noise').addEventListener('click', event => event.stopPropagation());
   $('save-audio').addEventListener('click', event => event.stopPropagation());
   $('connect-form').onsubmit=e=>{e.preventDefault();command('connect',{ip:$('board-ip').value.trim()},'board-message');};

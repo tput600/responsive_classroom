@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' qrc:; script-src 'self' qrc:; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
-  <title>課堂小幫手</title>
+  <title>responsive classroom</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="qrc:///qtwebchannel/qwebchannel.js"></script>
   <script defer src="app.js"></script>
@@ -30,11 +30,12 @@
 </defs></svg>
 <div id="app">
   <header class="app-header">
-    <div class="brand"><svg class="icon"><use href="#i-cap"/></svg><strong data-t="brand">課堂小幫手</strong></div>
+    <div class="brand"><svg class="icon"><use href="#i-cap"/></svg><strong data-t="brand">responsive classroom</strong></div>
     <nav class="navigation" aria-label="主要導覽" data-aria="navigation">
       <button type="button" data-page="classroom" aria-current="page" data-t="classroom">課堂</button>
       <button type="button" data-page="connection" data-t="connection">連線與收音</button>
       <button type="button" data-page="timers" data-t="timers">計時</button>
+      <button type="button" data-page="remote" data-t="remoteTitle">手機控制</button>
     </nav>
     <button id="language" class="language-button" type="button" aria-label="Switch interface language">EN</button>
   </header>
@@ -60,10 +61,10 @@
       <div class="control-column">
         <div class="control-heading"><h2 data-t="manual">手動控制</h2><p data-t="manualHelp">點選模式，立即調整課堂信號。</p></div>
         <div class="base-modes">
-          <button type="button" class="mode-button selected" data-mode="STANDBY" aria-pressed="true"><svg class="icon"><use href="#i-glow"/></svg><strong data-t="STANDBY">待機</strong><small data-t="standbyHelp">等待下一個課堂活動</small></button>
-          <button type="button" class="mode-button" data-mode="NOTICE" aria-pressed="false"><svg class="icon"><use href="#i-notice"/></svg><strong data-t="NOTICE">請注意</strong><small data-t="noticeHelp">安靜聽講</small></button>
-          <button type="button" class="mode-button" data-mode="DISCUSSION" aria-pressed="false"><svg class="icon"><use href="#i-chat"/></svg><strong data-t="DISCUSSION">討論</strong><small data-t="discussionHelp">允許交談，音量範圍更寬</small></button>
-          <button type="button" class="mode-button" data-mode="REST" aria-pressed="false"><svg class="icon"><use href="#i-rest"/></svg><strong data-t="REST">休息</strong><small data-t="restHelp">倒數後提醒回到課堂</small></button>
+          <div class="mode-tile"><button type="button" class="mode-button selected" data-mode="STANDBY" aria-pressed="true"><svg class="icon"><use href="#i-glow"/></svg><strong data-t="STANDBY">待機</strong><small data-t="standbyHelp">等待下一個課堂活動</small></button><div class="mode-switches"><button type="button" data-scenario-audio="STANDBY"><svg class="icon"><use href="#i-sound"/></svg></button><button type="button" data-scenario-voice="STANDBY"><svg class="icon"><use href="#i-mic"/></svg></button></div></div>
+          <div class="mode-tile"><button type="button" class="mode-button" data-mode="NOTICE" aria-pressed="false"><svg class="icon"><use href="#i-notice"/></svg><strong data-t="NOTICE">請注意</strong><small data-t="noticeHelp">安靜聽講</small></button><div class="mode-switches"><button type="button" data-scenario-audio="NOTICE"><svg class="icon"><use href="#i-sound"/></svg></button><button type="button" data-scenario-voice="NOTICE"><svg class="icon"><use href="#i-mic"/></svg></button></div></div>
+          <div class="mode-tile"><button type="button" class="mode-button" data-mode="DISCUSSION" aria-pressed="false"><svg class="icon"><use href="#i-chat"/></svg><strong data-t="DISCUSSION">討論</strong><small data-t="discussionHelp">允許交談，音量範圍更寬</small></button><div class="mode-switches"><button type="button" data-scenario-audio="DISCUSSION"><svg class="icon"><use href="#i-sound"/></svg></button><button type="button" data-scenario-voice="DISCUSSION"><svg class="icon"><use href="#i-mic"/></svg></button></div></div>
+          <div class="mode-tile"><button type="button" class="mode-button" data-mode="REST" aria-pressed="false"><svg class="icon"><use href="#i-rest"/></svg><strong data-t="REST">休息</strong><small data-t="restHelp">倒數後提醒回到課堂</small></button><div class="mode-switches"><button type="button" data-scenario-audio="REST"><svg class="icon"><use href="#i-sound"/></svg></button><button type="button" data-scenario-voice="REST"><svg class="icon"><use href="#i-mic"/></svg></button></div></div>
         </div>
         <div class="response-modes">
           <button type="button" class="mode-button response" data-mode="QUESTION" aria-pressed="false"><svg class="icon"><use href="#i-orbit"/></svg><strong data-t="QUESTION">提問</strong><small id="question-duration">10 秒</small></button>
@@ -80,18 +81,7 @@
     <section id="page-connection" class="page scroll-page" aria-label="連線與收音" data-aria="connection" hidden>
       <div class="settings-content">
         <div class="page-heading settings-heading"><h2 data-t="settingsTitle">連線與收音設定</h2><p data-t="settingsHelp">先連接燈板與麥克風，再依需要調整偵測及音源。</p></div>
-        <nav class="settings-nav" aria-label="設定區段" data-aria="settingsSections"><button type="button" data-section="remote-details" data-t="remoteTitle">手機遙控</button><button type="button" data-section="board-details" data-t="boards">燈板</button><button type="button" data-section="input-details" data-t="microphoneNoise">收音與偵測</button><button type="button" data-section="voice-details" data-t="voiceCommands">語音指令</button><button type="button" data-section="audio-details" data-t="customAudio">自訂音源</button></nav>
-        <section class="settings-section">
-          <details id="remote-details" class="disclosure section-disclosure settings-region" open>
-            <summary><svg class="icon"><use href="#i-chevron"/></svg><h2 data-t="remoteTitle">手機遙控</h2></summary>
-            <div class="region-content">
-              <p class="section-help" data-t="remoteHelp">手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。</p>
-              <div class="remote-controls"><button id="remote-toggle" class="button" type="button" aria-pressed="false"><span data-t="remoteOn">啟用手機按鈕</span></button><span id="remote-status" role="status">未啟用</span></div>
-              <div id="remote-urls" class="remote-urls" hidden></div>
-              <p id="remote-message" class="form-message" role="status"></p>
-            </div>
-          </details>
-        </section>
+        <nav class="settings-nav" aria-label="設定區段" data-aria="settingsSections"><button type="button" data-section="board-details" data-t="boards">燈板</button><button type="button" data-section="input-details" data-t="microphoneNoise">收音與偵測</button><button type="button" data-section="voice-details" data-t="voiceCommands">語音指令</button><button type="button" data-section="audio-details" data-t="customAudio">自訂音源</button></nav>
         <section class="settings-section">
           <details id="board-details" class="disclosure section-disclosure settings-region board-region" open>
             <summary><svg class="icon"><use href="#i-chevron"/></svg><h2><svg class="icon"><use href="#i-board"/></svg><span data-t="boards">燈板連線</span></h2></summary>
@@ -133,6 +123,14 @@
       </div>
     </section>
     <section id="page-timers" class="page scroll-page" aria-label="計時" data-aria="timers" hidden><div class="settings-content timer-content"><div class="page-heading"><h2><svg class="icon"><use href="#i-timer"/></svg><span data-t="classTimers">課堂計時</span></h2><p data-t="timerHelp">設定下一次啟動模式時使用的時長。</p></div><form id="timers-form" class="timer-grid"></form><p class="section-help" data-t="idleHelp">閒置回待機設為 0 可停用；請注意與討論不受閒置計時影響。</p><p id="timers-message" class="form-message" role="status"></p></div></section>
+    <section id="page-remote" class="page scroll-page" aria-label="手機控制" data-aria="remoteTitle" hidden>
+      <div class="settings-content remote-content">
+        <div class="page-heading"><h2 data-t="remoteTitle">手機控制</h2><p data-t="remoteHelp">手機與電腦連上同一個 Wi‑Fi 後，用手機瀏覽器開啟下方網址。手機只提供模式按鈕；收音與音量偵測仍由電腦負責。</p></div>
+        <div class="remote-controls"><button id="remote-toggle" class="button" type="button" aria-pressed="false"><span data-t="remoteOn">顯示手機網址</span></button><label class="remote-activation"><input id="remote-active" type="checkbox" disabled><span data-t="remoteActivate">啟動手機控制</span></label><span id="remote-status" role="status">未啟用</span></div>
+        <div id="remote-urls" class="remote-urls" hidden></div>
+        <p id="remote-message" class="form-message" role="status"></p>
+      </div>
+    </section>
   </main>
   <div id="connection-error" role="alert" hidden></div>
 </div>

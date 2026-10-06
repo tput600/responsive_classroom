@@ -2,28 +2,44 @@
 <html lang="zh-Hant">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>課堂模式遙控</title>
+<title>responsive classroom</title>
 <style>
-  :root{font-family:system-ui,"Microsoft JhengHei",sans-serif;color:#182f38;background:#f3f6f7}
-  body{max-width:480px;margin:auto;padding:20px 16px 40px}
-  h1{font-size:25px;margin:4px 0 8px}p{color:#536872;line-height:1.6;margin:0 0 22px}
-  h2{font-size:16px;margin:24px 0 12px}section{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  button{min-height:84px;border:1px solid #b7cbd0;border-radius:12px;background:white;color:inherit;font-family:inherit;font-size:21px;font-weight:600;box-shadow:0 2px 8px #16323d12}
-  button[aria-pressed=true]{background:#147b82;color:white;border-color:#147b82}
-  button:active{transform:scale(.98)}button:focus-visible{outline:3px solid #e9a720;outline-offset:2px}
-  #status{font-size:14px}#status.error{color:#b13427}#responses{grid-template-columns:repeat(3,minmax(0,1fr))}#responses button{font-size:17px}
+  :root{font-family:system-ui,"Microsoft JhengHei",sans-serif;color:#1e2b3b;background:#f4f7fa}
+  *{box-sizing:border-box}body{margin:0;padding:16px}
+  main{min-height:calc(100dvh - 34px);display:grid;grid-template-rows:minmax(0,4fr) minmax(110px,1fr);gap:20px}
+  section{display:grid;gap:20px}#scenarios{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+  #responses{grid-template-columns:repeat(3,minmax(0,1fr))}
+  button{min-width:0;min-height:100px;border:1px solid transparent;border-radius:17px;background:#e0e8ee;color:inherit;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px 8px;font-family:inherit;cursor:pointer}
+  button[aria-pressed=true]{background:#387e80;color:white}button:focus-visible{outline:3px solid #e9a720;outline-offset:2px}
+  button svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  button strong{font-size:clamp(22px,6vw,34px);line-height:1.2}button small{font-size:clamp(12px,3.3vw,17px);color:#536577;text-align:center;line-height:1.4}
+  button[aria-pressed=true] small{color:#e1f2f3}#responses button{gap:5px}#responses button svg{width:27px;height:27px}#responses button strong{font-size:clamp(16px,4.5vw,25px)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.offline button,.paused button{opacity:.55}
+  @media(max-width:420px){main,section{gap:10px}button{border-radius:12px;gap:6px}button svg{width:34px;height:34px}#responses button{padding:8px 3px}}
 </style>
-<h1>課堂模式遙控</h1>
-<p id="status" role="status">正在連線…</p>
-<h2>情境</h2>
-<section id="scenarios">
-  <button data-mode="STANDBY" type="button">待機</button><button data-mode="NOTICE" type="button">請注意</button>
-  <button data-mode="DISCUSSION" type="button">討論</button><button data-mode="REST" type="button">休息</button>
-</section>
-<h2>互動</h2>
-<section id="responses">
-  <button data-mode="QUESTION" type="button">提問</button><button data-mode="CORRECT" type="button">答對</button><button data-mode="WRONG" type="button">答錯</button>
-</section>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
+  <symbol id="glow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
+  <symbol id="notice" viewBox="0 0 24 24"><path d="m3 10 14-6v16L3 14zM3 10v4M7 16l2 5h3l-2-6M21 9v6"/></symbol>
+  <symbol id="discussion" viewBox="0 0 24 24"><path d="M4 3h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 1-2ZM8 19h10l3 3v-5"/><path d="M7 8h8M7 11h5"/></symbol>
+  <symbol id="rest" viewBox="0 0 24 24"><path d="M4 9h13v7a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h2a3 3 0 1 1 0 6h-2M8 2v3M12 1v4"/></symbol>
+  <symbol id="question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5M5.1 5.1a10 5.5 45 1 0 13.8 13.8"/><circle cx="19" cy="5" r="1"/></symbol>
+  <symbol id="correct" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></symbol>
+  <symbol id="wrong" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+</defs></svg>
+<main>
+  <section id="scenarios" aria-label="情境">
+    <button data-mode="STANDBY" type="button" aria-pressed="true"><svg><use href="#glow"/></svg><strong>待機</strong><small>等待下一個課堂活動</small></button>
+    <button data-mode="NOTICE" type="button" aria-pressed="false"><svg><use href="#notice"/></svg><strong>請注意</strong><small>安靜聽講</small></button>
+    <button data-mode="DISCUSSION" type="button" aria-pressed="false"><svg><use href="#discussion"/></svg><strong>討論</strong><small>允許交談，音量範圍更寬</small></button>
+    <button data-mode="REST" type="button" aria-pressed="false"><svg><use href="#rest"/></svg><strong>休息</strong><small>倒數後提醒回到課堂</small></button>
+  </section>
+  <section id="responses" aria-label="互動">
+    <button data-mode="QUESTION" type="button" aria-pressed="false"><svg><use href="#question"/></svg><strong>提問</strong><small id="question-time">10 秒</small></button>
+    <button data-mode="CORRECT" type="button" aria-pressed="false"><svg><use href="#correct"/></svg><strong>答對</strong><small class="feedback-time">5 秒</small></button>
+    <button data-mode="WRONG" type="button" aria-pressed="false"><svg><use href="#wrong"/></svg><strong>答錯</strong><small class="feedback-time">5 秒</small></button>
+  </section>
+</main>
+<p id="status" class="sr-only" role="status">正在連線</p>
 <script>
   'use strict';
   const token=location.hash.slice(1),status=document.getElementById('status');
@@ -33,16 +49,19 @@
       if(!response.ok)throw Error('無法驗證連線');
       const state=await response.json();
       document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===state.mode)));
-      status.textContent='已連線 · 目前模式：'+(document.querySelector(`[data-mode="${state.mode}"]`)?.textContent||state.mode);
-      status.classList.remove('error');
-    }catch(error){status.textContent='連線中斷，請確認電腦與手機在同一網段且電腦已啟用遙控。';status.classList.add('error');}
+      document.getElementById('question-time').textContent=`${state.question_seconds} 秒`;
+      document.querySelectorAll('.feedback-time').forEach(label=>label.textContent=`${state.feedback_seconds} 秒`);
+      document.querySelectorAll('[data-mode]').forEach(button=>button.disabled=!state.active);
+      document.body.classList.remove('offline');document.body.classList.toggle('paused',!state.active);
+      status.textContent=state.active?'已連線並啟動':'已連線；請在電腦啟動手機控制';
+    }catch(_){document.querySelectorAll('[data-mode]').forEach(button=>button.disabled=true);document.body.classList.add('offline');status.textContent='連線中斷，請確認同網段與電腦遙控設定';}
   }
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',async()=>{
     try{
       const response=await fetch('/mode',{method:'POST',headers:{'Content-Type':'application/json','X-Remote-Token':token},body:JSON.stringify({mode:button.dataset.mode})});
       if(!response.ok)throw Error('切換失敗');
       await sync();
-    }catch(error){status.textContent='切換失敗，請檢查連線。';status.classList.add('error');}
+    }catch(_){await sync();}
   }));
   sync();setInterval(sync,2000);
 </script>
