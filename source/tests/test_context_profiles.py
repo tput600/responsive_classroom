@@ -31,29 +31,29 @@ class ContextProfileTests(unittest.TestCase):
         scheduled[-1]()
         self.assertEqual(controller.state.base_mode, BaseMode.DISCUSSION)
 
-    def test_same_relative_level_is_loud_in_notice_and_rising_in_discussion(self):
+    def test_mode_change_keeps_detection_live_and_uses_discussion_thresholds(self):
         settings = Settings(speech_noise_guard=False)
         self.assertEqual((settings.noise_rising_db, settings.noise_loud_db,
                           settings.noise_rising_exit_db, settings.noise_loud_exit_db),
-                         (8, 18, 5, 14))
+                         (8, 15, 5, 14))
         self.assertEqual(settings.discussion_noise,
-                         {"rising_db": 12, "loud_db": 22,
+                         {"rising_db": 12, "loud_db": 19,
                           "rising_exit_db": 9, "loud_exit_db": 17})
         self.assertEqual((settings.noise_rising_enter_seconds,
                           settings.noise_loud_enter_seconds,
                           settings.noise_exit_seconds, settings.noise_smoothing_ms),
-                         (1.5, 2.0, 3.0, 750))
+                         (0.45, 0.75, 1.2, 300))
         analyzer = NoiseAnalyzer(settings, baseline_dbfs=-60)
-        tone = self.tone()
+        tone = self.tone(16)
         for now in np.arange(0, 2.2, .1):
             reading = analyzer.feed(tone, now=now, mode=BaseMode.NOTICE)
         self.assertEqual(reading.state, NoiseState.LOUD)
         reading = analyzer.feed(tone, now=3, mode=BaseMode.DISCUSSION)
-        self.assertEqual(reading.state, NoiseState.UNKNOWN)
-        for now in np.arange(3.1, 5.6, .1):
+        self.assertEqual(reading.state, NoiseState.LOUD)
+        for now in np.arange(3.1, 6.2, .1):
             reading = analyzer.feed(tone, now=float(now), mode=BaseMode.DISCUSSION)
         self.assertEqual(reading.state, NoiseState.RISING)
-        self.assertAlmostEqual(reading.relative_db, 20, delta=0.1)
+        self.assertAlmostEqual(reading.relative_db, 16, delta=0.1)
 
     def test_discussion_loud_threshold_and_exit_hysteresis_use_new_profile(self):
         settings = Settings(speech_noise_guard=False)
@@ -73,7 +73,7 @@ class ContextProfileTests(unittest.TestCase):
     def test_context_switch_discards_pending_candidate_but_keeps_baseline_and_smoothing(self):
         settings = Settings(speech_noise_guard=False, noise_rising_db=8, noise_loud_db=18,
                             noise_rising_exit_db=5, noise_loud_exit_db=15,
-                            noise_loud_enter_seconds=3,
+                           noise_rising_enter_seconds=1.5, noise_loud_enter_seconds=3,
                             discussion_noise={"rising_db": 16, "loud_db": 26,
                                               "rising_exit_db": 13, "loud_exit_db": 23})
         analyzer = NoiseAnalyzer(settings, baseline_dbfs=-60)
@@ -83,8 +83,8 @@ class ContextProfileTests(unittest.TestCase):
         self.assertEqual(analyzer._candidate, NoiseState.LOUD)
         smooth = list(analyzer._smooth)
         reading = analyzer.feed(tone, now=0.2, mode=BaseMode.DISCUSSION)
-        self.assertIsNone(analyzer._candidate)
-        self.assertEqual(reading.state, NoiseState.UNKNOWN)
+        self.assertEqual(analyzer._candidate, NoiseState.RISING)
+        self.assertEqual(reading.state, NoiseState.QUIET)
         self.assertEqual(analyzer.baseline_dbfs, -60)
         self.assertEqual(list(analyzer._smooth), smooth + [(0.2, reading.dbfs)])
         self.assertAlmostEqual(reading.raw_rms, np.sqrt(np.mean((tone - tone.mean()) ** 2)), places=8)
@@ -92,7 +92,7 @@ class ContextProfileTests(unittest.TestCase):
         for now in np.arange(.3, 1.2, .1):
             analyzer.feed(tone, now=float(now), mode=BaseMode.DISCUSSION)
         self.assertEqual(analyzer._candidate, NoiseState.RISING)
-        self.assertGreaterEqual(analyzer._candidate_since, 1.0)
+        self.assertAlmostEqual(analyzer._candidate_since, .2)
 
     def test_v7_migration_preserves_custom_settings_and_aliases(self):
         settings = Settings(command_aliases={
@@ -100,6 +100,7 @@ class ContextProfileTests(unittest.TestCase):
             "NOTICE": ["老師請注意"],
         }, command_prefix="老師", voice_idle_seconds=47, noise_baseline_dbfs=-53)
         payload = {"schema_version": 7, **asdict(settings)}
+        payload["noise_loud_db"] = 18.0
         payload.pop("discussion_noise")
         payload["command_aliases"].pop("DISCUSSION")
         payload["command_corrections"]["custom phrase"] = "notice"
@@ -123,6 +124,7 @@ class ContextProfileTests(unittest.TestCase):
 
     def test_v7_migration_does_not_expand_legacy_notice_aliases(self):
         payload = {"schema_version": 7, **asdict(Settings())}
+        payload["noise_loud_db"] = 18.0
         payload.pop("discussion_noise")
         payload["command_aliases"].pop("DISCUSSION")
         old_notice = ["notice", "attention", "請注意老師", "请注意老师", "class class class"]
@@ -137,6 +139,7 @@ class ContextProfileTests(unittest.TestCase):
         settings = Settings(command_prefix="teacher", voice_idle_seconds=47,
                             question_seconds=19, noise_baseline_dbfs=-53)
         payload = {"schema_version": 7, **asdict(settings)}
+        payload["noise_loud_db"] = 18.0
         payload.pop("discussion_noise")
         payload["command_aliases"].pop("DISCUSSION")
         collisions = ["discussion", "討論", "讨论", "discuss", "discuss2"]
@@ -167,6 +170,7 @@ class ContextProfileTests(unittest.TestCase):
         corrections = {f"custom{i}": "question" for i in range(99)}
         corrections["NOT IS"] = "wrong"
         payload = {"schema_version": 7, **asdict(Settings(command_corrections=corrections, question_seconds=19))}
+        payload["noise_loud_db"] = 18.0
         payload["command_aliases"].pop("DISCUSSION")
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"

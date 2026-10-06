@@ -21,7 +21,10 @@ class UniversalBundleAuditTests(unittest.TestCase):
         return mock.Mock(stdout=f'{self.binary}:\n\t@rpath/libpython.dylib (compatibility version 3.12.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0)\n')
 
     def test_audits_both_slices_and_skips_symlink_aliases(self):
-        (self.root / 'alias').symlink_to('Contents/MacOS/App')
+        try:
+            (self.root / 'alias').symlink_to('Contents/MacOS/App')
+        except (NotImplementedError, OSError):
+            self.skipTest('Symlink creation is unavailable on this host')
         with mock.patch.object(universal.subprocess, 'run', side_effect=self.run_tool) as run:
             records = universal.audit(self.root)
         self.assertEqual(len(records), 1)

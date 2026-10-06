@@ -5,7 +5,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QUrl
 
-from classroom_core import BaseMode, ClassroomState, DEFAULT_REST_AUDIO, NoiseState, RestStage, Settings
+from classroom_core import (BaseMode, ClassroomState, DEFAULT_REST_AUDIO, NoiseState,
+                            Overlay, RestStage, Settings)
 from classroom_playback import AudioPlayback
 
 
@@ -44,7 +45,7 @@ class AudioPlaybackTests(unittest.TestCase):
             self.assertEqual(list(folder.iterdir()), [])
             player.close()
 
-    def test_mode_cue_dedupes_noise_updates_and_rest_music_pauses_detection(self):
+    def test_only_rest_pauses_detection_during_playback(self):
         class Signal:
             def connect(self, callback):
                 self.callback = callback
@@ -93,32 +94,53 @@ class AudioPlaybackTests(unittest.TestCase):
                 settings = Settings(audio_fade_ms=0, audio_files={
                     **Settings().audio_files,
                     "discussion": playback.import_file("discussion", source),
+                    "notice": playback.import_file("notice", source),
                     "rest": playback.import_file("rest", source),
+                    "question": playback.import_file("question", source),
+                    "correct": playback.import_file("correct", source),
+                    "wrong": playback.import_file("wrong", source),
                 })
                 playback.apply_settings(settings)
                 playback.handle_state(ClassroomState(BaseMode.DISCUSSION))
                 self.assertEqual(playback._player.play_count, 1)
-                self.assertTrue(playback.suppress_detection)
+                self.assertEqual(playback._player.loops, Player.Loops.Infinite)
+                self.assertAlmostEqual(playback._output.volume(), .175)
+                self.assertFalse(playback.suppress_detection)
                 playback.handle_state(ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.LOUD))
                 self.assertEqual(playback._player.play_count, 1)
+                self.assertAlmostEqual(playback._output.volume(), .7)
+                playback.handle_state(ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.RISING))
+                self.assertAlmostEqual(playback._output.volume(), .42)
                 playback.apply_settings(Settings(question_seconds=17, audio_fade_ms=0,
                                                  audio_files=settings.audio_files))
                 self.assertEqual(playback._player.play_count, 1)
+                playback.handle_state(ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.LOUD))
+                playback.apply_settings(Settings(audio_volume_percent=40, audio_fade_ms=0,
+                                                 audio_files=settings.audio_files))
+                self.assertAlmostEqual(playback._output.volume(), .4)
                 playback._player.state = Player.PlaybackState.StoppedState
                 playback._on_media_status(Player.MediaStatus.EndOfMedia)
                 playback.handle_state(ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.QUIET))
                 self.assertEqual(playback._player.play_count, 1)
-                playback._suppress_until = 0
                 self.assertFalse(playback.suppress_detection)
+                for overlay in (Overlay.QUESTION, Overlay.CORRECT, Overlay.WRONG):
+                    playback.handle_state(ClassroomState(BaseMode.DISCUSSION, overlay=overlay))
+                    self.assertTrue(playback.is_playing)
+                    self.assertFalse(playback.suppress_detection)
+                    playback._player.state = Player.PlaybackState.StoppedState
+                    playback._on_media_status(Player.MediaStatus.EndOfMedia)
+                    self.assertFalse(playback.suppress_detection)
                 health_state = ClassroomState(BaseMode.DISCUSSION, noise_state=NoiseState.UNKNOWN,
                                               microphone_error="disconnected")
                 playback.handle_state(health_state)
-                self.assertEqual(playback._player.play_count, 1)
-                # Explicitly repeating the current mode still replays an ended cue.
+                self.assertEqual(playback._player.play_count, 5)
+                # Repeating the current mode leaves its level-responsive loop alone.
                 playback.handle_state(health_state)
-                self.assertEqual(playback._player.play_count, 2)
+                self.assertEqual(playback._player.play_count, 5)
                 playback.handle_state(ClassroomState(BaseMode.REST, rest_stage=RestStage.RESTING))
                 self.assertEqual(playback._player.loops, Player.Loops.Infinite)
+                self.assertTrue(playback.suppress_detection)
+                playback._player.state = Player.PlaybackState.StoppedState
                 self.assertTrue(playback.suppress_detection)
                 playback.apply_settings(Settings(voice_enabled=True, audio_fade_ms=0,
                                                  audio_files=settings.audio_files))

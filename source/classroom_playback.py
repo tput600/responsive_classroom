@@ -12,7 +12,8 @@ from typing import Callable
 from PySide6.QtCore import QObject, QTimer, QUrl
 from PySide6.QtMultimedia import QAudioBufferOutput, QAudioOutput, QAudioFormat, QMediaPlayer
 
-from classroom_core import BaseMode, ClassroomState, DEFAULT_REST_AUDIO, Overlay, RestStage, Settings
+from classroom_core import (BaseMode, ClassroomState, DEFAULT_REST_AUDIO, NoiseState,
+                            Overlay, RestStage, Settings)
 
 AUDIO_MODES = {"standby", "question", "correct", "wrong", "notice", "rest", "discussion"}
 EXTENSIONS = {".wav", ".mp3"}
@@ -46,7 +47,6 @@ class AudioPlayback(QObject):
         self._music_level = 0.0
         self._last_audio_buffer = 0.0
         self._looping = False
-        self._suppress_until = 0.0
         self._closed = False
         self._level_timer = QTimer(self)
         self._level_timer.setInterval(100)
@@ -69,9 +69,8 @@ class AudioPlayback(QObject):
 
     @property
     def suppress_detection(self) -> bool:
-        playing = (self._player is not None and
-                   self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState)
-        return playing or time.monotonic() < self._suppress_until
+        state = getattr(self, "_last_state", None)
+        return state is not None and state.base_mode is BaseMode.REST
 
     @property
     def is_playing(self) -> bool:
@@ -107,7 +106,7 @@ class AudioPlayback(QObject):
             self._playing_key = None
             self.handle_state(state)
         elif self._output and self._player and self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState and not self._fade_stop:
-            self._fade(self._output.volume(), settings.audio_volume_percent / 100)
+            self._fade(self._output.volume(), self._target_volume(mode, state))
         else:
             self._set_volume()
 
@@ -117,8 +116,8 @@ class AudioPlayback(QObject):
         if (previous is not None and state != previous and
                 (state.base_mode, state.overlay, state.rest_stage) ==
                 (previous.base_mode, previous.overlay, previous.rest_stage)):
-            # Noise and microphone health updates are not new cue events, even
-            # when the previous one-shot has finished and cleared its play key.
+            if self._playing_mode in ("notice", "discussion") and self.is_playing and self._output:
+                self._fade(self._output.volume(), self._target_volume(self._playing_mode, state))
             return
         if state.overlay is not None:
             mode = {Overlay.QUESTION: "question", Overlay.CORRECT: "correct",
@@ -134,7 +133,15 @@ class AudioPlayback(QObject):
         mode = {BaseMode.STANDBY: "standby", BaseMode.NOTICE: "notice",
                 BaseMode.DISCUSSION: "discussion"}.get(state.base_mode)
         if mode:
-            self._play(mode, loop=False, key=(mode, False))
+            self._play(mode, loop=mode in ("notice", "discussion"), key=(mode, mode in ("notice", "discussion")))
+
+    def _target_volume(self, mode: str | None, state: ClassroomState | None) -> float:
+        volume = self.settings.audio_volume_percent / 100
+        if mode in ("notice", "discussion"):
+            level = getattr(state, "noise_state", NoiseState.UNKNOWN)
+            volume *= {NoiseState.UNKNOWN: .25, NoiseState.QUIET: .25,
+                       NoiseState.RISING: .6, NoiseState.LOUD: 1.0}.get(level, .25)
+        return volume
 
     @staticmethod
     def _state_mode(state: ClassroomState) -> str | None:
@@ -153,7 +160,6 @@ class AudioPlayback(QObject):
         if not self.enabled or self._player is None or self._player.playbackState() == QMediaPlayer.PlaybackState.StoppedState:
             self._playing_key = None
             self._looping = False
-            self._suppress_until = 0
             self._clear_music_signal()
             return
         if self._fade_stop:
@@ -166,7 +172,6 @@ class AudioPlayback(QObject):
         self._closed = True
         self._timer.stop()
         self._level_timer.stop()
-        self._suppress_until = 0
         self._clear_music_signal()
         if self._player is not None:
             self._player.stop()
@@ -210,7 +215,6 @@ class AudioPlayback(QObject):
         if key == self._playing_key:
             return
         self._playing_key = key
-        self._suppress_until = 0
         if not self.enabled or self._closed or self._player is None or self._output is None:
             return
         relative = self.settings.audio_files.get(mode, "")
@@ -246,13 +250,15 @@ class AudioPlayback(QObject):
         self._player.stop()
         self._player.setLoops(QMediaPlayer.Loops.Infinite if loop else 1)
         self._looping = loop
-        self._output.setVolume(0.0 if self.settings.audio_fade_ms else self.settings.audio_volume_percent / 100)
+        state = getattr(self, "_last_state", None)
+        target_volume = (self._target_volume(mode, state)
+                         if key[0] == mode else self.settings.audio_volume_percent / 100)
+        self._output.setVolume(0.0 if self.settings.audio_fade_ms else target_volume)
         self._player.setSource(QUrl.fromLocalFile(str(source)))
         self._playing_mode = mode
         self._player.play()
-        self._suppress_until = 0.0
         if self.settings.audio_fade_ms:
-            self._fade(0.0, self.settings.audio_volume_percent / 100)
+            self._fade(0.0, target_volume)
         self._status(f"Playing: {source.name}")
 
     def _fade(self, start: float, end: float, stop: bool = False) -> None:
@@ -262,7 +268,6 @@ class AudioPlayback(QObject):
                 self._output.setVolume(end)
             if stop and self._player:
                 self._player.stop()
-            self._suppress_until = 0
             return
         self._fade_started = time.monotonic()
         self._fade_from = start
@@ -279,7 +284,6 @@ class AudioPlayback(QObject):
                 self._player.stop()
                 self._status("Stopped")
             self._fade_stop = False
-            self._suppress_until = 0
             return
         progress = min(1.0, (time.monotonic() - self._fade_started) * 1000 / self.settings.audio_fade_ms)
         if self._output:
@@ -290,7 +294,6 @@ class AudioPlayback(QObject):
                 self._player.stop()
                 self._status("Stopped")
             self._fade_stop = False
-            self._suppress_until = 0
 
     def _set_volume(self) -> None:
         if self._output and (self._player is None or self._player.playbackState() == QMediaPlayer.PlaybackState.StoppedState):
@@ -306,11 +309,9 @@ class AudioPlayback(QObject):
             self._output.setVolume(0.0)
         self._playing_key = None
         self._looping = False
-        self._suppress_until = 0
 
     def _on_error(self, error, message: str = "") -> None:
         if error:
-            self._suppress_until = 0
             self._playing_key = None
             self._looping = False
             self._clear_music_signal()
@@ -318,7 +319,6 @@ class AudioPlayback(QObject):
 
     def _on_media_status(self, status) -> None:
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
-            self._suppress_until = time.monotonic() + 0.5
             if not self._looping:
                 self._playing_key = None
                 self._clear_music_signal()

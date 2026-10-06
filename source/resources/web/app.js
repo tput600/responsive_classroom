@@ -4,7 +4,6 @@ const $ = id => document.getElementById(id);
 const MODES = ['STANDBY', 'NOTICE', 'DISCUSSION', 'REST', 'QUESTION', 'CORRECT', 'WRONG'];
 const TIMERS = ['question_seconds', 'feedback_seconds', 'rest_seconds', 'rest_reminder_seconds', 'voice_idle_seconds'];
 const WORDS = {
-  captureOverloaded: ['收音處理落後；追上即時音訊前，語音指令暫停。', 'Audio processing is behind. Voice commands pause until live audio catches up.'],
   audioDiagnostics: ['收音診斷', 'Input diagnostics'],
   inputAge: ['資料更新', 'Input age'], captureLag: ['處理延遲', 'Processing lag'], captureDropped: ['略過過期音訊區塊', 'Stale audio blocks skipped'],
   chooseNetwork: ['選擇要搜尋的網段', 'Choose a subnet to search'], searchNetwork: ['搜尋此網段', 'Search this subnet'],
@@ -58,10 +57,6 @@ const WORDS = {
   discussionQuietReturn: ['討論恢復安靜門檻', 'Discussion quiet recovery threshold'],
   focusLoudReturn: ['請注意離開吵鬧門檻', 'Attention loud recovery threshold'],
   discussionLoudReturn: ['討論離開吵鬧門檻', 'Discussion loud recovery threshold'],
-  speechGuard: ['人聲處理', 'Voice handling'],
-  speechGuardHelp: ['請注意排除偵測到的人聲；討論保留持續交談音量。單一麥克風無法辨別發言者。', 'Notice excludes detected speech; Discussion measures sustained conversation. One microphone cannot identify the speaker.'],
-  speechExcluded: ['人聲排除中', 'Speech excluded'],
-  vadPreparing: ['人聲判斷未就緒，音量偵測仍運作', 'Speech detection unavailable; noise detection continues'],
   saveSettings: ['儲存設定', 'Save settings'], saveAudio: ['儲存音源設定', 'Save audio settings'],
   voiceCommands: ['自訂語音指令', 'Voice commands'],
   voiceDetail: ['觸發詞與辨識修正', 'Trigger words and corrections'],
@@ -72,7 +67,6 @@ const WORDS = {
   clearAudio: ['清除音檔', 'Clear file'], noAudio: ['未設定音檔', 'No audio file'],
   musicReactive: ['隨音樂波動', 'Music-responsive light'],
   playbackSettings: ['播放設定', 'Playback settings'],
-  audioPausesVoice: ['播放中，語音暫停', 'Audio playing; voice paused'],
   classTimers: ['課堂計時', 'Classroom timers'], timerHelp: ['設定下一次啟動模式時使用的時長。', 'Set durations for the next time a mode starts.'],
   question_seconds: ['提問', 'Question'], feedback_seconds: ['答對／答錯', 'Correct / Wrong'], rest_seconds: ['休息', 'Rest'],
   rest_reminder_seconds: ['休息收尾提醒', 'Rest reminder'], voice_idle_seconds: ['語音閒置回待機', 'Voice idle timeout'],
@@ -257,7 +251,6 @@ async function saveInputSettings(event, messageId) {
   event.preventDefault();
   try {
     const payload = Object.fromEntries(Object.entries(NOISE_IDS).map(([id, key]) => [key, numeric(id)]));
-    payload.speech_noise_guard = $('speech-noise-guard').checked;
     payload.discussion_noise = {
       rising_db:numeric('discussion-rising'), loud_db:numeric('discussion-loud'),
       rising_exit_db:numeric('discussion-rising-exit'), loud_exit_db:numeric('discussion-loud-exit')
@@ -281,7 +274,6 @@ function setField(id, value) {
 function hydrateSettings(settings) {
   if (!dirty.has('timers-form')) TIMERS.forEach(k => { setField(k, settings[k]); });
   if (!dirty.has('noise-form') && !dirty.has('voice-form')) {
-    $('speech-noise-guard').checked = settings.speech_noise_guard !== false;
     Object.entries(NOISE_IDS).forEach(([id, key]) => { setField(id, settings[key]); });
     ['rising_db','loud_db','rising_exit_db','loud_exit_db'].forEach((key, i) => {
       setField(['discussion-rising','discussion-loud','discussion-rising-exit','discussion-loud-exit'][i], settings.discussion_noise[key]);
@@ -382,15 +374,13 @@ function renderState(value) {
   const microphone = state.microphones.find(m=>m.id === settings.microphone_device_id);
   setText('microphone-detail', microphone?.id ? microphone.name : text('defaultMic'));
   $('microphone-title').title = localMessage(statuses.microphone.message); $('microphone-dot').className = `status-dot ${statuses.microphone.ok ? 'ok' : 'error'}`;
-  const audioPausedVoice = settings.voice_enabled && statuses.audio?.detection_paused;
-  setText('speech-title', text(!settings.voice_enabled ? 'voiceDisabled' : audioPausedVoice ? 'audioPausesVoice' : statuses.speech.ok ? 'voiceReady' : 'voicePreparing'));
-  setText('speech-detail', audioPausedVoice ? text('stopAudio') : localMessage(statuses.speech.message) || 'SenseVoice · Offline'); $('speech-detail').title = audioPausedVoice ? text('audioPausesVoice') : localMessage(statuses.speech.message);
-  $('speech-dot').className = `status-dot ${settings.voice_enabled ? audioPausedVoice ? '' : statuses.speech.ok ? 'ok' : 'loading' : ''}`;
-  const n = state.noise, level = Number.isFinite(n.dbfs) ? `${n.dbfs.toFixed(1)} dBFS` : '— dBFS';
-  setText('live-dbfs', level); setText('noise-reading', level + (n.speech_excluded ? ` · ${text('speechExcluded')}` : n.speech_guard_ready === false ? ` · ${text('vadPreparing')}` : Number.isFinite(n.relative_db) ? ` · ${n.relative_db >= 0 ? '+' : ''}${n.relative_db.toFixed(1)} dB` : ''));
+  setText('speech-title', text(!settings.voice_enabled ? 'voiceDisabled' : statuses.speech.ok ? 'voiceReady' : 'voicePreparing'));
+  setText('speech-detail', localMessage(statuses.speech.message) || 'SenseVoice · Offline'); $('speech-detail').title = localMessage(statuses.speech.message);
+  $('speech-dot').className = `status-dot ${settings.voice_enabled ? statuses.speech.ok ? 'ok' : 'loading' : ''}`;
+  const n = state.noise, rawLevel = Number.isFinite(n.dbfs) ? `${n.dbfs.toFixed(1)} dBFS` : '— dBFS';
+  const smoothLevel = Number.isFinite(n.smoothed_dbfs) ? `${n.smoothed_dbfs.toFixed(1)} dBFS` : rawLevel;
+  setText('live-dbfs', rawLevel); setText('noise-reading', smoothLevel + (Number.isFinite(n.relative_db) ? ` · ${n.relative_db >= 0 ? '+' : ''}${n.relative_db.toFixed(1)} dB` : ''));
   $('noise-reading').title=$('noise-reading').textContent;
-  $('capture-warning').hidden = !n.capture_overloaded;
-  setText('capture-warning', n.capture_overloaded ? text('captureOverloaded') : '');
   setText('input-age', `${text('inputAge')}: ${Number.isFinite(n.age_ms) ? Math.round(n.age_ms)+' ms' : '—'}`);
   setText('capture-lag', `${text('captureLag')}: ${Number.isFinite(n.capture_lag_ms) ? Math.round(n.capture_lag_ms)+' ms' : '—'}`);
   setText('capture-dropped', `${text('captureDropped')}: ${n.capture_dropped || 0}`);
@@ -398,7 +388,7 @@ function renderState(value) {
   $('calibration-progress').value = n.calibration_progress || 0; $('calibrate').disabled = state.busy.calibration || !statuses.microphone.available;
   $('calibrate').textContent = state.busy.calibration ? text('calibrating') : text('calibrate');
   setText('transcript', state.transcript.corrected || state.transcript.raw || text(state.transcript.active ? 'listening' : 'noSpeech'));
-  $('transcript').title = state.transcript.raw || ''; setText('command-result', n.capture_overloaded ? text('captureOverloaded') : localMessage(state.transcript.status));
+  $('transcript').title = state.transcript.raw || ''; setText('command-result', localMessage(state.transcript.status));
   $('command-result').title = $('command-result').textContent;
   const boardSignature = JSON.stringify([language,state.boards]);
   if ($('board-list').dataset.signature !== boardSignature) { renderBoards(state.boards); $('board-list').dataset.signature = boardSignature; }

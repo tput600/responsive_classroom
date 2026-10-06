@@ -226,7 +226,7 @@ class SenseVoiceRuntimeTests(unittest.TestCase):
         analyzer.feed(tone, now=20.1)
         for t in range(201, 216):
             analyzer.feed(tone, now=t / 10)
-        self.assertEqual(analyzer.state.name, "UNKNOWN")
+        self.assertEqual(analyzer.state.name, "QUIET")
         analyzer.feed(tone, now=21.7)
         self.assertEqual(analyzer.state.name, "RISING")
 

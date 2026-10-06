@@ -10,8 +10,7 @@ from unittest.mock import patch
 import numpy as np
 import soxr  # load extension before sys.modules mocks to avoid re-registering it
 
-from classroom_audio import (AudioRuntime, CaptureFrame, NoiseAnalyzer, RollingCommandBuffer,
-                             SpeechJob, SpeechJobQueue)
+from classroom_audio import AudioRuntime, CaptureFrame, NoiseAnalyzer, SpeechJob
 from classroom_core import BaseMode, NoiseState, Settings
 
 
@@ -21,55 +20,11 @@ class PipelineTests(unittest.TestCase):
                             lambda: True, revision, lambda *_: None, lambda *_: None,
                             lambda *_: None, lambda result, _: results.append(result))
 
-    def test_long_pause_retains_only_bounded_onset_preroll(self):
-        buffer = RollingCommandBuffer()
-        for _ in range(120):
-            buffer.push(np.ones(160, np.float32), True, 1)
-        for _ in range(60):
-            buffer.push(np.zeros(160, np.float32), False, 2)
-        item = buffer.push(np.full(160, .1, np.float32), True, 2)
-        self.assertEqual(item[1:], (2, 2))
-        self.assertLessEqual(len(item[0]), buffer.preroll_samples + 160)
-        self.assertLess(float(np.max(item[0])), .11)  # no previous command waveform
-
-    def test_endpoint_closes_identity_even_for_short_gap(self):
-        buffer = RollingCommandBuffer()
-        for _ in range(40):
-            buffer.push(np.ones(160, np.float32), True, 1)
-        buffer.finish()
-        for _ in range(40):
-            item = buffer.push(np.full(160, .2, np.float32), True, 2)
-            if item is not None:
-                self.assertEqual(item[1:], (2, 2))
-                np.testing.assert_array_equal(item[0], np.full(len(item[0]), .2, np.float32))
-
-    def test_final_survives_live_backpressure_and_keeps_bounded_queue(self):
-        jobs = SpeechJobQueue()
-        final = SpeechJob(None, 0, 1, 10, 1)
-        jobs.put_latest(final)
-        for i in range(100):
-            jobs.put_latest(SpeechJob(i, 0, 1, 10, 2, True))
-        self.assertEqual(jobs.qsize(), 2)
-        self.assertIs(jobs.get_nowait(), final)
-        self.assertEqual(jobs.get_nowait().samples, 99)
-        with self.assertRaises(queue.Empty):
-            jobs.get_nowait()
-
-    def test_same_utterance_endpoint_replaces_partial_and_cannot_be_erased(self):
-        jobs = SpeechJobQueue()
-        jobs.put_latest(SpeechJob('live', 0, 1, 10, 1, True))
-        jobs.put_latest(SpeechJob('final', 0, 1, 10, 1))
-        jobs.put_latest(SpeechJob('late live', 0, 1, 10, 1, True))
-        self.assertEqual(jobs.qsize(), 1)
-        self.assertEqual(jobs.get_nowait().samples, 'final')
-
-    def test_overload_rejects_even_fresh_jobs_until_recovery(self):
+    def test_capture_lag_does_not_invalidate_a_completed_segment(self):
         runtime = self.runtime([])
         now = time.monotonic()
         self.assertTrue(runtime._job_is_current(0, runtime._epoch, now, now=now))
-        runtime.capture_overloaded = True
-        self.assertFalse(runtime._job_is_current(0, runtime._epoch, now, now=now))
-        runtime.capture_overloaded = False
+        runtime.capture_lag_seconds = 1.0
         self.assertTrue(runtime._job_is_current(0, runtime._epoch, now, now=now))
 
     def test_manual_revision_during_decode_does_not_consume_next_command(self):
@@ -80,7 +35,7 @@ class PipelineTests(unittest.TestCase):
             def decode(self, _):
                 revision[0] = 2
                 return 'question'
-        jobs = iter(SpeechJob(None, rev, runtime._epoch, 10, rev) for rev in (1, 2))
+        jobs = iter(SpeechJob(None, rev, runtime._epoch, 10) for rev in (1, 2))
         def get(*_, **__):
             try:
                 return next(jobs)
@@ -108,8 +63,8 @@ class PipelineTests(unittest.TestCase):
         with patch('classroom_audio.SenseVoiceSpeech', Speech):
             worker = threading.Thread(target=runtime._decode_loop)
             worker.start()
-            runtime._jobs.put_latest(SpeechJob(np.ones(5120), 1, runtime._epoch,
-                                              time.monotonic(), 1))
+            runtime._jobs.put_nowait(SpeechJob(np.ones(5120), 1, runtime._epoch,
+                                               time.monotonic()))
             self.assertTrue(entered.wait(2))
             revision[0] = 2
             started = time.monotonic()
@@ -120,13 +75,12 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(worker.is_alive())
         self.assertEqual(results, [])
 
-    def test_stale_capture_is_dropped_and_gap_resets_vad_before_new_samples(self):
+    def test_lagged_and_discontinuous_capture_keeps_vad_running(self):
         runtime = self.runtime([])
         accepted, resets = [], []
 
         class Vad:
             active = False
-            noise_speech_active = False
             def reset(self): resets.append(True)
             def accept(self, samples):
                 accepted.append(samples.copy())
@@ -139,9 +93,9 @@ class PipelineTests(unittest.TestCase):
             def __exit__(self, *_): pass
 
         runtime._vad = Vad()
-        frames = iter((CaptureFrame(np.ones(160, np.float32), 9, 1),
-                       CaptureFrame(np.full(160, .1, np.float32), 10, 2),
-                       CaptureFrame(np.full(160, .2, np.float32), 10, 4)))
+        frames = iter((CaptureFrame(np.ones(160, np.float32), 9),
+                       CaptureFrame(np.full(160, .1, np.float32), 10),
+                       CaptureFrame(np.full(160, .2, np.float32), 10)))
         def get(*_, **__):
             try:
                 return next(frames)
@@ -155,12 +109,12 @@ class PipelineTests(unittest.TestCase):
                 patch.object(runtime._queue, 'get', get), \
                 patch('classroom_audio.time.monotonic', return_value=10):
             runtime._run()
-        self.assertEqual(len(accepted), 2)
-        self.assertEqual(runtime.capture_dropped, 1)
-        self.assertEqual(len(resets), 3)  # open, stale capture, missing sequence
+        self.assertEqual(len(accepted), 3)
+        self.assertEqual(runtime.capture_dropped, 0)
+        self.assertEqual(len(resets), 1)  # only the initial stream setup resets the VAD
         self.assertEqual(runtime.latest.captured_at, 10)
 
-    def test_sustained_overload_is_visible_and_recovers_after_fresh_audio(self):
+    def test_lagged_audio_keeps_meter_and_vad_live_without_error_status(self):
         runtime = self.runtime([])
         statuses, readings, accepted = [], [], []
         runtime.on_status = lambda *args: statuses.append(args)
@@ -168,7 +122,6 @@ class PipelineTests(unittest.TestCase):
         now = [10.0]
         class Vad:
             active = False
-            noise_speech_active = False
             def reset(self): pass
             def accept(self, samples):
                 accepted.append(len(samples))
@@ -188,7 +141,7 @@ class PipelineTests(unittest.TestCase):
                 raise queue.Empty
             lag = 1 if count[0] <= 100 else 0
             return CaptureFrame(np.tile([.01, -.01], 80).astype(np.float32),
-                                now[0] - lag, count[0])
+                                now[0] - lag)
         with patch.dict('sys.modules', {'sounddevice': SimpleNamespace(InputStream=Stream)}), \
                 patch.object(runtime, '_device', return_value=0), \
                 patch.object(runtime, '_input_channels', return_value=1), \
@@ -196,40 +149,21 @@ class PipelineTests(unittest.TestCase):
                 patch.object(runtime._queue, 'get', get), \
                 patch('classroom_audio.time.monotonic', side_effect=lambda: now[0]):
             runtime._run()
-        self.assertEqual(runtime.capture_dropped, 100)
-        self.assertEqual(len(accepted), 70)  # fresh samples are not starved
-        self.assertFalse(runtime.capture_overloaded)
+        self.assertEqual(runtime.capture_dropped, 0)
+        self.assertEqual(len(accepted), 170)
         self.assertEqual(runtime.capture_lag_seconds, 0)
-        self.assertTrue(any(not r.speech_guard_ready for r in readings))
-        self.assertTrue(readings[-1].speech_guard_ready)
-        self.assertTrue(any(not ok and '落後' in text for _, ok, text in statuses))
+        self.assertFalse(any(not ok and '落後' in text for _, ok, text in statuses))
         self.assertTrue(statuses[-1][1])
 
-    def test_notice_pause_recovery_discussion_and_unavailable_guard(self):
+    def test_noise_level_detection_counts_all_measured_audio(self):
         settings = Settings(noise_smoothing_ms=200, noise_loud_enter_seconds=.2)
         samples = np.random.default_rng(42).normal(0, .1, 480).astype(np.float32)
         analyzer = NoiseAnalyzer(settings, -60)
-        for i in range(200):
-            reading = analyzer.feed(samples, now=i * .01, speech_active=True)
-        self.assertTrue(reading.speech_excluded)
-        self.assertEqual(reading.state, NoiseState.QUIET)
-        # A short inter-word pause must not turn noise classification on.
-        for i in range(200, 220):
-            reading = analyzer.feed(samples, now=i * .01, speech_active=False)
-            self.assertTrue(reading.speech_excluded)
-        for i in range(220, 300):
-            reading = analyzer.feed(samples, now=i * .01, speech_active=False)
+        for i in range(40):
+            reading = analyzer.feed(samples, now=i * .01, mode=BaseMode.NOTICE)
         self.assertEqual(reading.state, NoiseState.LOUD)
-        self.assertAlmostEqual(reading.captured_at, 2.99)
-        for i in range(300, 450):
-            reading = analyzer.feed(samples, now=i * .01, speech_active=True,
-                                    mode=BaseMode.DISCUSSION)
-        self.assertFalse(reading.speech_excluded)
-        self.assertEqual(reading.state, NoiseState.LOUD)
-        reading = analyzer.feed(samples, now=4.5, speech_active=None,
-                                mode=BaseMode.DISCUSSION)
-        self.assertFalse(reading.speech_guard_ready)
-        self.assertFalse(reading.speech_excluded)
+        self.assertGreater(reading.relative_db, settings.noise_loud_db)
+        self.assertAlmostEqual(reading.captured_at, .39)
 
 
 if __name__ == '__main__':

@@ -24,11 +24,11 @@ class ReactiveMigrationTests(unittest.TestCase):
             settings=SettingsRepository(path).load()
             self.assertEqual(path.with_suffix('.json.v12.bak').read_text(encoding='utf-8'),original)
             self.assertEqual(settings.noise_rising_db,8)
-            self.assertEqual(settings.noise_loud_db,18)
+            self.assertEqual(settings.noise_loud_db,15)
             self.assertEqual(settings.noise_rising_exit_db,5)
             self.assertEqual(settings.noise_loud_exit_db,14)
             self.assertEqual(settings.discussion_noise, {
-                'rising_db':12, 'loud_db':22, 'rising_exit_db':9, 'loud_exit_db':17,
+                'rising_db':12, 'loud_db':19, 'rising_exit_db':9, 'loud_exit_db':17,
             })
             self.assertEqual(settings.rest_seconds,147)
             self.assertEqual(settings.command_aliases['REST'],['my break'])
@@ -111,9 +111,9 @@ class ReactiveMigrationTests(unittest.TestCase):
                     result=SettingsRepository(path).load()
                     self.assertEqual((result.noise_rising_db, result.noise_loud_db,
                                       result.noise_rising_exit_db, result.noise_loud_exit_db),
-                                     (8,18,5,14))
+                                     (8,15,5,14))
                     self.assertEqual(result.discussion_noise, {
-                        'rising_db':12, 'loud_db':22, 'rising_exit_db':9, 'loud_exit_db':17,
+                        'rising_db':12, 'loud_db':19, 'rising_exit_db':9, 'loud_exit_db':17,
                     })
 
     def test_schema_14_migrates_exact_default_and_preserves_backup_and_other_settings(self):
@@ -139,11 +139,11 @@ class ReactiveMigrationTests(unittest.TestCase):
             result=repository.load()
             backup=path.with_suffix('.json.v14.bak')
             self.assertEqual(backup.read_text(encoding='utf-8'), original)
-            self.assertEqual(json.loads(path.read_text(encoding='utf-8'))['schema_version'], 15)
+            self.assertEqual(json.loads(path.read_text(encoding='utf-8'))['schema_version'], SCHEMA_VERSION)
             self.assertEqual(repository.load(), result)
 
         self.assertEqual(result.discussion_noise,
-                         {'rising_db':12, 'loud_db':22, 'rising_exit_db':9, 'loud_exit_db':17})
+                         {'rising_db':12, 'loud_db':19, 'rising_exit_db':9, 'loud_exit_db':17})
         self.assertEqual((result.rest_seconds, result.question_seconds), (147, 8))
         self.assertEqual((result.noise_rising_db, result.noise_loud_db,
                           result.noise_rising_exit_db, result.noise_loud_exit_db), (11, 19, 7, 15))
@@ -164,6 +164,25 @@ class ReactiveMigrationTests(unittest.TestCase):
             path.write_text(json.dumps(data),encoding='utf-8')
             result=SettingsRepository(path).load()
         self.assertEqual(result.discussion_noise, custom)
+
+    def test_schema_15_lowers_only_untouched_loud_thresholds(self):
+        data = {'schema_version':15, **asdict(Settings())}
+        data['noise_loud_db'] = 18
+        data['discussion_noise']['loud_db'] = 22
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'settings.json'
+            path.write_text(json.dumps(data),encoding='utf-8')
+            result=SettingsRepository(path).load()
+            self.assertTrue(path.with_suffix('.json.v15.bak').is_file())
+        self.assertEqual((result.noise_loud_db, result.discussion_noise['loud_db']), (15, 19))
+        custom = Settings(noise_loud_db=21,
+                          discussion_noise={'rising_db':12, 'loud_db':24,
+                                            'rising_exit_db':9, 'loud_exit_db':17})
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'settings.json'
+            path.write_text(json.dumps({'schema_version':15, **asdict(custom)}),encoding='utf-8')
+            result=SettingsRepository(path).load()
+        self.assertEqual((result.noise_loud_db, result.discussion_noise['loud_db']), (21, 24))
 
     def test_schema_13_and_14_keep_old_discussion_default_when_notice_is_higher(self):
         old_discussion = {'rising_db':16, 'loud_db':26,

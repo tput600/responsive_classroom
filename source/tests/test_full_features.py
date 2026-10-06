@@ -128,7 +128,7 @@ class NoiseAndVoiceTests(unittest.TestCase):
                                           calibration={**Settings().calibration, 'discard_initial_sec': 0}))
         analyzer.start_calibration(now=0, seconds=1)
         for t in range(11):
-            reading = analyzer.feed(self.tone(-55), now=t / 10, speech_active=False)
+            reading = analyzer.feed(self.tone(-55), now=t / 10)
         self.assertAlmostEqual(analyzer.baseline_dbfs, -55, delta=0.2)
         self.assertEqual(reading.state, NoiseState.QUIET)
         analyzer.set_spl_reference(60, -55)

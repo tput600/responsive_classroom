@@ -41,22 +41,7 @@ class SettingsWorkflowTests(unittest.TestCase):
                 self.assertEqual(js("document.getElementById('question_seconds').value"), '10')
                 self.assertTrue(js("document.querySelector('[data-draft-status=timers-form]').hidden"))
 
-                # Overload is explicitly distinct from a recognition result and
-                # clears as soon as fresh capture recovers.
-                # Inspect transient renderer-only overload fixtures in the same
-                # JavaScript turn, before a real periodic snapshot can replace them.
-                overload_checks = json.loads(js("""JSON.stringify((()=>{
-                    const original=structuredClone(window.classroom.state),status=structuredClone(original);
-                    status.noise.capture_overloaded=true;renderState(status);
-                    const shown=!document.getElementById('capture-warning').hidden;
-                    const message=document.getElementById('command-result').textContent;
-                    status.noise.capture_overloaded=false;renderState(status);
-                    const cleared=document.getElementById('capture-warning').hidden;
-                    renderState(original);return {shown,message,cleared};
-                })())"""))
-                self.assertTrue(overload_checks['shown'])
-                self.assertIn('Voice commands pause', overload_checks['message'])
-                self.assertTrue(overload_checks['cleared'])
+                self.assertTrue(js("!document.getElementById('speech-noise-guard') && !document.getElementById('capture-warning')"))
 
                 # Drive network fixtures through the real WebChannel. Renderer-only
                 # fixtures can be overwritten by a queued periodic service snapshot.
@@ -223,8 +208,8 @@ class SettingsWorkflowTests(unittest.TestCase):
             service = ClassroomService(Path(directory) / 'settings.json', Path('source/resources'), start_io=False)
             self.assertIsNone(service.snapshot()['noise']['age_ms'])
             self.assertEqual(service.snapshot()['noise']['capture_dropped'], 0)
-            self.assertFalse(service.snapshot()['noise']['capture_overloaded'])
-            service._reading = SimpleNamespace(captured_at=12, speech_excluded=False, speech_guard_ready=True)
+            self.assertNotIn('capture_overloaded', service.snapshot()['noise'])
+            service._reading = SimpleNamespace(captured_at=12)
             with patch('classroom_service.time.monotonic', return_value=12.25):
                 self.assertEqual(service.snapshot()['noise']['age_ms'], 250)
             with patch('classroom_service.time.monotonic', return_value=11):

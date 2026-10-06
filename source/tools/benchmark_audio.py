@@ -167,44 +167,33 @@ def main():
     results = []
     for name, samples, expected, acoustic_onset, acoustic_end in cases:
         speech.reset()
-        rolling = module.RollingCommandBuffer()
         commands = module.CommandParser(Settings(), cooldown_seconds=0)
-        first = onset = last_guard = endpoint = None
+        first = endpoint = None
         transcripts, timings = [], []
         for offset in range(0, len(samples), 160):
             frame = samples[offset:offset + 160]
             segments = speech.accept(frame)
             at = (offset + len(frame)) / 16000
-            if speech.noise_speech_active:
-                onset = at if onset is None else onset
-                last_guard = at
-            item = rolling.push(frame, speech.active, 0)
-            checks = ([] if item is None else [(item[0], True)]) + [(s, False) for s in segments]
-            for values, partial in checks:
+            for values in segments:
                 started = time.perf_counter()
                 text = speech.decode(values)
                 elapsed = time.perf_counter() - started
                 timings.append(elapsed)
                 result = commands.parse(text)
                 if result.intent:
-                    transcripts.append({'at': round(at, 3), 'partial': partial, 'text': text, 'intent': result.intent})
+                    transcripts.append({'at': round(at, 3), 'text': text, 'intent': result.intent})
                     if first is None and (expected is None or result.intent == expected):
                         first = at
-                if not partial and endpoint is None:
+                if endpoint is None:
                     endpoint = at
-            if segments and hasattr(rolling, 'finish'):
-                rolling.finish()
         row = dict(case=name, expected=expected, detected=first is not None,
                    fixture_sha256=hashlib.sha256(samples.tobytes()).hexdigest(),
                    first_command_audio_s=first, first_endpoint_audio_s=endpoint,
-                   noise_guard_onset_s=onset, last_guard_s=last_guard,
-                   onset_delay_s=None if onset is None or acoustic_onset is None else onset-acoustic_onset,
-                   guard_tail_s=None if last_guard is None or acoustic_end is None else last_guard-acoustic_end,
                    decode_p50_s=float(np.median(timings)) if timings else None,
                    decode_p95_s=float(np.percentile(timings, 95)) if timings else None,
                    decode_calls=len(timings), transcripts=transcripts)
         results.append(row)
-        print(name, 'detected', row['detected'], 'guard onset', onset, 'first command', first, flush=True)
+        print(name, 'detected', row['detected'], 'first command', first, flush=True)
     replays = {name: replay_runtime(module, args.models, samples, expected)
                for name, samples, expected, _, _ in cases
                if name in ('wrong/clean', 'continuous/clean')}

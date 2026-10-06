@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Callable
 
 log = logging.getLogger(__name__)
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 17
 DEFAULT_REST_AUDIO = "audio/rest/default-rest.mp3"
 
 
@@ -109,7 +109,9 @@ class Settings:
     rest_seconds: int = 600
     rest_reminder_seconds: int = 20
     voice_idle_seconds: int = 0
-    mode_change_grace_ms: int = 800
+    # Retained for older settings files; mode changes no longer pause classification.
+    mode_change_grace_ms: int = 0
+    # Speech-related keys stay inert so calibration from older settings files remains readable.
     calibration: dict[str, object] = field(default_factory=lambda: {
         "duration_sec": 12, "discard_initial_sec": 2, "max_spread_db": 8.0,
         "max_speech_ratio": 0.1, "device_id": "", "timestamp": "",
@@ -128,19 +130,20 @@ class Settings:
     red_flash_hz: float = 1.5
     rotation_direction: str = "clockwise"
     noise_rising_db: float = 8.0
-    noise_loud_db: float = 18.0
-    noise_rising_enter_seconds: float = 1.5
-    noise_loud_enter_seconds: float = 2.0
+    noise_loud_db: float = 15.0
+    noise_rising_enter_seconds: float = 0.45
+    noise_loud_enter_seconds: float = 0.75
     noise_rising_exit_db: float = 5.0
     noise_loud_exit_db: float = 14.0
-    noise_exit_seconds: float = 3.0
-    noise_smoothing_ms: int = 750
+    noise_exit_seconds: float = 1.2
+    noise_smoothing_ms: int = 300
     discussion_noise: dict[str, float] = field(default_factory=lambda: {
-        "rising_db": 12.0, "loud_db": 22.0,
+        "rising_db": 12.0, "loud_db": 19.0,
         "rising_exit_db": 9.0, "loud_exit_db": 17.0,
     })
     session_logging_enabled: bool = True
     voice_enabled: bool = False
+    # Retained only for settings-file compatibility; noise classification is always level-only.
     speech_noise_guard: bool = True
     command_prefix: str = "課堂"
     command_corrections: dict[str, str] = field(default_factory=lambda: {
@@ -451,6 +454,7 @@ class SettingsRepository:
                                    **({key: value for key, value in colors.items()
                                        if key in defaults.colors} if isinstance(colors, dict) else {})}
                 # Upgrade only the untouched former defaults; retain user tuning.
+                converted_noise_thresholds = {}
                 for key, old, new in (
                     ("noise_rising_db", 8.0, 20.0), ("noise_loud_db", 18.0, 36.0),
                     ("noise_rising_exit_db", 5.0, 12.0), ("noise_loud_exit_db", 15.0, 24.0),
@@ -459,7 +463,15 @@ class SettingsRepository:
                     ("noise_exit_seconds", 3.0, 4.0), ("noise_smoothing_ms", 750, 1200),
                 ):
                     if data.get(key) == old:
+                        converted_noise_thresholds[key] = data[key]
                         data[key] = new
+                rising = data.get("noise_rising_db", defaults.noise_rising_db)
+                loud = data.get("noise_loud_db", defaults.noise_loud_db)
+                rising_exit = data.get("noise_rising_exit_db", defaults.noise_rising_exit_db)
+                loud_exit = data.get("noise_loud_exit_db", defaults.noise_loud_exit_db)
+                if (loud <= rising or loud - rising < 4 or rising_exit >= rising or
+                        loud_exit >= loud):
+                    data.update(converted_noise_thresholds)
                 if data.get("discussion_noise") == {
                     "rising_db": 16.0, "loud_db": 26.0,
                     "rising_exit_db": 13.0, "loud_exit_db": 23.0,
@@ -525,7 +537,7 @@ class SettingsRepository:
                     **defaults.pattern_levels,
                     **(data.get("pattern_levels") if isinstance(data.get("pattern_levels"), dict) else {}),
                 }
-            elif version in (11, 12, 13, 14):
+            elif version in (11, 12, 13, 14, 15, 16):
                 self._backup(version)
             elif version != SCHEMA_VERSION:
                 raise ValueError(f"Unsupported settings schema: {version}")
@@ -590,6 +602,23 @@ class SettingsRepository:
                         defaults.discussion_noise["loud_db"] >= data.get(
                             "noise_loud_db", defaults.noise_loud_db)):
                     data["discussion_noise"] = defaults.discussion_noise
+            if version in (14, 15):
+                # Retune only untouched loud-level defaults; preserve user tuning.
+                if data.get("noise_loud_db") == 18.0:
+                    data["noise_loud_db"] = 15.0
+                discussion = data.get("discussion_noise")
+                if isinstance(discussion, dict) and discussion.get("loud_db") == 22.0:
+                    data["discussion_noise"] = {**discussion, "loud_db": 19.0}
+            if version == 16:
+                # Replace only the prior untouched response defaults; keep custom timing.
+                previous_timing = {
+                    "noise_rising_enter_seconds": 1.5,
+                    "noise_loud_enter_seconds": 2.0,
+                    "noise_exit_seconds": 3.0,
+                    "noise_smoothing_ms": 750,
+                }
+                if all(data.get(key) == value for key, value in previous_timing.items()):
+                    data.update({key: getattr(Settings(), key) for key in previous_timing})
             data.pop("schema_version", None)
             allowed = Settings.__dataclass_fields__.keys()
             values = {k: v for k, v in data.items() if k in allowed}
@@ -601,7 +630,7 @@ class SettingsRepository:
                 # Recover unrelated preferences without overwriting the damaged
                 # file. Older schemas still use their established migration path.
                 return self._recover_current(values)
-            if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
+            if version in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
                 self.save(settings)
             return settings
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:

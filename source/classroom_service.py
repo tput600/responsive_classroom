@@ -188,17 +188,13 @@ class ClassroomService(QObject):
             },
             "statuses": {"microphone": dict(self._microphone), "speech": dict(self._speech),
                          "output": {"enabled": self._output_enabled, "stopping": self._output_stopping},
-                         "audio": {"playing": self.playback.is_playing,
-                                   "detection_paused": self.playback.suppress_detection}},
+                         "audio": {"playing": self.playback.is_playing}},
             "noise": {"dbfs": getattr(noise, "dbfs", None), "smoothed_dbfs": getattr(noise, "smoothed_dbfs", None),
                       "relative_db": getattr(noise, "relative_db", None),
                       "age_ms": max(0.0, (time.monotonic() - captured_at) * 1000) if captured_at > 0 else None,
                       "capture_lag_ms": max(0.0, getattr(self.audio, "capture_lag_seconds", 0.0) * 1000),
                       "capture_dropped": getattr(self.audio, "capture_dropped", 0),
-                      "capture_overloaded": bool(getattr(self.audio, "capture_overloaded", False)),
                       "health": self._enum_name(getattr(noise, "health", None)),
-                      "speech_excluded": bool(noise.speech_excluded) if noise is not None else False,
-                      "speech_guard_ready": bool(noise.speech_guard_ready) if noise is not None else True,
                       "calibration_progress": getattr(noise, "calibration_progress", 0.0)},
             "transcript": dict(self._transcript),
             "boards": [dict(item, status=self._board_status(item), health=self._hardware_messages.get(item.get("ip"), ""))
@@ -232,7 +228,6 @@ class ClassroomService(QObject):
     def _state_changed(self, state):
         if self._noise_context[0] is not state.base_mode:
             self._noise_context = (state.base_mode, self._noise_context[1] + 1)
-            self._reading = None
         self.playback.handle_state(state)
         self._sync_voice_capture()
         self._publish()
@@ -302,8 +297,6 @@ class ClassroomService(QObject):
         enabled = self._bool(p, "enabled")
         if enabled == self.settings.voice_enabled:
             return
-        if enabled and self.controller.state.base_mode is BaseMode.REST:
-            self.playback.stop()
         if self._save(replace(self.settings, voice_enabled=enabled)):
             self._sync_voice_capture()
         self._speech["message"] = "等待語音指令" if enabled else "語音已關閉"
@@ -334,8 +327,6 @@ class ClassroomService(QObject):
 
     def _noise_settings(self, p):
         fields = {key: p[key] for key in NOISE_KEYS}
-        if "speech_noise_guard" in p:
-            fields["speech_noise_guard"] = self._bool(p, "speech_noise_guard")
         if isinstance(fields["discussion_noise"], dict):
             fields["discussion_noise"] = {key: fields["discussion_noise"][key]
                                            for key in ("rising_db", "loud_db", "rising_exit_db", "loud_exit_db")}
@@ -823,7 +814,8 @@ class ClassroomService(QObject):
     @Slot(int, object)
     def _noise_received(self, generation, reading):
         if (generation != self._audio_generation or reading is None or
-                reading.context_revision != self._noise_context[1] or self.playback.suppress_detection):
+                reading.context_revision != self._noise_context[1] or
+                self.playback.suppress_detection):
             return
         self._reading = self._last_reading = reading
         health_ok = reading.health in (AudioHealth.OK, AudioHealth.CLIPPING)

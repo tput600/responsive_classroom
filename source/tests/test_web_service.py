@@ -48,7 +48,7 @@ class WebServiceTests(unittest.TestCase):
         aliases = {key: list(values) for key, values in original.command_aliases.items()}
         aliases['STANDBY'].append('ready now')
         payload = {key: getattr(original, key) for key in NOISE_KEYS}
-        payload.update(noise_rising_db=9, speech_noise_guard=False,
+        payload.update(noise_rising_db=9,
                        aliases=aliases, corrections=original.command_corrections)
         conflicting = {key: list(values) for key, values in aliases.items()}
         conflicting['WRONG'].append('question')
@@ -61,20 +61,19 @@ class WebServiceTests(unittest.TestCase):
             save.assert_called_once()
         loaded = subject.repository.load()
         self.assertEqual(loaded.noise_rising_db, 9)
-        self.assertFalse(loaded.speech_noise_guard)
         self.assertIn('ready now', loaded.command_aliases['STANDBY'])
         self.assertEqual(loaded.audio_files, original.audio_files)
         finish(subject)
 
-    def test_noise_guard_checkbox_persists_and_invalid_type_is_rejected(self):
+    def test_removed_speech_noise_guard_setting_is_ignored(self):
         subject = service(self.directory)
         names = ("noise_rising_db", "noise_loud_db", "noise_rising_enter_seconds",
                  "noise_loud_enter_seconds", "noise_rising_exit_db", "noise_loud_exit_db",
                  "noise_exit_seconds", "noise_smoothing_ms", "discussion_noise")
         payload = {name: getattr(subject.settings, name) for name in names}
         self.assertTrue(call(subject,"save_noise",{**payload,"speech_noise_guard":False})["ok"])
-        self.assertFalse(subject.repository.load().speech_noise_guard)
-        self.assertFalse(call(subject,"save_noise",{**payload,"speech_noise_guard":"false"})["ok"])
+        self.assertTrue(subject.repository.load().speech_noise_guard)
+        self.assertTrue(call(subject,"save_noise",{**payload,"speech_noise_guard":"false"})["ok"])
         finish(subject)
 
     def test_late_context_is_rejected_but_measurable_clipping_is_not_masked(self):

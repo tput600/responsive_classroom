@@ -256,7 +256,7 @@ class ClassroomControllerTests(unittest.TestCase):
 
 
 class SettingsTests(unittest.TestCase):
-    def test_schema_thirteen_migrates_noise_defaults_with_backup_and_saves_schema_fifteen(self):
+    def test_schema_thirteen_migrates_noise_defaults_with_backup_and_saves_current_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"
             data = {"schema_version": 13, **asdict(Settings(
@@ -275,15 +275,15 @@ class SettingsTests(unittest.TestCase):
 
             self.assertEqual(path.with_suffix(".json.v13.bak").read_text(encoding="utf-8"), original)
             self.assertEqual((loaded.noise_rising_db, loaded.noise_loud_db,
-                              loaded.noise_rising_exit_db, loaded.noise_loud_exit_db), (8, 18, 5, 14))
+                              loaded.noise_rising_exit_db, loaded.noise_loud_exit_db), (8, 15, 5, 14))
             self.assertEqual(loaded.discussion_noise,
-                             {"rising_db": 12, "loud_db": 22,
+                             {"rising_db": 12, "loud_db": 19,
                               "rising_exit_db": 9, "loud_exit_db": 17})
             self.assertEqual((loaded.question_seconds, loaded.rest_seconds), (19, 777))
             self.assertEqual(loaded.noise_baseline_dbfs, -54)
             self.assertEqual(loaded.audio_files["notice"], "audio/notice/custom.wav")
             self.assertFalse(loaded.speech_noise_guard)
-            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["schema_version"], 15)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["schema_version"], SCHEMA_VERSION)
 
     def test_schema_eleven_rest_default_preserves_custom_audio_and_clear_stays_clear(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -365,6 +365,7 @@ class SettingsTests(unittest.TestCase):
             path = Path(directory) / "settings.json"
             original = {"schema_version": 5, **asdict(Settings(
                 question_seconds=17, language="en_US", command_prefix="teacher"))}
+            original["noise_loud_db"] = 18.0
             original.pop("voice_idle_seconds")
             raw = json.dumps(original, ensure_ascii=False)
             path.write_text(raw, encoding="utf-8")
@@ -386,6 +387,7 @@ class SettingsTests(unittest.TestCase):
             ):
                 with self.subTest(aliases=aliases):
                     data = {"schema_version": 6, **asdict(Settings(voice_idle_seconds=42))}
+                    data["noise_loud_db"] = 18.0
                     data["command_aliases"]["NOTICE"] = aliases
                     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
                     loaded = SettingsRepository(path).load()
@@ -398,6 +400,7 @@ class SettingsTests(unittest.TestCase):
             path = Path(directory) / "settings.json"
             previous = asdict(Settings(question_seconds=19, rest_seconds=777, voice_idle_seconds=41,
                                        command_prefix="老師", noise_baseline_dbfs=-54))
+            previous["noise_loud_db"] = 18.0
             previous.pop("mode_change_grace_ms")
             previous.pop("calibration")
             previous["wled_devices"] = [{"ip": "192.0.2.20", "mac": "aa:bb", "name": "Panel"}]
@@ -408,7 +411,7 @@ class SettingsTests(unittest.TestCase):
             self.assertEqual((loaded.question_seconds, loaded.rest_seconds, loaded.voice_idle_seconds), (19, 777, 41))
             self.assertEqual((loaded.command_prefix, loaded.noise_baseline_dbfs), ("老師", -54))
             self.assertEqual(loaded.wled_devices[0]["enabled"], True)
-            self.assertEqual(loaded.mode_change_grace_ms, 800)
+            self.assertEqual(loaded.mode_change_grace_ms, 0)
             self.assertEqual(loaded.calibration["quality"], "UNKNOWN")
             self.assertEqual(path.with_suffix(".json.v8.bak").read_text(encoding="utf-8"), raw)
 

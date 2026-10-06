@@ -29,8 +29,7 @@ class AudioHealthTests(unittest.TestCase):
         analyzer.start_calibration(now=0, seconds=3)
         result = None
         for t in range(31):
-            reading = analyzer.feed(tone(.01 if t < 10 else .04), now=t / 10,
-                                    speech_active=False)
+            reading = analyzer.feed(tone(.01 if t < 10 else .04), now=t / 10)
             result = reading.calibration_result or result
             if t < 30:
                 self.assertEqual(reading.state, NoiseState.UNKNOWN)
@@ -42,47 +41,46 @@ class AudioHealthTests(unittest.TestCase):
         self.assertTrue(result["timestamp"].endswith("+0000") or "+" in result["timestamp"][-6:] or
                         result["timestamp"].endswith("-0000"))
 
-    def test_unstable_or_speech_contaminated_calibration_keeps_baseline(self):
+    def test_unstable_calibration_rejects_but_stable_audio_is_accepted(self):
         settings = Settings(calibration={**Settings().calibration, "discard_initial_sec": 0,
                                          "max_speech_ratio": .1})
-        for speech, varying in ((False, True), (True, False)):
+        for varying in (True, False):
             analyzer = NoiseAnalyzer(settings, -45)
             analyzer.start_calibration(now=0, seconds=2)
             result = None
             for t in range(21):
-                reading = analyzer.feed(tone(.005 if varying and t % 2 else .1), now=t / 10,
-                                        speech_active=speech)
+                reading = analyzer.feed(tone(.005 if varying and t % 2 else .1), now=t / 10)
                 result = reading.calibration_result or result
-            self.assertEqual(result["quality"], "REJECTED")
-            self.assertEqual(analyzer.baseline_dbfs, -45)
+            self.assertEqual(result["quality"], "REJECTED" if varying else "PASS")
+            self.assertEqual(analyzer.baseline_dbfs == -45, varying)
 
     def test_sparse_or_clipped_calibration_is_rejected(self):
         settings = Settings(calibration={**Settings().calibration, "discard_initial_sec": 0})
         sparse = NoiseAnalyzer(settings, -45)
         sparse.start_calibration(now=0, seconds=3)
-        result = sparse.feed(tone(), now=3, speech_active=False).calibration_result
+        result = sparse.feed(tone(), now=3).calibration_result
         self.assertEqual(result["quality"], "REJECTED")
         clipped = NoiseAnalyzer(settings, -45)
         clipped.start_calibration(now=0, seconds=2)
         result = None
         for t in range(21):
             block = np.tile([1., -1.], 240).astype(np.float32) if t == 10 else tone()
-            result = clipped.feed(block, now=t / 10, speech_active=False).calibration_result or result
+            result = clipped.feed(block, now=t / 10).calibration_result or result
         self.assertEqual(result["quality"], "REJECTED")
         self.assertEqual(clipped.baseline_dbfs, -45)
 
-    def test_mode_change_grace_and_stale_gap_clear_candidate(self):
+    def test_mode_change_restarts_hold_and_stale_gap_keeps_last_classification(self):
         settings = Settings(speech_noise_guard=False, noise_loud_enter_seconds=1, mode_change_grace_ms=800)
         analyzer = NoiseAnalyzer(settings, -50)
         loud = tone(.2)
         analyzer.feed(loud, now=0, mode=BaseMode.NOTICE, context_revision=1)
         first = analyzer.feed(loud, now=.1, mode=BaseMode.DISCUSSION, context_revision=2)
-        self.assertEqual(first.state, NoiseState.UNKNOWN)
-        analyzer.feed(loud, now=.9, mode=BaseMode.DISCUSSION, context_revision=2)
-        analyzer.feed(loud, now=1.0, mode=BaseMode.DISCUSSION, context_revision=2)
-        analyzer.feed(loud, now=1.1, mode=BaseMode.DISCUSSION, context_revision=2)
+        self.assertEqual(first.state, NoiseState.QUIET)
+        for step in range(2, 13):
+            analyzer.feed(loud, now=step / 10, mode=BaseMode.DISCUSSION, context_revision=2)
+        self.assertEqual(analyzer.state, NoiseState.LOUD)
         stale = analyzer.feed(loud, now=2.0, mode=BaseMode.DISCUSSION, context_revision=2)
-        self.assertNotEqual(stale.state, NoiseState.LOUD)
+        self.assertEqual(stale.state, NoiseState.LOUD)
 
 
 if __name__ == "__main__":
