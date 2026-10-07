@@ -15,7 +15,9 @@ const WORDS = {
   remoteOn: ['顯示連線 QR 碼', 'Show connection QR code'], remoteOff: ['關閉手機連線', 'Close phone connection'],
   remoteActivate: ['啟動手機控制', 'Activate phone control'], remotePaused: ['手機已連線；控制已暫停', 'Phone connected; control paused'],
   remoteVoicePermission: ['可啟動情境語音偵測', 'Allow scenario voice detection'],
-  remoteVoiceHelp: ['情境語音由電腦麥克風偵測，需先開啟總語音開關；噪音偵測不受影響。', 'The computer microphone detects scenario voice commands. Enable the main voice switch first; noise detection stays on.'],
+  remoteVoiceHelp: ['開啟情境的小麥克風時，電腦會啟動語音偵測；噪音偵測不受影響。', 'Turning on a scenario microphone also starts speech detection on the computer; noise detection is unaffected.'],
+  remoteVoiceChoose: ['請用情境按鈕內的小麥克風，逐一開啟要辨識的情境。', 'Use the small microphone buttons to enable the scenarios you want recognized.'],
+  remoteVoiceReady: ['電腦語音偵測已就緒。', 'Computer speech detection is ready.'],
   remoteQr: ['掃描以連線手機', 'Scan to connect phone'],
   remoteDisabled: ['未啟用', 'Disabled'], remoteWaiting: ['等待手機連線；四情境仍可用電腦語音切換', 'Waiting for phone; desktop voice can still switch scenarios'],
   remoteConnected: ['手機已連線；可用按鈕切換情境，三個互動仍可用電腦語音', 'Phone connected; buttons can switch scenarios, while desktop voice still handles interactions'],
@@ -397,8 +399,13 @@ function renderState(value) {
   $('remote-toggle').querySelector('span').textContent=text(remote.enabled ? 'remoteOff' : 'remoteOn');
   $('remote-active').disabled=!remote.enabled;
   $('remote-active').checked=Boolean(remote.armed);
-  $('remote-voice-permission').disabled=!remote.active;
+  $('remote-voice-permission').disabled=!remote.armed;
   $('remote-voice-permission').checked=Boolean(remote.allow_voice);
+  const remoteVoiceSelected=Object.values(remote.voice_modes||{}).some(Boolean);
+  setText('remote-voice-status',!remote.allow_voice ? '' : !remoteVoiceSelected ? text('remoteVoiceChoose') :
+    !settings.voice_enabled || statuses.speech.command_paused ? text('voicePaused') :
+    !statuses.microphone.ok ? localMessage(statuses.microphone.message || text('micError')) :
+    !statuses.speech.ok ? localMessage(statuses.speech.message || text('voicePreparing')) : text('remoteVoiceReady'));
   setText('remote-status',text(remote.active ? 'remoteConnected' : remote.connected ? 'remotePaused' : remote.enabled ? 'remoteWaiting' : 'remoteDisabled'));
   $('remote-urls').hidden=!remote.enabled;
   const remoteUrls=JSON.stringify(remote.urls);

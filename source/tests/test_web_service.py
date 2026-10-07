@@ -363,6 +363,7 @@ class WebServiceTests(unittest.TestCase):
                 urllib.request.urlopen(voice, timeout=2)
             self.assertEqual(blocked.exception.code, 409)
             self.assertEqual(call(subject, "remote_voice_permission", {"enabled": True}), {"ok": True})
+            subject._voice_commands_paused = True
             with urllib.request.urlopen(voice, timeout=2) as response:
                 self.assertTrue(json.load(response)["ok"])
             deadline = time.monotonic() + 2
@@ -370,8 +371,22 @@ class WebServiceTests(unittest.TestCase):
                 APP.processEvents()
                 time.sleep(.005)
             self.assertTrue(subject.snapshot()["remote"]["voice_modes"]["notice"])
+            self.assertTrue(subject.settings.voice_enabled)
+            self.assertFalse(subject._voice_commands_paused)
             self.assertIs(subject._reading, marker)
             self.assertEqual(subject._noise_context, context)
+            with subject.remote._lock:
+                subject.remote._last_seen = time.monotonic() - 7
+            revision = subject.controller.manual_revision
+            subject._tick()
+            self.assertFalse(subject.snapshot()["remote"]["active"])
+            self.assertTrue(subject.snapshot()["remote"]["allow_voice"])
+            self.assertTrue(subject.snapshot()["remote"]["voice_modes"]["notice"])
+            self.assertEqual(subject.controller.manual_revision, revision)
+            self.assertEqual(call(subject, "remote_voice_permission", {"enabled": True}), {"ok": True})
+            with urllib.request.urlopen(urllib.request.Request(url + "state", headers=headers), timeout=2):
+                pass
+            self.assertTrue(subject.snapshot()["remote"]["active"])
             subject._apply_command(CommandResult("notice", "NOTICE", "accepted", "notice"),
                                    subject.controller.manual_revision)
             self.assertEqual(subject.snapshot()["current"]["base_mode"], "NOTICE")
@@ -392,6 +407,33 @@ class WebServiceTests(unittest.TestCase):
         finally:
             call(subject, "remote", {"enabled": False})
             finish(subject)
+
+    def test_audio_switch_does_not_restart_speech_or_clear_noise(self):
+        subject = service(self.directory)
+
+        class AudioProbe:
+            is_running = True
+            updates = 0
+
+            def update_settings(self, _settings):
+                self.updates += 1
+
+            def set_listening(self, _enabled):
+                pass
+
+        probe = subject.audio = AudioProbe()
+        marker, context = object(), subject._noise_context
+        subject._reading = marker
+        revision = subject.controller.manual_revision
+        self.assertEqual(call(subject, "scenario_audio", {"mode": "notice", "enabled": False}), {"ok": True})
+        self.assertEqual(probe.updates, 0)
+        self.assertEqual(subject.controller.manual_revision, revision)
+        self.assertIs(subject._reading, marker)
+        self.assertEqual(subject._noise_context, context)
+        self.assertEqual(call(subject, "voice", {"enabled": True}), {"ok": True})
+        self.assertEqual(probe.updates, 1)
+        subject.audio = None
+        finish(subject)
 
     def test_board_enable_is_saved_independently_and_stop_runs_off_gui_thread(self):
         subject = service(self.directory)

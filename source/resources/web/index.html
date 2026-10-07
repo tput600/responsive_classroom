@@ -127,7 +127,8 @@
       <div class="settings-content remote-content">
         <div class="page-heading"><h2 data-t="remoteTitle">手機控制</h2><p data-t="remoteHelp">手機與電腦連上同一個 Wi‑Fi 後，掃描 QR 碼開啟手機按鈕。收音與噪音偵測仍由電腦負責。</p></div>
         <div class="remote-controls"><button id="remote-toggle" class="button" type="button" aria-pressed="false"><span data-t="remoteOn">顯示連線 QR 碼</span></button><label class="remote-activation"><input id="remote-active" type="checkbox" disabled><span data-t="remoteActivate">啟動手機控制</span></label><label class="remote-activation"><input id="remote-voice-permission" type="checkbox" disabled><span data-t="remoteVoicePermission">可啟動情境語音偵測</span></label><span id="remote-status" role="status">未啟用</span></div>
-        <p class="section-help" data-t="remoteVoiceHelp">情境語音由電腦麥克風偵測，需先開啟總語音開關；噪音偵測不受影響。</p>
+        <p class="section-help" data-t="remoteVoiceHelp">開啟情境的小麥克風時，電腦會啟動語音偵測；噪音偵測不受影響。</p>
+        <p id="remote-voice-status" class="section-help" role="status"></p>
         <div id="remote-urls" class="remote-urls" hidden></div>
         <p id="remote-message" class="form-message" role="status"></p>
       </div>

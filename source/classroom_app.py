@@ -230,6 +230,7 @@ def ui_smoke_report(path,captures=False):
             report['remote_page']=_javascript(app,window,'''Boolean(document.querySelector('#page-remote #remote-toggle') &&
               document.querySelector('#page-remote #remote-active') &&
               document.querySelector('#page-remote #remote-voice-permission') &&
+              document.querySelector('#page-remote #remote-voice-status') &&
               document.querySelector('[data-page=timers]+[data-page=remote]') &&
               !document.querySelector('#page-classroom #remote-toggle'))''')
             # Mode QA switches rapidly; let the requested 1.4 s transition settle.

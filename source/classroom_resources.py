@@ -10,7 +10,7 @@ import wave
 from classroom_core import Settings
 from classroom_audio import CommandParser
 APP_NAME = "Responsive Classroom"
-VERSION = "3.2.1"
+VERSION = "3.2.2"
 
 def config_dir():
     if os.name == 'nt':
